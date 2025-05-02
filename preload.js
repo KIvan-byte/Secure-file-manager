@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld(
       readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
       readFileBinary: (filePath) => ipcRenderer.invoke('read-file-binary', filePath),
       
-      // File selection for sharing (new function)
+      // File selection for sharing
       selectFile: () => ipcRenderer.invoke('select-file'),
       
       // File sharing operations
@@ -25,7 +25,11 @@ contextBridge.exposeInMainWorld(
       getAccessLogs: () => ipcRenderer.invoke('get-access-logs'),
       
       // Content search
-      searchFileContent: (params) => ipcRenderer.invoke('search-file-content', params)
+      searchFileContent: (params) => ipcRenderer.invoke('search-file-content', params),
+      
+      // Encryption/Decryption operations
+      encryptFile: (params) => ipcRenderer.invoke('encrypt-file', params),
+      decryptFile: (params) => ipcRenderer.invoke('decrypt-file', params)
     }
   }
 );

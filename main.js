@@ -10,6 +10,7 @@ const express = require('express');
 const cors = require('cors');
 const ip = require('ip');
 const FileUtils = require('./utils/file-utils');
+const EncryptionUtils = require('./utils/encryption-utils');
 
 // We'll create a separate module loader for lowdb using dynamic imports
 // since lowdb v5 is an ES Module
@@ -556,6 +557,66 @@ ipcMain.handle('search-file-content', async (event, { directoryPath, searchText,
     return { success: true, results };
   } catch (error) {
     console.error(`Error searching file content:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// New handlers for file encryption/decryption
+
+// Encrypt a file with password
+ipcMain.handle('encrypt-file', async (event, { filePath, password, outputPath }) => {
+  try {
+    if (!filePath || !password) {
+      return { success: false, error: 'File path and password are required' };
+    }
+
+    // Check if file exists
+    if (!FileUtils.fileExists(filePath)) {
+      return { success: false, error: 'File does not exist' };
+    }
+
+    // Perform encryption
+    const result = await EncryptionUtils.encryptFile(filePath, password, outputPath);
+    
+    // Log encryption activity
+    if (result.success) {
+      await logAccess('encrypt_file', filePath, { 
+        outputPath: result.outputPath 
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error encrypting file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Decrypt a file with password
+ipcMain.handle('decrypt-file', async (event, { filePath, password, outputPath }) => {
+  try {
+    if (!filePath || !password) {
+      return { success: false, error: 'File path and password are required' };
+    }
+
+    // Check if file exists
+    if (!FileUtils.fileExists(filePath)) {
+      return { success: false, error: 'File does not exist' };
+    }
+
+    // Perform decryption
+    const result = await EncryptionUtils.decryptFile(filePath, password, outputPath);
+    
+    // Log decryption activity
+    if (result.success) {
+      await logAccess('decrypt_file', filePath, { 
+        outputPath: result.outputPath 
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error decrypting file:', error);
     return { success: false, error: error.message };
   }
 });

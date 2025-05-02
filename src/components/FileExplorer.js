@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
+import FileEncryptionModal from './FileEncryptionModal';
 
 const Container = styled.div`
   display: flex;
@@ -502,6 +503,10 @@ function FileExplorer() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  
+  const [showEncryptionModal, setShowEncryptionModal] = useState(false);
+  const [encryptionFile, setEncryptionFile] = useState(null);
+  const [encryptionMode, setEncryptionMode] = useState('encrypt');
 
   useEffect(() => {
     if (currentPath) {
@@ -564,7 +569,7 @@ function FileExplorer() {
       try {
         setIsLoading(true);
         setSelectedFile(file);
-        setZoom(1); // Reset zoom when opening a new file
+        setZoom(1);
         
         const fileExtension = path.extname(file.name).toLowerCase();
         const type = getFileType(fileExtension);
@@ -874,6 +879,29 @@ function FileExplorer() {
     }
   };
 
+  const handleEncryptFile = (file) => {
+    setEncryptionFile(file);
+    setEncryptionMode('encrypt');
+    setShowEncryptionModal(true);
+  };
+
+  const handleDecryptFile = (file) => {
+    setEncryptionFile(file);
+    setEncryptionMode('decrypt');
+    setShowEncryptionModal(true);
+  };
+
+  const closeEncryptionModal = () => {
+    setShowEncryptionModal(false);
+    if (currentPath) {
+      loadDirectory(currentPath);
+    }
+  };
+
+  const isEncryptedFile = (fileName) => {
+    return fileName.endsWith('.enc');
+  };
+
   return (
     <Container>
       <Header>
@@ -1007,6 +1035,33 @@ function FileExplorer() {
                       >
                         <FaEye />
                       </ActionButton>
+                      
+                      {isEncryptedFile(file.name) ? (
+                        <ActionButton 
+                          $color="#27ae60" 
+                          $hoverColor="#219653"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDecryptFile(file);
+                          }}
+                          title="Decrypt file"
+                        >
+                          <FaLockOpen />
+                        </ActionButton>
+                      ) : (
+                        <ActionButton 
+                          $color="#f39c12" 
+                          $hoverColor="#d35400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEncryptFile(file);
+                          }}
+                          title="Encrypt file"
+                        >
+                          <FaLock />
+                        </ActionButton>
+                      )}
+                      
                       <ActionButton 
                         $color="#e74c3c" 
                         $hoverColor="#c0392b"
@@ -1057,6 +1112,13 @@ function FileExplorer() {
           {renderPreview()}
         </FilePreview>
       )}
+
+      <FileEncryptionModal 
+        isOpen={showEncryptionModal}
+        onClose={closeEncryptionModal}
+        file={encryptionFile}
+        mode={encryptionMode}
+      />
     </Container>
   );
 }
