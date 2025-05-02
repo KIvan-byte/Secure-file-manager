@@ -148,18 +148,20 @@ const ActionButton = styled.button`
   justify-content: center;
   width: 32px;
   height: 32px;
-  background-color: ${props => props.$color || '#2c3e50'};
-  color: white;
-  border: none;
+  padding: 0;
   border-radius: 4px;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  background-color: ${props => props.$color || '#3498db'};
+  color: white;
   
   &:hover {
-    background-color: ${props => props.$hoverColor || '#1a252f'};
+    background-color: ${props => props.$hoverColor || '#2980b9'};
   }
   
-  &:active {
-    transform: scale(0.95);
+  /* Ensure the icon is properly centered and sized */
+  svg {
+    width: 16px;
+    height: 16px;
+    display: block;
   }
 `;
 
