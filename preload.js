@@ -39,7 +39,14 @@ contextBridge.exposeInMainWorld(
       // Compression methods
       compressFiles: (params) => ipcRenderer.invoke('compress-files', params),
       extractArchive: (params) => ipcRenderer.invoke('extract-archive', params),
-      isArchive: (filePath) => ipcRenderer.invoke('is-archive', filePath)
+      isArchive: (filePath) => ipcRenderer.invoke('is-archive', filePath),
+      
+      // Analytics endpoints
+      getAllFiles: () => ipcRenderer.invoke('getAllFiles'),
+      getSharedFilesCount: () => ipcRenderer.invoke('getSharedFilesCount'),
+      getStorageInfo: () => ipcRenderer.invoke('getStorageInfo'),
+      getFileTypeDistribution: () => ipcRenderer.invoke('getFileTypeDistribution'),
+      getActivityTrends: () => ipcRenderer.invoke('getActivityTrends'),
     }
   }
 );

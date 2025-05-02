@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { styled } from 'styled-components';
-import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock } from 'react-icons/fa';
+import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
   background-color: #2c3e50;
@@ -175,6 +175,15 @@ function Sidebar() {
           >
             <NavIcon $collapsed={collapsed}><FaShareAlt /></NavIcon>
             <NavText $collapsed={collapsed}>File Sharing</NavText>
+          </NavLink>
+          
+          <NavLink 
+            to="/analytics" 
+            $active={location.pathname === '/analytics' ? "true" : undefined}
+            onClick={closeSidebar}
+          >
+            <NavIcon $collapsed={collapsed}><FaChartBar /></NavIcon>
+            <NavText $collapsed={collapsed}>Analytics</NavText>
           </NavLink>
           
           <NavLink 
