@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
 import FileEncryptionModal from './FileEncryptionModal';
+import FileCompressionModal from './FileCompressionModal';
 
 const Container = styled.div`
   display: flex;
@@ -57,7 +58,7 @@ const FileList = styled.div`
 
 const FileListHeader = styled.div`
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: 40px 40px 1fr auto auto;
   align-items: center;
   padding: 12px 16px;
   background-color: #f8f9fa;
@@ -76,7 +77,7 @@ const FileListHeaderItem = styled.div`
 
 const FileItem = styled.div`
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 40px 40px 1fr auto;
   align-items: center;
   padding: 12px 16px;
   cursor: pointer;
@@ -88,12 +89,12 @@ const FileItem = styled.div`
   }
   
   @media (max-width: 768px) {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 40px 40px 1fr auto;
   }
   
   @media (max-width: 576px) {
-    grid-template-columns: auto 1fr;
-    grid-row-gap: 4px;
+    grid-template-columns: 40px 40px 1fr;
+    grid-row-gap: 8px;
   }
 `;
 
@@ -507,6 +508,11 @@ function FileExplorer() {
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
   const [encryptionFile, setEncryptionFile] = useState(null);
   const [encryptionMode, setEncryptionMode] = useState('encrypt');
+  
+  const [showCompressionModal, setShowCompressionModal] = useState(false);
+  const [compressionFiles, setCompressionFiles] = useState([]);
+  const [compressionMode, setCompressionMode] = useState('compress');
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
     if (currentPath) {
@@ -713,10 +719,19 @@ function FileExplorer() {
     return 'other';
   };
 
+  const isArchive = (fileName) => {
+    const extension = path.extname(fileName).toLowerCase();
+    return extension === '.zip' || extension === '.tar' || extension === '.gz' || 
+           extension === '.tgz' || fileName.toLowerCase().endsWith('.tar.gz');
+  };
+
   const getFileIcon = (file) => {
     if (file.isDirectory) return <FaFolder />;
     
     const extension = path.extname(file.name).toLowerCase();
+    
+    if (isArchive(file.name)) return <FaFileArchive />;
+    
     const type = getFileType(extension);
     
     switch (type) {
@@ -902,6 +917,51 @@ function FileExplorer() {
     return fileName.endsWith('.enc');
   };
 
+  const handleCompressFiles = () => {
+    if (selectedFiles.length === 0) {
+      setError('Please select at least one file or directory to compress');
+      return;
+    }
+    
+    setCompressionFiles(selectedFiles);
+    setCompressionMode('compress');
+    setShowCompressionModal(true);
+  };
+  
+  const handleExtractArchive = (file) => {
+    if (!isArchive(file.name)) {
+      setError('This file is not a recognized archive format');
+      return;
+    }
+    
+    setCompressionFiles([file]);
+    setCompressionMode('extract');
+    setShowCompressionModal(true);
+  };
+  
+  const toggleFileSelection = (file, event) => {
+    event.stopPropagation();
+    
+    const isSelected = selectedFiles.some(f => f.path === file.path);
+    
+    if (isSelected) {
+      setSelectedFiles(selectedFiles.filter(f => f.path !== file.path));
+    } else {
+      setSelectedFiles([...selectedFiles, file]);
+    }
+  };
+  
+  const clearSelection = () => {
+    setSelectedFiles([]);
+  };
+
+  const closeCompressionModal = () => {
+    setShowCompressionModal(false);
+    if (currentPath) {
+      loadDirectory(currentPath);
+    }
+  };
+
   return (
     <Container>
       <Header>
@@ -932,6 +992,26 @@ function FileExplorer() {
             >
               <FaSearch /> {isAdvancedSearchVisible ? 'Hide Content Search' : 'Search Contents'}
             </SearchButton>
+            
+            {selectedFiles.length > 0 && (
+              <Button 
+                onClick={handleCompressFiles}
+                title="Compress selected files"
+                style={{ backgroundColor: '#f39c12', marginLeft: 'auto' }}
+              >
+                <FaCompress /> Compress ({selectedFiles.length})
+              </Button>
+            )}
+            
+            {selectedFiles.length > 0 && (
+              <Button 
+                onClick={clearSelection}
+                title="Clear selection"
+                style={{ backgroundColor: '#95a5a6' }}
+              >
+                <FaTimesCircle /> Clear Selection
+              </Button>
+            )}
           </>
         )}
       </ActionBar>
@@ -1001,10 +1081,11 @@ function FileExplorer() {
           {buildBreadcrumbs()}
           <FileList>
             <FileListHeader>
-              <FileListHeaderItem>Type</FileListHeaderItem>
-              <FileListHeaderItem>Name</FileListHeaderItem>
-              <FileListHeaderItem>Size</FileListHeaderItem>
-              <FileListHeaderItem>Modified</FileListHeaderItem>
+              <div></div>
+              <div>Type</div>
+              <div>Name</div>
+              <div>Size</div>
+              <div>Modified</div>
             </FileListHeader>
             
             {isLoading ? (
@@ -1012,6 +1093,14 @@ function FileExplorer() {
             ) : filteredFiles.length > 0 ? (
               filteredFiles.map((file, index) => (
                 <FileItem key={index} onClick={() => handleFileClick(file)}>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedFiles.some(f => f.path === file.path)}
+                      onChange={(e) => toggleFileSelection(file, e)} 
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   <FileIcon $isDirectory={file.isDirectory}>
                     {getFileIcon(file)}
                   </FileIcon>
@@ -1036,7 +1125,19 @@ function FileExplorer() {
                         <FaEye />
                       </ActionButton>
                       
-                      {isEncryptedFile(file.name) ? (
+                      {isArchive(file.name) ? (
+                        <ActionButton 
+                          $color="#9b59b6" 
+                          $hoverColor="#8e44ad"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExtractArchive(file);
+                          }}
+                          title="Extract archive"
+                        >
+                          <FaArchive />
+                        </ActionButton>
+                      ) : isEncryptedFile(file.name) ? (
                         <ActionButton 
                           $color="#27ae60" 
                           $hoverColor="#219653"
@@ -1118,6 +1219,13 @@ function FileExplorer() {
         onClose={closeEncryptionModal}
         file={encryptionFile}
         mode={encryptionMode}
+      />
+
+      <FileCompressionModal 
+        isOpen={showCompressionModal}
+        onClose={closeCompressionModal}
+        files={compressionFiles}
+        mode={compressionMode}
       />
     </Container>
   );

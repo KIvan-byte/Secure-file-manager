@@ -34,7 +34,12 @@ contextBridge.exposeInMainWorld(
       // New functionality for encrypted files
       listEncryptedFiles: () => ipcRenderer.invoke('list-encrypted-files'),
       getEncryptedFileDetails: (filePath) => ipcRenderer.invoke('get-encrypted-file-details', filePath),
-      shareEncryptedFileWithDecryption: (params) => ipcRenderer.invoke('share-encrypted-file-with-decryption', params)
+      shareEncryptedFileWithDecryption: (params) => ipcRenderer.invoke('share-encrypted-file-with-decryption', params),
+      
+      // Compression methods
+      compressFiles: (params) => ipcRenderer.invoke('compress-files', params),
+      extractArchive: (params) => ipcRenderer.invoke('extract-archive', params),
+      isArchive: (filePath) => ipcRenderer.invoke('is-archive', filePath)
     }
   }
 );
