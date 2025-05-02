@@ -74,7 +74,7 @@ const FileListHeaderItem = styled.div`
 
 const FileItem = styled.div`
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   padding: 12px 16px;
   cursor: pointer;
@@ -103,54 +103,42 @@ const FileIcon = styled.div`
   font-size: 18px;
 `;
 
+const FileInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Allows for proper text truncation */
+`;
+
 const FileName = styled.div`
-  padding: 0 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  
-  @media (max-width: 576px) {
-    grid-column: 1 / 3;
-    font-weight: 500;
-    margin-top: 6px;
-  }
+  font-weight: 500;
+`;
+
+const FileDetails = styled.div`
+  display: flex;
+  gap: 16px;
+  color: #7f8c8d;
+  font-size: 12px;
+  margin-top: 4px;
 `;
 
 const FileSize = styled.div`
-  padding: 0 8px;
-  text-align: right;
-  color: #7f8c8d;
-  
-  @media (max-width: 576px) {
-    grid-column: 2;
-    text-align: left;
-    font-size: 12px;
-    padding-left: 30px;
-  }
 `;
 
 const FileDate = styled.div`
-  padding: 0 8px;
   white-space: nowrap;
-  color: #7f8c8d;
-  
-  @media (max-width: 768px) {
-    display: none;
-  }
 `;
 
 const FileActions = styled.div`
   display: flex;
   gap: 8px;
   opacity: 0.7;
+  margin-left: auto;
   
   ${FileItem}:hover & {
     opacity: 1;
-  }
-  
-  @media (max-width: 576px) {
-    grid-column: 2;
-    justify-content: flex-end;
   }
 `;
 
@@ -558,9 +546,13 @@ function FileExplorer() {
                   <FileIcon $isDirectory={file.isDirectory}>
                     {file.isDirectory ? <FaFolder /> : <FaFile />}
                   </FileIcon>
-                  <FileName>{file.name}</FileName>
-                  <FileSize>{formatSize(file.size)}</FileSize>
-                  <FileDate>{formatDate(file.mtime)}</FileDate>
+                  <FileInfo>
+                    <FileName>{file.name}</FileName>
+                    <FileDetails>
+                      <FileSize>{formatSize(file.size)}</FileSize>
+                      <FileDate>{formatDate(file.mtime)}</FileDate>
+                    </FileDetails>
+                  </FileInfo>
                   {!file.isDirectory && (
                     <FileActions onClick={(e) => e.stopPropagation()}>
                       <ActionButton 
