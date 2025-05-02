@@ -93,7 +93,7 @@ function startFileServer() {
     `);
   });
   
-  // Set up endpoint to access shared files
+  // Modify the endpoint to serve shared files to handle decryption
   expressApp.get('/share/:token', async (req, res) => {
     try {
       const { token } = req.params;
@@ -119,7 +119,7 @@ function startFileServer() {
         return res.status(401).send('Invalid encryption key');
       }
       
-      // Get file content
+      // Get file details
       const filePath = shareInfo.filePath;
       console.log(`Serving file: ${filePath}`);
       
@@ -152,7 +152,203 @@ function startFileServer() {
           </html>
         `);
       }
+
+      // Check if this is an encrypted file that allows decryption
+      const isEncryptedFile = filePath.endsWith('.enc');
+      const allowDecryption = isEncryptedFile && shareInfo.allowDecryption;
       
+      // If it's an encrypted file with decryption option enabled, show the decryption page
+      if (allowDecryption) {
+        // If the user hasn't provided a password parameter, show the decryption form
+        if (!req.query.password) {
+          // Get filename for display
+          const filename = path.basename(filePath).replace('.enc', '');
+          
+          return res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Decrypt File</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                  body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f8f9fa;
+                  }
+                  .container {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    padding: 30px;
+                    margin-top: 40px;
+                  }
+                  h1 {
+                    color: #2c3e50;
+                    margin-top: 0;
+                  }
+                  .form-group {
+                    margin-bottom: 20px;
+                  }
+                  label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: bold;
+                  }
+                  input[type="password"] {
+                    width: 100%;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    font-size: 16px;
+                  }
+                  button {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    padding: 12px 20px;
+                    border-radius: 4px;
+                    font-size: 16px;
+                    cursor: pointer;
+                  }
+                  button:hover {
+                    background-color: #2980b9;
+                  }
+                  .file-info {
+                    background-color: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 4px;
+                    margin-bottom: 20px;
+                  }
+                  .error {
+                    color: #e74c3c;
+                    background-color: #fdf1f0;
+                    padding: 10px;
+                    border-radius: 4px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #e74c3c;
+                  }
+                  .note {
+                    font-size: 14px;
+                    color: #7f8c8d;
+                    margin-top: 20px;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <h1>Decrypt Shared File</h1>
+                  
+                  <div class="file-info">
+                    <strong>File:</strong> ${filename}
+                  </div>
+                  
+                  ${req.query.error ? `<div class="error">${req.query.error}</div>` : ''}
+                  
+                  <form action="/share/${token}" method="GET">
+                    <input type="hidden" name="key" value="${key}">
+                    
+                    <div class="form-group">
+                      <label for="password">Enter Decryption Password:</label>
+                      <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit">Decrypt and Download</button>
+                  </form>
+                  
+                  <div class="note">
+                    <p>This encrypted file requires a password to decrypt. Enter the password to download the decrypted file.</p>
+                    <p>If you don't have the password, please contact the person who shared this file.</p>
+                  </div>
+                </div>
+              </body>
+            </html>
+          `);
+        }
+        
+        // If we have a password parameter and decryption is allowed, try to decrypt
+        const password = req.query.password;
+        const decryptionPassword = shareInfo.decryptionPassword || password;
+        
+        if (!decryptionPassword) {
+          return res.redirect(`/share/${token}?key=${key}&error=No password provided`);
+        }
+        
+        // Create a temporary file for the decrypted content
+        const tmpDir = path.join(app.getPath('temp'), 'secure-file-manager');
+        fs.mkdirSync(tmpDir, { recursive: true });
+        const decryptedFilePath = path.join(tmpDir, uuidv4());
+        
+        try {
+          // Attempt to decrypt the file
+          const decryptResult = await EncryptionUtils.decryptFile(filePath, decryptionPassword, decryptedFilePath);
+          
+          if (!decryptResult.success) {
+            fs.unlinkSync(decryptedFilePath);
+            return res.redirect(`/share/${token}?key=${key}&error=Invalid password or corrupted file`);
+          }
+          
+          // Mark link as used only after successful decryption
+          const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
+          db.data.sharedLinks[linkIndex].isUsed = true;
+          await db.write();
+          
+          // Log access
+          await logAccess('access_shared_file', filePath, { token, remote: true, decrypted: true });
+          
+          // Serve the decrypted file instead
+          const filename = decryptResult.decryptedFilename || path.basename(decryptedFilePath);
+          const mimetype = getMimeType(filename);
+          
+          // Properly format the Content-disposition header to ensure browser uses the filename with extension
+          res.setHeader('Content-disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+          res.setHeader('Content-type', mimetype);
+          
+          // Create read stream and pipe to response
+          const fileStream = fs.createReadStream(decryptedFilePath);
+          
+          fileStream.on('error', (err) => {
+            console.error(`Error streaming file: ${err.message}`);
+            if (!res.headersSent) {
+              res.status(500).send('Error streaming file');
+            } else {
+              res.end();
+            }
+          });
+          
+          fileStream.on('end', () => {
+            // Delete the temporary decrypted file after serving
+            try {
+              fs.unlinkSync(decryptedFilePath);
+            } catch (err) {
+              console.error(`Error deleting temporary file: ${err.message}`);
+            }
+          });
+          
+          fileStream.pipe(res);
+        } catch (error) {
+          console.error('Error decrypting file:', error);
+          
+          // Cleanup in case of error
+          try {
+            if (fs.existsSync(decryptedFilePath)) {
+              fs.unlinkSync(decryptedFilePath);
+            }
+          } catch (err) {
+            console.error(`Error cleaning up: ${err.message}`);
+          }
+          
+          return res.redirect(`/share/${token}?key=${key}&error=${encodeURIComponent(error.message || 'Error decrypting file')}`);
+        }
+        
+        return;
+      }
+      
+      // For non-decryptable files, continue with the original logic
       // Mark link as used (one-time access) only if the file exists and is about to be served
       const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
       db.data.sharedLinks[linkIndex].isUsed = true;
@@ -166,7 +362,8 @@ function startFileServer() {
       const filename = path.basename(filePath);
       const mimetype = getMimeType(filename);
       
-      res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+      // Properly format the Content-disposition header to ensure browser uses the filename with extension
+      res.setHeader('Content-disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
       res.setHeader('Content-type', mimetype);
       
       // Create read stream and pipe to response
@@ -617,6 +814,215 @@ ipcMain.handle('decrypt-file', async (event, { filePath, password, outputPath })
     return result;
   } catch (error) {
     console.error('Error decrypting file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// New handler to get all encrypted files
+ipcMain.handle('list-encrypted-files', async () => {
+  try {
+    // Define common directories to search
+    const userDirectories = [
+      app.getPath('documents'),
+      app.getPath('downloads'),
+      app.getPath('desktop')
+    ];
+    
+    // Add any previously accessed directories from logs
+    await db.read();
+    const accessedDirs = new Set();
+    db.data.accessLogs.forEach(log => {
+      if (log.action === 'encrypt_file' || log.action === 'decrypt_file') {
+        const dirPath = path.dirname(log.path);
+        accessedDirs.add(dirPath);
+      }
+    });
+    
+    // Combine all directories, removing duplicates
+    const dirsToSearch = [...new Set([...userDirectories, ...accessedDirs])];
+    
+    // Find all encrypted files
+    const encryptedFiles = [];
+    
+    for (const dirPath of dirsToSearch) {
+      try {
+        // Skip if directory doesn't exist
+        if (!fs.existsSync(dirPath)) continue;
+        
+        const items = FileUtils.readDirectory(dirPath);
+        
+        // Filter and add encrypted files
+        items.filter(item => !item.isDirectory && item.name.endsWith('.enc'))
+          .forEach(file => {
+            encryptedFiles.push({
+              name: file.name,
+              path: file.path,
+              size: file.size,
+              mtime: file.mtime
+            });
+          });
+          
+        // Check one level of subdirectories for more encrypted files
+        items.filter(item => item.isDirectory).forEach(dir => {
+          try {
+            const subItems = FileUtils.readDirectory(dir.path);
+            subItems.filter(item => !item.isDirectory && item.name.endsWith('.enc'))
+              .forEach(file => {
+                encryptedFiles.push({
+                  name: file.name,
+                  path: file.path,
+                  size: file.size,
+                  mtime: file.mtime
+                });
+              });
+          } catch (err) {
+            // Ignore errors for subdirectories we can't access
+          }
+        });
+      } catch (err) {
+        console.warn(`Could not scan directory ${dirPath}: ${err.message}`);
+      }
+    }
+    
+    // Sort by date modified (newest first)
+    encryptedFiles.sort((a, b) => new Date(b.mtime) - new Date(a.mtime));
+    
+    return { success: true, files: encryptedFiles };
+  } catch (error) {
+    console.error(`Error listing encrypted files:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Get details about an encrypted file
+ipcMain.handle('get-encrypted-file-details', async (event, filePath) => {
+  try {
+    if (!filePath || !filePath.endsWith('.enc')) {
+      return { success: false, error: 'Invalid encrypted file path' };
+    }
+    
+    // Check if file exists
+    if (!FileUtils.fileExists(filePath)) {
+      return { success: false, error: 'File does not exist' };
+    }
+    
+    // Get basic file info
+    const stats = FileUtils.getFileStats(filePath);
+    if (!stats) {
+      return { success: false, error: 'Could not access file stats' };
+    }
+    
+    // Try to get original filename from encryption metadata
+    let originalFileName = '';
+    let originalExtension = '';
+    
+    try {
+      // Read the metadata from the encrypted file
+      const fileHandle = fs.openSync(filePath, 'r');
+      // Skip IV (16 bytes)
+      // Read metadata length (4 bytes)
+      const metadataLengthBuffer = Buffer.alloc(4);
+      fs.readSync(fileHandle, metadataLengthBuffer, 0, 4, 16);
+      const metadataLength = metadataLengthBuffer.readUInt32LE(0);
+      
+      // Read the metadata if it exists
+      if (metadataLength > 0 && metadataLength < 1024) {
+        const metadataBuffer = Buffer.alloc(metadataLength);
+        fs.readSync(fileHandle, metadataBuffer, 0, metadataLength, 20);
+        try {
+          const metadata = JSON.parse(metadataBuffer.toString());
+          originalExtension = metadata.originalExtension || '';
+        } catch (err) {
+          console.warn('Failed to parse metadata');
+        }
+      }
+      fs.closeSync(fileHandle);
+      
+      // Try to determine original file name
+      const encFileName = path.basename(filePath);
+      if (encFileName.endsWith('.enc')) {
+        originalFileName = encFileName.slice(0, -4);
+        if (originalExtension) {
+          originalFileName += originalExtension;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not read file metadata:', err);
+    }
+    
+    // Find any previous share records for this file
+    await db.read();
+    const shareRecords = db.data.sharedLinks.filter(link => 
+      link.filePath === filePath
+    );
+    
+    // Get access logs for this file
+    const accessLogs = db.data.accessLogs.filter(log => 
+      log.path === filePath
+    );
+    
+    return { 
+      success: true, 
+      details: {
+        name: path.basename(filePath),
+        path: filePath,
+        size: stats.size,
+        mtime: stats.mtime,
+        originalFileName,
+        originalExtension,
+        shareRecords: shareRecords.length,
+        accessLogs: accessLogs.length
+      }
+    };
+  } catch (error) {
+    console.error(`Error getting encrypted file details:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Share encrypted file with option for automatic decryption
+ipcMain.handle('share-encrypted-file-with-decryption', async (event, { filePath, password, allowDecryption }) => {
+  try {
+    if (!filePath || !filePath.endsWith('.enc')) {
+      return { success: false, error: 'Invalid encrypted file path' };
+    }
+    
+    // Check if file exists
+    if (!FileUtils.fileExists(filePath)) {
+      return { success: false, error: 'File does not exist' };
+    }
+    
+    // Create a unique token for this share
+    const token = uuidv4();
+    const encryptionKey = crypto.randomBytes(32).toString('hex');
+    
+    // Store share information, including whether decryption is allowed and the password (if provided)
+    db.data.sharedLinks.push({
+      id: token,
+      filePath,
+      createdAt: new Date().toISOString(),
+      encryptionKey,
+      isUsed: false,
+      allowDecryption: allowDecryption === true,
+      decryptionPassword: allowDecryption && password ? password : null
+    });
+    
+    await db.write();
+    
+    // Log the share
+    await logAccess('share_file', filePath, { token, encryptedFile: true, allowDecryption });
+    
+    // Return share link with network address
+    const shareUrl = `${serverAddress}/share/${token}?key=${encryptionKey}`;
+    
+    return { 
+      success: true, 
+      shareLink: shareUrl,
+      encryptionKey,
+      token
+    };
+  } catch (error) {
+    console.error(`Error sharing encrypted file:`, error);
     return { success: false, error: error.message };
   }
 });

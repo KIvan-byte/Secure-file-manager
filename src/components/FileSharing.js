@@ -197,6 +197,7 @@ const QRCodeFrame = styled.div`
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 `;
 
 const TabContainer = styled.div`
@@ -533,7 +534,7 @@ function FileSharing() {
                 <QRCodeContainer>
                   <h3>Scan QR Code to Download</h3>
                   <QRCodeFrame>
-                    <QRCode value={shareLink} size={200} />
+                    <QRCode value={shareLink} size={250} renderAs="svg" includeMargin={true} />
                   </QRCodeFrame>
                 </QRCodeContainer>
               )}

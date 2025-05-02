@@ -29,7 +29,12 @@ contextBridge.exposeInMainWorld(
       
       // Encryption/Decryption operations
       encryptFile: (params) => ipcRenderer.invoke('encrypt-file', params),
-      decryptFile: (params) => ipcRenderer.invoke('decrypt-file', params)
+      decryptFile: (params) => ipcRenderer.invoke('decrypt-file', params),
+      
+      // New functionality for encrypted files
+      listEncryptedFiles: () => ipcRenderer.invoke('list-encrypted-files'),
+      getEncryptedFileDetails: (filePath) => ipcRenderer.invoke('get-encrypted-file-details', filePath),
+      shareEncryptedFileWithDecryption: (params) => ipcRenderer.invoke('share-encrypted-file-with-decryption', params)
     }
   }
 );

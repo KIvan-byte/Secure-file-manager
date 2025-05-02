@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { styled } from 'styled-components';
-import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes } from 'react-icons/fa';
+import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
   background-color: #2c3e50;
@@ -157,6 +157,15 @@ function Sidebar() {
           >
             <NavIcon $collapsed={collapsed}><FaFolder /></NavIcon>
             <NavText $collapsed={collapsed}>File Explorer</NavText>
+          </NavLink>
+          
+          <NavLink 
+            to="/encrypted" 
+            $active={location.pathname === '/encrypted' ? "true" : undefined}
+            onClick={closeSidebar}
+          >
+            <NavIcon $collapsed={collapsed}><FaLock /></NavIcon>
+            <NavText $collapsed={collapsed}>Encrypted Files</NavText>
           </NavLink>
           
           <NavLink 

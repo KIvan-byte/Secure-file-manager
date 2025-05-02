@@ -6,6 +6,7 @@ import FileExplorer from './components/FileExplorer';
 import FileSharing from './components/FileSharing';
 import AccessLogs from './components/AccessLogs';
 import AccessSharedFile from './components/AccessSharedFile';
+import EncryptedFiles from './components/EncryptedFiles';
 
 const AppContainer = styled.div`
   display: flex;
@@ -29,6 +30,7 @@ function App() {
           <Route path="/" element={<FileExplorer />} />
           <Route path="/share" element={<FileSharing />} />
           <Route path="/logs" element={<AccessLogs />} />
+          <Route path="/encrypted" element={<EncryptedFiles />} />
           <Route path="/access/:token" element={<AccessSharedFile />} />
         </Routes>
       </ContentArea>
