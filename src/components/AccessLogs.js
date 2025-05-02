@@ -1,41 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
+import { FaSync, FaFilter, FaBook, FaFolder, FaFile, FaShare, FaDownload, FaExclamationTriangle, FaTimes, FaCheck } from 'react-icons/fa';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
+  max-width: 100%;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 `;
 
 const Title = styled.h2`
   margin: 0;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const Card = styled.div`
   background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  margin-bottom: 24px;
   overflow: auto;
+  transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 const FilterBar = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const FilterButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: ${props => props.$active ? props.$color : '#95a5a6'};
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: ${props => props.$active ? props.$hoverColor : '#7f8c8d'};
+  }
+
+  @media (max-width: 576px) {
+    justify-content: flex-start;
+  }
 `;
 
 const Badge = styled.span`
-  padding: 3px 8px;
-  border-radius: 12px;
+  padding: 4px 10px;
+  border-radius: 16px;
   font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
   background-color: ${props => {
     switch (props.$action) {
       case 'read_file': return '#3498db';
@@ -46,6 +89,202 @@ const Badge = styled.span`
     }
   }};
   color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const BadgeIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+`;
+
+const StatusMessage = styled.div`
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  background-color: ${props => props.$type === 'error' ? '#fdeded' : '#edf7ed'};
+  color: ${props => props.$type === 'error' ? '#ef5350' : '#4caf50'};
+  border-left: 4px solid ${props => props.$type === 'error' ? '#ef5350' : '#4caf50'};
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const MessageIcon = styled.div`
+  font-size: 20px;
+`;
+
+const MessageContent = styled.div`
+  flex: 1;
+`;
+
+const CloseButton = styled.button`
+  background: transparent;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+`;
+
+const TableContainer = styled.div`
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid #eaeaea;
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+`;
+
+const TableHead = styled.thead`
+  background-color: #f8f9fa;
+  
+  th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+  }
+`;
+
+const TableRow = styled.tr`
+  border-bottom: 1px solid #eaeaea;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: #f9f9f9;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const TableCell = styled.td`
+  padding: 12px 16px;
+  text-align: ${props => props.$align || 'left'};
+  max-width: ${props => props.$maxWidth ? props.$maxWidth : 'none'};
+  overflow: ${props => props.$overflow ? 'hidden' : 'visible'};
+  text-overflow: ${props => props.$overflow ? 'ellipsis' : 'clip'};
+  white-space: ${props => props.$wrap ? 'normal' : 'nowrap'};
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+    font-size: 13px;
+  }
+`;
+
+const TableHeader = styled.th`
+  padding: 14px 16px;
+  text-align: ${props => props.$align || 'left'};
+  font-weight: 600;
+  color: #34495e;
+  white-space: nowrap;
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: #7f8c8d;
+  text-align: center;
+`;
+
+const IconContainer = styled.div`
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+`;
+
+const Button = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: ${props => props.$primary ? '#3498db' : '#2c3e50'};
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  
+  &:hover {
+    background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
+const LoadingIndicator = styled.div`
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+`;
+
+const SpinningIcon = styled.div`
+  animation: spin 1s linear infinite;
+  font-size: 24px;
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const Timestamp = styled.div`
+  color: #7f8c8d;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  
+  span:first-child {
+    font-weight: 500;
+    color: #34495e;
+  }
+`;
+
+const PathCell = styled.div`
+  word-break: break-all;
+  white-space: normal;
+  max-width: 300px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+`;
+
+const TokenSpan = styled.span`
+  font-family: monospace;
+  background-color: #f8f9fa;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid #eaeaea;
+  font-size: 12px;
 `;
 
 function AccessLogs() {
@@ -53,7 +292,8 @@ function AccessLogs() {
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState(null);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
   useEffect(() => {
     fetchLogs();
@@ -72,22 +312,35 @@ function AccessLogs() {
       setIsLoading(true);
       const result = await window.electron.fileManager.getAccessLogs();
       if (result.success) {
-        setLogs(result.logs);
-        setFilteredLogs(result.logs);
-        setError('');
+        // Sort logs from newest to oldest
+        const sortedLogs = result.logs.sort((a, b) => 
+          new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        setLogs(sortedLogs);
+        setFilteredLogs(sortedLogs);
+        setMessage({ type: 'success', text: 'Logs refreshed successfully' });
+        setLastRefreshed(new Date());
       } else {
-        setError('Error fetching logs: ' + result.error);
+        setMessage({ type: 'error', text: `Error fetching logs: ${result.error}` });
       }
     } catch (error) {
       console.error('Error fetching logs:', error);
-      setError('Error fetching logs: ' + error.message);
+      setMessage({ type: 'error', text: `Error fetching logs: ${error.message}` });
     } finally {
       setIsLoading(false);
+      // Auto-dismiss success message after 3 seconds
+      if (message?.type === 'success') {
+        setTimeout(() => setMessage(null), 3000);
+      }
     }
   };
 
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
+    const date = new Date(timestamp);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString()
+    };
   };
 
   const getActionName = (action) => {
@@ -99,91 +352,151 @@ function AccessLogs() {
       default: return action;
     }
   };
+  
+  const getActionIcon = (action) => {
+    switch (action) {
+      case 'read_file': return <FaFile />;
+      case 'read_directory': return <FaFolder />;
+      case 'share_file': return <FaShare />;
+      case 'access_shared_file': return <FaDownload />;
+      default: return null;
+    }
+  };
 
   return (
     <Container>
       <Header>
-        <Title>Access Logs</Title>
-        <button onClick={fetchLogs}>Refresh</button>
+        <Title>
+          <FaBook /> Access Logs
+        </Title>
+        <Button onClick={fetchLogs} disabled={isLoading}>
+          <FaSync /> Refresh
+        </Button>
       </Header>
 
+      {message && (
+        <StatusMessage $type={message.type}>
+          <MessageIcon>
+            {message.type === 'error' ? <FaExclamationTriangle /> : <FaCheck />}
+          </MessageIcon>
+          <MessageContent>{message.text}</MessageContent>
+          <CloseButton onClick={() => setMessage(null)}>
+            <FaTimes />
+          </CloseButton>
+        </StatusMessage>
+      )}
+
       <FilterBar>
-        <button 
-          onClick={() => setFilter('all')} 
-          style={{ 
-            backgroundColor: filter === 'all' ? '#2c3e50' : '#95a5a6'
-          }}
+        <FilterButton 
+          $active={filter === 'all'}
+          $color="#2c3e50"
+          $hoverColor="#1a252f"
+          onClick={() => setFilter('all')}
         >
-          All
-        </button>
-        <button 
-          onClick={() => setFilter('read_file')} 
-          style={{ 
-            backgroundColor: filter === 'read_file' ? '#3498db' : '#95a5a6'
-          }}
+          <FaFilter /> All Activities
+        </FilterButton>
+        <FilterButton 
+          $active={filter === 'read_file'}
+          $color="#3498db"
+          $hoverColor="#2980b9"
+          onClick={() => setFilter('read_file')}
         >
-          File Reads
-        </button>
-        <button 
-          onClick={() => setFilter('read_directory')} 
-          style={{ 
-            backgroundColor: filter === 'read_directory' ? '#2ecc71' : '#95a5a6'
-          }}
+          <FaFile /> File Reads
+        </FilterButton>
+        <FilterButton 
+          $active={filter === 'read_directory'}
+          $color="#2ecc71"
+          $hoverColor="#27ae60"
+          onClick={() => setFilter('read_directory')}
         >
-          Directory Access
-        </button>
-        <button 
-          onClick={() => setFilter('share_file')} 
-          style={{ 
-            backgroundColor: filter === 'share_file' ? '#e74c3c' : '#95a5a6'
-          }}
+          <FaFolder /> Directory Access
+        </FilterButton>
+        <FilterButton 
+          $active={filter === 'share_file'}
+          $color="#e74c3c"
+          $hoverColor="#c0392b"
+          onClick={() => setFilter('share_file')}
         >
-          File Shares
-        </button>
-        <button 
-          onClick={() => setFilter('access_shared_file')} 
-          style={{ 
-            backgroundColor: filter === 'access_shared_file' ? '#f39c12' : '#95a5a6'
-          }}
+          <FaShare /> File Shares
+        </FilterButton>
+        <FilterButton 
+          $active={filter === 'access_shared_file'}
+          $color="#f39c12"
+          $hoverColor="#d35400"
+          onClick={() => setFilter('access_shared_file')}
         >
-          Shared File Access
-        </button>
+          <FaDownload /> Shared File Access
+        </FilterButton>
       </FilterBar>
 
-      {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+      {lastRefreshed && (
+        <div style={{ marginBottom: '16px', fontSize: '14px', color: '#7f8c8d' }}>
+          Last refreshed: {lastRefreshed.toLocaleString()}
+        </div>
+      )}
 
       <Card>
         {isLoading ? (
-          <div>Loading logs...</div>
+          <LoadingIndicator>
+            <SpinningIcon>
+              <FaSync />
+            </SpinningIcon>
+            <div>Loading access logs...</div>
+          </LoadingIndicator>
         ) : filteredLogs.length === 0 ? (
-          <div>No logs found</div>
+          <EmptyState>
+            <IconContainer>
+              <FaBook />
+            </IconContainer>
+            <p>No logs found for this filter</p>
+            <Button $primary onClick={() => setFilter('all')} style={{ marginTop: '16px' }}>
+              <FaFilter /> Show All Logs
+            </Button>
+          </EmptyState>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Action</th>
-                <th>Path</th>
-                <th>Timestamp</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.map((log, index) => (
-                <tr key={index}>
-                  <td>
-                    <Badge $action={log.action}>{getActionName(log.action)}</Badge>
-                  </td>
-                  <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {log.path}
-                  </td>
-                  <td>{formatTimestamp(log.timestamp)}</td>
-                  <td>
-                    {log.token && <div>Token: {log.token}</div>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>Activity</TableHeader>
+                  <TableHeader>Path</TableHeader>
+                  <TableHeader>Timestamp</TableHeader>
+                  <TableHeader>Details</TableHeader>
+                </TableRow>
+              </TableHead>
+              <tbody>
+                {filteredLogs.map((log, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Badge $action={log.action}>
+                        <BadgeIcon>{getActionIcon(log.action)}</BadgeIcon>
+                        {getActionName(log.action)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell $overflow $maxWidth="300px">
+                      <PathCell>{log.path}</PathCell>
+                    </TableCell>
+                    <TableCell>
+                      <Timestamp>
+                        <span>{formatTimestamp(log.timestamp).date}</span>
+                        <span>{formatTimestamp(log.timestamp).time}</span>
+                      </Timestamp>
+                    </TableCell>
+                    <TableCell>
+                      {log.token && (
+                        <div>Token: <TokenSpan>{log.token}</TokenSpan></div>
+                      )}
+                      {log.remote && (
+                        <Badge $action="access_shared_file" style={{ marginTop: '5px' }}>
+                          Remote Access
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          </TableContainer>
         )}
       </Card>
     </Container>

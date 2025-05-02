@@ -386,6 +386,16 @@ ipcMain.handle('browse-directory', async () => {
   return { success: true, path: result.filePaths[0] };
 });
 
+// Add new handler for selecting a single file
+ipcMain.handle('select-file', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile']
+  });
+  if (result.canceled) return { success: false };
+  return { success: true, path: result.filePaths[0] };
+});
+
+// Read directories
 ipcMain.handle('read-directory', async (event, dirPath) => {
   try {
     // Use our safer FileUtils instead of direct fs calls

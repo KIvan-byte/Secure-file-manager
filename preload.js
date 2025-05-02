@@ -6,11 +6,21 @@ contextBridge.exposeInMainWorld(
   'electron',
   {
     fileManager: {
+      // Directory operations
       browseDirectory: () => ipcRenderer.invoke('browse-directory'),
       readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
+      
+      // File operations
       readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+      
+      // File selection for sharing (new function)
+      selectFile: () => ipcRenderer.invoke('select-file'),
+      
+      // File sharing operations
       shareFile: (filePath) => ipcRenderer.invoke('share-file', filePath),
-      accessSharedFile: (shareInfo) => ipcRenderer.invoke('access-shared-file', shareInfo),
+      accessSharedFile: (params) => ipcRenderer.invoke('access-shared-file', params),
+      
+      // Access logs
       getAccessLogs: () => ipcRenderer.invoke('get-access-logs')
     }
   }
