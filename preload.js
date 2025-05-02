@@ -51,6 +51,13 @@ contextBridge.exposeInMainWorld(
       // File operations for drag and drop
       moveFile: (params) => ipcRenderer.invoke('moveFile', params),
       copyFileFromPath: (params) => ipcRenderer.invoke('copyFileFromPath', params),
+    },
+    secureNotes: {
+      validateMasterPassword: (password) => ipcRenderer.invoke('secure-notes:validate-master-password', password),
+      setupVault: (password) => ipcRenderer.invoke('secure-notes:setup-vault', password),
+      getEntries: (password) => ipcRenderer.invoke('secure-notes:get-entries', password),
+      saveEntry: (entry, password) => ipcRenderer.invoke('secure-notes:save-entry', { entry, password }),
+      deleteEntry: (entryId, password) => ipcRenderer.invoke('secure-notes:delete-entry', { entryId, password })
     }
   }
 );

@@ -4,12 +4,13 @@ import { styled } from 'styled-components';
 import Sidebar from './components/Sidebar';
 import FileExplorer from './components/FileExplorer';
 import FileSharing from './components/FileSharing';
-import AccessLogs from './components/AccessLogs';
-import AccessSharedFile from './components/AccessSharedFile';
 import EncryptedFiles from './components/EncryptedFiles';
+import SecureNotes from './components/SecureNotes';
+import AccessLogs from './components/AccessLogs';
 import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import LockScreen from './components/LockScreen';
+import AccessSharedFile from './components/AccessSharedFile';
 
 const AppContainer = styled.div`
   display: flex;
@@ -128,6 +129,7 @@ function App() {
               <Route path="/share" element={<FileSharing />} />
               <Route path="/logs" element={<AccessLogs />} />
               <Route path="/encrypted" element={<EncryptedFiles />} />
+              <Route path="/secure-notes" element={<SecureNotes />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/access/:token" element={<AccessSharedFile />} />
               <Route path="/settings" element={<Settings />} />

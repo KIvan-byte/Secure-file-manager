@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { styled } from 'styled-components';
-import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar, FaSignOutAlt, FaCog } from 'react-icons/fa';
+import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar, FaSignOutAlt, FaCog, FaStickyNote } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
   background-color: #2c3e50;
@@ -204,9 +204,18 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           </NavLink>
           
           <NavLink 
+            to="/secure-notes" 
+            $active={location.pathname === '/secure-notes' ? "true" : undefined}
+            onClick={() => handleNavigation('/secure-notes', 3)}
+          >
+            <NavIcon $collapsed={collapsed}><FaStickyNote /></NavIcon>
+            <NavText $collapsed={collapsed}>Secure Notes</NavText>
+          </NavLink>
+          
+          <NavLink 
             to="/analytics" 
             $active={location.pathname === '/analytics' ? "true" : undefined}
-            onClick={() => handleNavigation('/analytics', 3)}
+            onClick={() => handleNavigation('/analytics', 4)}
           >
             <NavIcon $collapsed={collapsed}><FaChartBar /></NavIcon>
             <NavText $collapsed={collapsed}>Analytics</NavText>
@@ -215,7 +224,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           <NavLink 
             to="/logs" 
             $active={location.pathname === '/logs' ? "true" : undefined}
-            onClick={() => handleNavigation('/logs', 4)}
+            onClick={() => handleNavigation('/logs', 5)}
           >
             <NavIcon $collapsed={collapsed}><FaListAlt /></NavIcon>
             <NavText $collapsed={collapsed}>Access Logs</NavText>
@@ -224,7 +233,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           <NavLink 
             to="/settings" 
             $active={location.pathname === '/settings' ? "true" : undefined}
-            onClick={() => handleNavigation('/settings', 5)}
+            onClick={() => handleNavigation('/settings', 6)}
           >
             <NavIcon $collapsed={collapsed}><FaCog /></NavIcon>
             <NavText $collapsed={collapsed}>Settings</NavText>

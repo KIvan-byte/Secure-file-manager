@@ -1430,3 +1430,294 @@ ipcMain.handle('copyFileFromPath', async (event, params) => {
     return { success: false, error: error.message };
   }
 });
+
+// Create secure notes data directory
+const secureNotesDir = path.join(app.getPath('userData'), 'secureNotes');
+
+if (!fs.existsSync(secureNotesDir)) {
+  fs.mkdirSync(secureNotesDir, { recursive: true });
+}
+
+// Crypto functions for secure notes
+const VAULT_FILE_PATH = path.join(secureNotesDir, 'vault.enc');
+const SALT_FILE_PATH = path.join(secureNotesDir, 'salt');
+const KEY_ITERATIONS = 100000;
+const KEY_LENGTH = 32;
+const ALGORITHM = 'aes-256-gcm';
+
+// Generate or retrieve salt
+function getSalt() {
+  try {
+    if (fs.existsSync(SALT_FILE_PATH)) {
+      return fs.readFileSync(SALT_FILE_PATH);
+    } else {
+      const salt = crypto.randomBytes(16);
+      fs.writeFileSync(SALT_FILE_PATH, salt);
+      return salt;
+    }
+  } catch (error) {
+    console.error('Error handling salt:', error);
+    throw error;
+  }
+}
+
+// Derive encryption key from master password
+function deriveKey(masterPassword) {
+  const salt = getSalt();
+  return crypto.pbkdf2Sync(masterPassword, salt, KEY_ITERATIONS, KEY_LENGTH, 'sha256');
+}
+
+// Encrypt data using the derived key
+function encrypt(data, masterPassword) {
+  const key = deriveKey(masterPassword);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  
+  let encrypted = cipher.update(data, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  const authTag = cipher.getAuthTag();
+  
+  // Return IV, authTag, and ciphertext for storage
+  return {
+    iv: iv.toString('hex'),
+    authTag: authTag.toString('hex'),
+    data: encrypted
+  };
+}
+
+// Decrypt data using the derived key
+function decrypt(encryptedData, masterPassword) {
+  try {
+    const key = deriveKey(masterPassword);
+    const iv = Buffer.from(encryptedData.iv, 'hex');
+    const authTag = Buffer.from(encryptedData.authTag, 'hex');
+    
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+    
+    let decrypted = decipher.update(encryptedData.data, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    
+    return decrypted;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return null;
+  }
+}
+
+// Create a hash of the master password for validation
+function hashMasterPassword(password) {
+  const salt = getSalt();
+  return crypto.pbkdf2Sync(password, salt, KEY_ITERATIONS, 64, 'sha512').toString('hex');
+}
+
+// Check if vault exists
+function vaultExists() {
+  return fs.existsSync(VAULT_FILE_PATH);
+}
+
+// Create a new vault with the master password
+function setupVault(masterPassword) {
+  try {
+    const hash = hashMasterPassword(masterPassword);
+    const encryptedData = encrypt(JSON.stringify({
+      passwordHash: hash,
+      entries: []
+    }), masterPassword);
+    
+    fs.writeFileSync(VAULT_FILE_PATH, JSON.stringify(encryptedData));
+    return true;
+  } catch (error) {
+    console.error('Error setting up vault:', error);
+    return false;
+  }
+}
+
+// Get all entries
+function getEntries(masterPassword) {
+  try {
+    if (!vaultExists()) {
+      return null;
+    }
+    
+    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    const decrypted = decrypt(encryptedData, masterPassword);
+    
+    if (!decrypted) {
+      return null;
+    }
+    
+    const data = JSON.parse(decrypted);
+    return data.entries;
+  } catch (error) {
+    console.error('Error getting entries:', error);
+    return null;
+  }
+}
+
+// Save an entry to the vault
+function saveEntry(entry, masterPassword) {
+  try {
+    if (!vaultExists()) {
+      return false;
+    }
+    
+    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    const decrypted = decrypt(encryptedData, masterPassword);
+    
+    if (!decrypted) {
+      return false;
+    }
+    
+    const data = JSON.parse(decrypted);
+    
+    // Find if entry exists and update it, or add a new one
+    const index = data.entries.findIndex(e => e.id === entry.id);
+    if (index !== -1) {
+      data.entries[index] = entry;
+    } else {
+      data.entries.push(entry);
+    }
+    
+    // Save updated data
+    const updatedEncrypted = encrypt(JSON.stringify(data), masterPassword);
+    fs.writeFileSync(VAULT_FILE_PATH, JSON.stringify(updatedEncrypted));
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving entry:', error);
+    return false;
+  }
+}
+
+// Delete an entry from the vault
+function deleteEntry(entryId, masterPassword) {
+  try {
+    if (!vaultExists()) {
+      return false;
+    }
+    
+    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    const decrypted = decrypt(encryptedData, masterPassword);
+    
+    if (!decrypted) {
+      return false;
+    }
+    
+    const data = JSON.parse(decrypted);
+    
+    // Filter out the entry
+    data.entries = data.entries.filter(entry => entry.id !== entryId);
+    
+    // Save updated data
+    const updatedEncrypted = encrypt(JSON.stringify(data), masterPassword);
+    fs.writeFileSync(VAULT_FILE_PATH, JSON.stringify(updatedEncrypted));
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting entry:', error);
+    return false;
+  }
+}
+
+// Validate the master password
+function validateMasterPassword(password) {
+  try {
+    if (!vaultExists()) {
+      return { valid: false, newUser: true };
+    }
+    
+    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    const decrypted = decrypt(encryptedData, password);
+    
+    if (!decrypted) {
+      return { valid: false, newUser: false };
+    }
+    
+    return { valid: true, newUser: false };
+  } catch (error) {
+    console.error('Error validating password:', error);
+    return { valid: false, newUser: false };
+  }
+}
+
+// IPC handlers for the secure notes functionality
+ipcMain.handle('secure-notes:validate-master-password', async (event, password) => {
+  try {
+    const result = validateMasterPassword(password);
+    return {
+      success: result.valid,
+      newUser: result.newUser
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('secure-notes:setup-vault', async (event, password) => {
+  try {
+    const result = setupVault(password);
+    return {
+      success: result
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('secure-notes:get-entries', async (event, password) => {
+  try {
+    const entries = getEntries(password);
+    if (entries === null) {
+      return {
+        success: false,
+        error: 'Failed to decrypt vault or vault not found'
+      };
+    }
+    
+    return {
+      success: true,
+      entries
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('secure-notes:save-entry', async (event, { entry, password }) => {
+  try {
+    const result = saveEntry(entry, password);
+    return {
+      success: result
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('secure-notes:delete-entry', async (event, { entryId, password }) => {
+  try {
+    const result = deleteEntry(entryId, password);
+    return {
+      success: result
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
