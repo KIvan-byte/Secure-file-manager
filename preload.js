@@ -47,6 +47,10 @@ contextBridge.exposeInMainWorld(
       getStorageInfo: () => ipcRenderer.invoke('getStorageInfo'),
       getFileTypeDistribution: () => ipcRenderer.invoke('getFileTypeDistribution'),
       getActivityTrends: () => ipcRenderer.invoke('getActivityTrends'),
+      
+      // File operations for drag and drop
+      moveFile: (params) => ipcRenderer.invoke('moveFile', params),
+      copyFileFromPath: (params) => ipcRenderer.invoke('copyFileFromPath', params),
     }
   }
 );

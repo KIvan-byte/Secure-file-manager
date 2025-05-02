@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
@@ -54,6 +54,7 @@ const FileList = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: auto;
+  position: relative;
 `;
 
 const FileListHeader = styled.div`
@@ -83,9 +84,11 @@ const FileItem = styled.div`
   cursor: pointer;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s ease;
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  background-color: ${props => props.$isOver ? '#e3f2fd' : props.$isSelected ? '#f0f7ff' : props.$isDragTarget ? '#e8f5e9' : props.$isDragging ? '#f5f5f5' : props.$isHighlighted ? '#fff8e1' : ''};
 
   &:hover {
-    background-color: #f9f9f9;
+    background-color: ${props => props.$isOver ? '#bbdefb' : props.$isDragTarget ? '#c8e6c9' : '#f9f9f9'};
   }
   
   @media (max-width: 768px) {
@@ -484,6 +487,51 @@ const SearchOption = styled.div`
   gap: 8px;
 `;
 
+const DragIndicator = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #3498db;
+  height: 3px;
+  display: ${props => props.$visible ? 'block' : 'none'};
+`;
+
+const DropOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(52, 152, 219, 0.1);
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  font-size: 24px;
+  color: #3498db;
+  pointer-events: none;
+`;
+
+const StatusBadge = styled.div`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #34495e;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateY(${props => props.$visible ? '0' : '100px'});
+  transition: transform 0.3s ease;
+`;
+
 function FileExplorer() {
   const [currentPath, setCurrentPath] = useState('');
   const [files, setFiles] = useState([]);
@@ -513,6 +561,15 @@ function FileExplorer() {
   const [compressionFiles, setCompressionFiles] = useState([]);
   const [compressionMode, setCompressionMode] = useState('compress');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  
+  // Drag and Drop state
+  const [draggedFile, setDraggedFile] = useState(null);
+  const [dragOverFile, setDragOverFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [showStatusMessage, setShowStatusMessage] = useState(false);
+  const fileListRef = useRef(null);
 
   useEffect(() => {
     if (currentPath) {
@@ -962,6 +1019,157 @@ function FileExplorer() {
     }
   };
 
+  const handleDragStart = (e, file) => {
+    if (file.isDirectory) return; // Only allow dragging files, not directories
+    
+    setDraggedFile(file);
+    setIsDragging(true);
+    
+    // Set the drag image and data
+    const dragImage = new Image();
+    dragImage.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAEtAI8Aw5T5AAAAABJRU5ErkJggg==';
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    e.dataTransfer.setData('text/plain', file.path);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, file) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (file && file.isDirectory && draggedFile && file.path !== draggedFile.path) {
+      setDragOverFile(file);
+    } else {
+      setDragOverFile(null);
+    }
+  };
+
+  const handleDragEnter = (e, file) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (file && file.isDirectory && draggedFile && file.path !== draggedFile.path) {
+      setDragOverFile(file);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverFile(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedFile(null);
+    setDragOverFile(null);
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e, targetFile) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setDragOverFile(null);
+    
+    if (!draggedFile) return;
+    
+    // If target is a directory, move the file to that directory
+    if (targetFile && targetFile.isDirectory) {
+      try {
+        setStatusMessage('Moving file...');
+        setShowStatusMessage(true);
+        
+        const destinationPath = path.join(targetFile.path, path.basename(draggedFile.path));
+        
+        const result = await window.electron.fileManager.moveFile({
+          sourcePath: draggedFile.path,
+          destinationPath
+        });
+        
+        if (result.success) {
+          setStatusMessage('File moved successfully');
+          // Refresh the current directory
+          loadDirectory(currentPath);
+        } else {
+          setStatusMessage(`Error moving file: ${result.error}`);
+          setError(`Error moving file: ${result.error}`);
+        }
+      } catch (error) {
+        setStatusMessage(`Error moving file: ${error.message}`);
+        setError(`Error moving file: ${error.message}`);
+      } finally {
+        setTimeout(() => {
+          setShowStatusMessage(false);
+        }, 3000);
+      }
+    }
+    
+    setDraggedFile(null);
+    setIsDragging(false);
+  };
+
+  const handleFileListDragOver = (e) => {
+    e.preventDefault();
+    if (isDragging) return;
+    
+    // Handle files dragged from outside the application
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleFileListDragLeave = (e) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleFileListDrop = async (e) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    
+    if (!currentPath) return;
+    
+    // Handle files dragged from outside the application
+    if (e.dataTransfer.files.length > 0) {
+      try {
+        setStatusMessage('Copying files...');
+        setShowStatusMessage(true);
+        
+        const files = Array.from(e.dataTransfer.files);
+        let successCount = 0;
+        
+        for (const file of files) {
+          const destinationPath = path.join(currentPath, file.name);
+          
+          const result = await window.electron.fileManager.copyFileFromPath({
+            sourcePath: file.path,
+            destinationPath
+          });
+          
+          if (result.success) {
+            successCount++;
+          }
+        }
+        
+        if (successCount > 0) {
+          setStatusMessage(`${successCount} file(s) copied successfully`);
+          // Refresh the current directory
+          loadDirectory(currentPath);
+        } else {
+          setStatusMessage('No files were copied');
+        }
+      } catch (error) {
+        setStatusMessage(`Error copying files: ${error.message}`);
+        setError(`Error copying files: ${error.message}`);
+      } finally {
+        setTimeout(() => {
+          setShowStatusMessage(false);
+        }, 3000);
+      }
+    }
+  };
+
   return (
     <Container>
       <Header>
@@ -1079,7 +1287,12 @@ function FileExplorer() {
       {currentPath && !showSearchResults ? (
         <>
           {buildBreadcrumbs()}
-          <FileList>
+          <FileList 
+            ref={fileListRef}
+            onDragOver={handleFileListDragOver}
+            onDragLeave={handleFileListDragLeave}
+            onDrop={handleFileListDrop}
+          >
             <FileListHeader>
               <div></div>
               <div>Type</div>
@@ -1092,7 +1305,21 @@ function FileExplorer() {
               <LoadingIndicator>Loading files...</LoadingIndicator>
             ) : filteredFiles.length > 0 ? (
               filteredFiles.map((file, index) => (
-                <FileItem key={index} onClick={() => handleFileClick(file)}>
+                <FileItem 
+                  key={index}
+                  onClick={() => handleFileClick(file)}
+                  draggable={!file.isDirectory}
+                  onDragStart={(e) => handleDragStart(e, file)}
+                  onDragOver={(e) => handleDragOver(e, file)}
+                  onDragEnter={(e) => handleDragEnter(e, file)}
+                  onDragLeave={handleDragLeave}
+                  onDragEnd={handleDragEnd}
+                  onDrop={(e) => handleDrop(e, file)}
+                  $isDragging={draggedFile && draggedFile.path === file.path}
+                  $isOver={dragOverFile && dragOverFile.path === file.path}
+                  $isDragTarget={file.isDirectory}
+                  $isSelected={selectedFiles.some(f => f.path === file.path)}
+                >
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <input 
                       type="checkbox" 
@@ -1176,6 +1403,7 @@ function FileExplorer() {
                       </ActionButton>
                     </FileActions>
                   )}
+                  {dragOverFile && dragOverFile.path === file.path && <DragIndicator $visible={true} />}
                 </FileItem>
               ))
             ) : (
@@ -1185,6 +1413,12 @@ function FileExplorer() {
                 </IconContainer>
                 <p>This directory is empty{searchTerm ? ' or no files match your search' : ''}</p>
               </EmptyState>
+            )}
+            
+            {isDraggingOver && (
+              <DropOverlay>
+                <div>Drop files here to upload</div>
+              </DropOverlay>
             )}
           </FileList>
         </>
@@ -1227,6 +1461,15 @@ function FileExplorer() {
         files={compressionFiles}
         mode={compressionMode}
       />
+
+      <StatusBadge $visible={showStatusMessage}>
+        {statusMessage.includes('Error') ? (
+          <FaExclamationTriangle style={{ color: '#e74c3c' }} />
+        ) : (
+          <FaCheck style={{ color: '#2ecc71' }} />
+        )}
+        {statusMessage}
+      </StatusBadge>
     </Container>
   );
 }

@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const { createReadStream, createWriteStream } = require('fs');
+const { pipeline } = require('stream/promises');
 
 /**
  * Safe file operations with better error handling
@@ -242,6 +244,89 @@ class FileUtils {
     }
     
     return snippets;
+  }
+
+  /**
+   * Move a file from one location to another
+   * @param {Object} params - Parameters
+   * @param {string} params.sourcePath - Source file path
+   * @param {string} params.destinationPath - Destination file path
+   * @returns {Promise<Object>} - Result object
+   */
+  static async moveFile(params) {
+    try {
+      const { sourcePath, destinationPath } = params;
+      
+      // Check if source file exists
+      await fs.promises.access(sourcePath);
+      
+      // Create destination directory if it doesn't exist
+      const destDir = path.dirname(destinationPath);
+      try {
+        await fs.promises.access(destDir);
+      } catch (error) {
+        await fs.promises.mkdir(destDir, { recursive: true });
+      }
+      
+      // Copy the file first
+      await fs.promises.copyFile(sourcePath, destinationPath);
+      
+      // Delete the original file after successful copy
+      await fs.promises.unlink(sourcePath);
+      
+      return { 
+        success: true, 
+        message: 'File moved successfully',
+        sourcePath,
+        destinationPath
+      };
+    } catch (error) {
+      console.error('Error moving file:', error);
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
+  }
+
+  /**
+   * Copy a file from an external path to the app's managed location
+   * @param {Object} params - Parameters
+   * @param {string} params.sourcePath - Source file path
+   * @param {string} params.destinationPath - Destination file path
+   * @returns {Promise<Object>} - Result object
+   */
+  static async copyFileFromPath(params) {
+    try {
+      const { sourcePath, destinationPath } = params;
+      
+      // Create destination directory if it doesn't exist
+      const destDir = path.dirname(destinationPath);
+      try {
+        await fs.promises.access(destDir);
+      } catch (error) {
+        await fs.promises.mkdir(destDir, { recursive: true });
+      }
+      
+      // Use streams for more efficient copying of large files
+      await pipeline(
+        createReadStream(sourcePath),
+        createWriteStream(destinationPath)
+      );
+      
+      return { 
+        success: true, 
+        message: 'File copied successfully',
+        sourcePath,
+        destinationPath
+      };
+    } catch (error) {
+      console.error('Error copying file:', error);
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
   }
 }
 

@@ -1411,3 +1411,22 @@ async function logAccess(action, path, metadata = {}) {
   
   await db.write();
 }
+
+// File operations IPC handlers
+ipcMain.handle('moveFile', async (event, params) => {
+  try {
+    return await FileUtils.moveFile(params);
+  } catch (error) {
+    console.error('Error in moveFile handler:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('copyFileFromPath', async (event, params) => {
+  try {
+    return await FileUtils.copyFileFromPath(params);
+  } catch (error) {
+    console.error('Error in copyFileFromPath handler:', error);
+    return { success: false, error: error.message };
+  }
+});
