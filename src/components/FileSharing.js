@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaClipboard, FaCheck, FaQrcode, FaFolder, FaFile, FaShare, FaLink, FaTimes } from 'react-icons/fa';
+import { FaClipboard, FaCheck, FaQrcode, FaFolder, FaFile, FaShare, FaLink, FaTimes, FaUpload } from 'react-icons/fa';
 import QRCode from 'qrcode.react';
 
 const Container = styled.div`
@@ -324,6 +324,41 @@ const CloseButton = styled.button`
   align-items: center;
 `;
 
+const DropZone = styled.div`
+  border: 2px dashed ${props => props.$isDragOver ? '#3498db' : '#ddd'};
+  border-radius: 8px;
+  padding: 30px 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background-color: ${props => props.$isDragOver ? 'rgba(52, 152, 219, 0.1)' : '#f9f9f9'};
+  margin-bottom: 16px;
+  cursor: pointer;
+  
+  &:hover {
+    border-color: #3498db;
+    background-color: rgba(52, 152, 219, 0.05);
+  }
+`;
+
+const DropZoneIcon = styled.div`
+  font-size: 36px;
+  color: ${props => props.$isDragOver ? '#3498db' : '#95a5a6'};
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+`;
+
+const DropZoneText = styled.div`
+  font-size: 16px;
+  color: ${props => props.$isDragOver ? '#3498db' : '#7f8c8d'};
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+`;
+
+const DropZoneSubtext = styled.div`
+  font-size: 14px;
+  color: #95a5a6;
+`;
+
 function FileSharing() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -335,6 +370,7 @@ function FileSharing() {
   const [currentTab, setCurrentTab] = useState('select');
   const [currentDirectory, setCurrentDirectory] = useState('');
   const [files, setFiles] = useState([]);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     if (location.state?.filePath) {
@@ -429,7 +465,58 @@ function FileSharing() {
       setTimeout(() => setAlert(null), 5000);
     }
   };
-  
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    
+    if (files.length === 0) {
+      return;
+    }
+    
+    const file = files[0];
+    
+    if (file.path) {
+      setFilePath(file.path);
+    } else {
+      try {
+        const result = await window.electron.fileManager.saveExternalFile({
+          name: file.name,
+          type: file.type,
+          data: await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(file);
+          })
+        });
+        
+        if (result.success) {
+          setFilePath(result.path);
+          showAlert('success', 'File uploaded successfully');
+        } else {
+          showAlert('error', `Error saving file: ${result.error}`);
+        }
+      } catch (error) {
+        showAlert('error', `Error processing file: ${error.message}`);
+      }
+    }
+  };
+
   const formatSize = (size) => {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let unitIndex = 0;
@@ -478,6 +565,24 @@ function FileSharing() {
 
       {currentTab === 'select' ? (
         <Card>
+          <DropZone 
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={selectFile}
+            $isDragOver={isDragOver}
+          >
+            <DropZoneIcon $isDragOver={isDragOver}>
+              {isDragOver ? <FaFile /> : <FaUpload />}
+            </DropZoneIcon>
+            <DropZoneText $isDragOver={isDragOver}>
+              {isDragOver ? 'Drop file here' : 'Drag & Drop your file here'}
+            </DropZoneText>
+            <DropZoneSubtext>
+              or click to select from your computer
+            </DropZoneSubtext>
+          </DropZone>
+
           <FormGroup>
             <Label>File to share</Label>
             <FileInput>
