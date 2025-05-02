@@ -199,12 +199,63 @@ const InfoBox = styled.div`
   font-size: 14px;
 `;
 
+const PasswordStrengthContainer = styled.div`
+  margin-top: 8px;
+`;
+
+const PasswordStrengthBar = styled.div`
+  height: 5px;
+  background-color: #ecf0f1;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  overflow: hidden;
+`;
+
+const PasswordStrengthIndicator = styled.div`
+  height: 100%;
+  border-radius: 5px;
+  width: ${props => props.$percent}%;
+  background-color: ${props => {
+    if (props.$strength === 'weak') return '#e74c3c';
+    if (props.$strength === 'medium') return '#f39c12';
+    if (props.$strength === 'strong') return '#2ecc71';
+    if (props.$strength === 'very-strong') return '#27ae60';
+    return '#ecf0f1';
+  }};
+  transition: all 0.3s ease;
+`;
+
+const PasswordStrengthText = styled.div`
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+`;
+
+const PasswordStrengthLabel = styled.span`
+  color: ${props => {
+    if (props.$strength === 'weak') return '#e74c3c';
+    if (props.$strength === 'medium') return '#f39c12';
+    if (props.$strength === 'strong') return '#2ecc71';
+    if (props.$strength === 'very-strong') return '#27ae60';
+    return '#7f8c8d';
+  }};
+  font-weight: 600;
+`;
+
+const PasswordRequirements = styled.div`
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-top: 5px;
+`;
+
 function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [outputPath, setOutputPath] = useState('');
   const [message, setMessage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('');
+  const [strengthPercent, setStrengthPercent] = useState(0);
   
   useEffect(() => {
     if (file) {
@@ -216,11 +267,68 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
     }
   }, [file, mode]);
   
+  useEffect(() => {
+    if (mode === 'encrypt') {
+      calculatePasswordStrength(password);
+    }
+  }, [password, mode]);
+  
+  const calculatePasswordStrength = (pass) => {
+    if (!pass) {
+      setPasswordStrength('');
+      setStrengthPercent(0);
+      return;
+    }
+    
+    let score = 0;
+    
+    if (pass.length >= 8) score += 1;
+    if (pass.length >= 12) score += 1;
+    if (pass.length >= 16) score += 1;
+    
+    if (/\d/.test(pass)) score += 1;
+    if (/[a-z]/.test(pass)) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+    if (!/(123|abc|password|qwerty|admin)/i.test(pass)) score += 1;
+    
+    const percent = (score / 8) * 100;
+    setStrengthPercent(percent);
+    
+    if (percent < 30) {
+      setPasswordStrength('weak');
+    } else if (percent < 60) {
+      setPasswordStrength('medium');
+    } else if (percent < 80) {
+      setPasswordStrength('strong');
+    } else {
+      setPasswordStrength('very-strong');
+    }
+  };
+  
+  const getStrengthLabel = () => {
+    switch (passwordStrength) {
+      case 'weak': return 'Weak';
+      case 'medium': return 'Medium';
+      case 'strong': return 'Strong';
+      case 'very-strong': return 'Very Strong';
+      default: return '';
+    }
+  };
+  
   const validateForm = () => {
     if (!password) {
       setMessage({
         type: 'error',
         text: 'Please enter a password'
+      });
+      return false;
+    }
+    
+    if (mode === 'encrypt' && passwordStrength === 'weak') {
+      setMessage({
+        type: 'error',
+        text: 'Please use a stronger password for better security'
       });
       return false;
     }
@@ -318,6 +426,27 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
                 disabled={isProcessing}
                 placeholder="Enter password for encryption"
               />
+              {mode === 'encrypt' && password && (
+                <PasswordStrengthContainer>
+                  <PasswordStrengthBar>
+                    <PasswordStrengthIndicator 
+                      $percent={strengthPercent} 
+                      $strength={passwordStrength} 
+                    />
+                  </PasswordStrengthBar>
+                  <PasswordStrengthText>
+                    <PasswordStrengthLabel $strength={passwordStrength}>
+                      {getStrengthLabel()}
+                    </PasswordStrengthLabel>
+                    <span>{strengthPercent.toFixed(0)}%</span>
+                  </PasswordStrengthText>
+                  {passwordStrength === 'weak' && (
+                    <PasswordRequirements>
+                      For a strong password, use at least 12 characters with uppercase, lowercase, numbers, and special characters.
+                    </PasswordRequirements>
+                  )}
+                </PasswordStrengthContainer>
+              )}
             </FormGroup>
             
             {mode === 'encrypt' && (
@@ -404,6 +533,9 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
                   ? 'Make sure to remember your password. There is no way to recover encrypted files without it.'
                   : 'If decryption fails, double-check your password and ensure the file is not corrupted.'}
               </li>
+              {mode === 'encrypt' && (
+                <li>Stronger passwords provide better protection against unauthorized access</li>
+              )}
             </ul>
           </InfoBox>
         </ModalBody>
