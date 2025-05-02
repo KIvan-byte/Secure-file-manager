@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
+import SearchResults from './SearchResults';
 
 const Container = styled.div`
   display: flex;
@@ -399,6 +400,88 @@ const BreadcrumbItem = styled.span`
   }
 `;
 
+const SearchButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: #2980b9;
+  }
+  
+  &:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+  }
+`;
+
+const AdvancedSearchContainer = styled.div`
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+`;
+
+const SearchHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const SearchTitle = styled.h3`
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const SearchForm = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const SearchRow = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const SearchOptionRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const SearchOption = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 function FileExplorer() {
   const [currentPath, setCurrentPath] = useState('');
   const [files, setFiles] = useState([]);
@@ -413,6 +496,12 @@ function FileExplorer() {
   const [zoom, setZoom] = useState(1);
   const imageContainerRef = useRef(null);
   const navigate = useNavigate();
+  const [isAdvancedSearchVisible, setIsAdvancedSearchVisible] = useState(false);
+  const [searchContent, setSearchContent] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     if (currentPath) {
@@ -725,6 +814,66 @@ function FileExplorer() {
     }
   };
 
+  const closeSearchResults = () => {
+    setShowSearchResults(false);
+    setSearchResults([]);
+  };
+
+  const toggleAdvancedSearch = () => {
+    setIsAdvancedSearchVisible(!isAdvancedSearchVisible);
+    if (!isAdvancedSearchVisible) {
+      setSearchContent('');
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  };
+
+  const handleContentSearch = async () => {
+    if (!currentPath) {
+      setError('Please select a directory first');
+      return;
+    }
+
+    if (!searchContent.trim()) {
+      setError('Please enter a search term');
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      setError(null);
+      
+      const options = {
+        caseSensitive,
+        maxResults: 100
+      };
+      
+      const result = await window.electron.fileManager.searchFileContent({
+        directoryPath: currentPath,
+        searchText: searchContent,
+        options
+      });
+      
+      if (result.success) {
+        setSearchResults(result.results);
+        setShowSearchResults(true);
+      } else {
+        setError(`Error searching files: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error during search:', error);
+      setError(`Error searching files: ${error.message}`);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleContentSearch();
+    }
+  };
+
   return (
     <Container>
       <Header>
@@ -745,9 +894,17 @@ function FileExplorer() {
           <FaFolder /> Browse Directory
         </Button>
         {currentPath && (
-          <Button onClick={navigateUp}>
-            <FaArrowUp /> Up
-          </Button>
+          <>
+            <Button onClick={navigateUp}>
+              <FaArrowUp /> Up
+            </Button>
+            <SearchButton 
+              onClick={toggleAdvancedSearch}
+              title="Search file contents"
+            >
+              <FaSearch /> {isAdvancedSearchVisible ? 'Hide Content Search' : 'Search Contents'}
+            </SearchButton>
+          </>
         )}
       </ActionBar>
 
@@ -758,7 +915,60 @@ function FileExplorer() {
         </InfoMessage>
       )}
 
-      {currentPath ? (
+      {isAdvancedSearchVisible && currentPath && (
+        <AdvancedSearchContainer>
+          <SearchHeader>
+            <SearchTitle>
+              <FaCode /> Search File Contents
+            </SearchTitle>
+          </SearchHeader>
+          <SearchForm>
+            <SearchRow>
+              <SearchInput 
+                type="text"
+                placeholder="Enter text to search for within files..."
+                value={searchContent}
+                onChange={(e) => setSearchContent(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+              />
+              <Button 
+                $primary 
+                onClick={handleContentSearch}
+                disabled={isSearching || !searchContent.trim()}
+              >
+                {isSearching ? 'Searching...' : 'Search'}
+              </Button>
+            </SearchRow>
+            <SearchOptionRow>
+              <SearchOption>
+                <input 
+                  type="checkbox" 
+                  id="caseSensitive" 
+                  checked={caseSensitive}
+                  onChange={(e) => setCaseSensitive(e.target.checked)}
+                />
+                <label htmlFor="caseSensitive">Case sensitive</label>
+              </SearchOption>
+              <div style={{ fontSize: '14px', color: '#7f8c8d' }}>
+                <FaInfoCircle style={{ marginRight: '5px' }} />
+                Search will be performed in {currentPath}
+              </div>
+            </SearchOptionRow>
+          </SearchForm>
+        </AdvancedSearchContainer>
+      )}
+
+      {showSearchResults && (
+        <SearchResults
+          results={searchResults}
+          searchTerm={searchContent}
+          onClose={closeSearchResults}
+          onFileClick={handleFileClick}
+          isLoading={isSearching}
+        />
+      )}
+
+      {currentPath && !showSearchResults ? (
         <>
           {buildBreadcrumbs()}
           <FileList>
@@ -822,7 +1032,9 @@ function FileExplorer() {
             )}
           </FileList>
         </>
-      ) : (
+      ) : null}
+
+      {!currentPath && !showSearchResults && (
         <EmptyState>
           <IconContainer>
             <FaFolder />

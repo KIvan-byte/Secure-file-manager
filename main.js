@@ -538,6 +538,28 @@ ipcMain.handle('get-access-logs', async () => {
   }
 });
 
+// New handler for content search
+ipcMain.handle('search-file-content', async (event, { directoryPath, searchText, options }) => {
+  try {
+    if (!directoryPath || !searchText) {
+      return { success: false, error: 'Directory path and search text are required' };
+    }
+
+    const results = FileUtils.searchFileContent(directoryPath, searchText, options);
+    
+    // Log search activity
+    await logAccess('search_content', directoryPath, { 
+      searchText, 
+      resultsCount: results.length 
+    });
+    
+    return { success: true, results };
+  } catch (error) {
+    console.error(`Error searching file content:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Helper to log access
 async function logAccess(action, path, metadata = {}) {
   db.data.accessLogs.push({

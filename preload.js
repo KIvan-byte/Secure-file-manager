@@ -22,7 +22,10 @@ contextBridge.exposeInMainWorld(
       accessSharedFile: (params) => ipcRenderer.invoke('access-shared-file', params),
       
       // Access logs
-      getAccessLogs: () => ipcRenderer.invoke('get-access-logs')
+      getAccessLogs: () => ipcRenderer.invoke('get-access-logs'),
+      
+      // Content search
+      searchFileContent: (params) => ipcRenderer.invoke('search-file-content', params)
     }
   }
 );
