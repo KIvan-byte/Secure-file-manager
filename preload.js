@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld(
       
       // File operations
       readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+      readFileBinary: (filePath) => ipcRenderer.invoke('read-file-binary', filePath),
       
       // File selection for sharing (new function)
       selectFile: () => ipcRenderer.invoke('select-file'),

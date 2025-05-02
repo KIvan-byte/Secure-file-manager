@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
 
@@ -262,9 +262,8 @@ const FilePreview = styled.div`
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  white-space: pre-wrap;
   overflow: auto;
-  max-height: 400px;
+  max-height: 80vh;
 `;
 
 const PreviewHeader = styled.div`
@@ -285,9 +284,87 @@ const PreviewTitle = styled.h3`
 `;
 
 const PreviewContent = styled.div`
-  font-family: monospace;
-  font-size: 14px;
+  font-family: ${props => props.$monospace ? 'monospace' : 'inherit'};
+  font-size: ${props => props.$monospace ? '14px' : 'inherit'};
   line-height: 1.5;
+  text-align: ${props => props.$centered ? 'center' : 'left'};
+`;
+
+const ImagePreview = styled.img`
+  max-width: ${props => `${props.$zoom * 100}%`};
+  max-height: ${props => props.$zoom <= 1 ? '70vh' : 'none'};
+  margin: 0 auto;
+  display: block;
+  object-fit: contain;
+  transition: max-width 0.2s ease;
+`;
+
+const ImagePreviewContainer = styled.div`
+  overflow: auto;
+  max-height: 70vh;
+  position: relative;
+`;
+
+const ZoomControls = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  padding: 5px;
+  z-index: 10;
+`;
+
+const ZoomButton = styled.button`
+  background-color: transparent;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const PdfPreview = styled.iframe`
+  width: 100%;
+  height: 70vh;
+  border: none;
+`;
+
+const VideoPreview = styled.video`
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 0 auto;
+  display: block;
+`;
+
+const AudioPreview = styled.audio`
+  width: 100%;
+  margin: 20px 0;
+`;
+
+const UnsupportedPreview = styled.div`
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  text-align: center;
+`;
+
+const PreviewActions = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: center;
 `;
 
 const LoadingIndicator = styled.div`
@@ -331,6 +408,10 @@ function FileExplorer() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fileType, setFileType] = useState('');
+  const [base64Content, setBase64Content] = useState('');
+  const [zoom, setZoom] = useState(1);
+  const imageContainerRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -370,6 +451,7 @@ function FileExplorer() {
       setIsLoading(true);
       setSelectedFile(null);
       setFileContent('');
+      setBase64Content('');
       
       const result = await window.electron.fileManager.readDirectory(directoryPath);
       if (result.success) {
@@ -393,18 +475,45 @@ function FileExplorer() {
       try {
         setIsLoading(true);
         setSelectedFile(file);
+        setZoom(1); // Reset zoom when opening a new file
         
-        const result = await window.electron.fileManager.readFile(file.path);
-        if (result.success) {
-          setFileContent(result.content);
-          setError(null);
+        const fileExtension = path.extname(file.name).toLowerCase();
+        const type = getFileType(fileExtension);
+        setFileType(type);
+        
+        if (type === 'image' || type === 'pdf' || type === 'video' || type === 'audio') {
+          try {
+            const result = await window.electron.fileManager.readFileBinary(file.path);
+            if (result.success) {
+              setBase64Content(result.content);
+              setFileContent('');
+              setError(null);
+            } else {
+              setError(`Error reading file: ${result.error}`);
+              setBase64Content('');
+              setFileContent('');
+            }
+          } catch (error) {
+            setError(`Error reading file: ${error.message}`);
+            setBase64Content('');
+            setFileContent('');
+          }
         } else {
-          setError(`Error reading file: ${result.error}`);
-          setFileContent('');
+          const result = await window.electron.fileManager.readFile(file.path);
+          if (result.success) {
+            setFileContent(result.content);
+            setBase64Content('');
+            setError(null);
+          } else {
+            setError(`Error reading file: ${result.error}`);
+            setFileContent('');
+            setBase64Content('');
+          }
         }
       } catch (error) {
         setError(`Error reading file: ${error.message}`);
         setFileContent('');
+        setBase64Content('');
       } finally {
         setIsLoading(false);
       }
@@ -444,6 +553,7 @@ function FileExplorer() {
   const closePreview = () => {
     setSelectedFile(null);
     setFileContent('');
+    setBase64Content('');
   };
   
   const getPathParts = (pathString) => {
@@ -451,12 +561,10 @@ function FileExplorer() {
     
     const parts = pathString.split(path.sep).filter(Boolean);
     
-    // Handle Windows drive letter
     if (pathString.match(/^[A-Z]:\\/i)) {
-      parts[0] = pathString.substring(0, 3); // e.g., "C:\"
+      parts[0] = pathString.substring(0, 3);
     }
     
-    // For Unix-like systems, add root
     if (pathString.startsWith('/')) {
       parts.unshift('/');
     }
@@ -468,7 +576,6 @@ function FileExplorer() {
     const parts = getPathParts(currentPath);
     const newPath = parts.slice(0, index + 1).join(path.sep);
     
-    // Handle special cases for Windows and Unix
     if (parts[0] === '/' && index === 0) {
       setCurrentPath('/');
     } else if (parts[0].match(/^[A-Z]:\\/i) && index === 0) {
@@ -494,6 +601,128 @@ function FileExplorer() {
         ))}
       </Breadcrumbs>
     );
+  };
+
+  const getFileType = (extension) => {
+    const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'];
+    const textExts = ['.txt', '.md', '.js', '.jsx', '.ts', '.tsx', '.html', '.css', '.json', '.yml', '.yaml', '.xml', '.csv'];
+    const pdfExts = ['.pdf'];
+    const videoExts = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+    const audioExts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
+    
+    if (imageExts.includes(extension)) return 'image';
+    if (textExts.includes(extension)) return 'text';
+    if (pdfExts.includes(extension)) return 'pdf';
+    if (videoExts.includes(extension)) return 'video';
+    if (audioExts.includes(extension)) return 'audio';
+    
+    return 'other';
+  };
+
+  const getFileIcon = (file) => {
+    if (file.isDirectory) return <FaFolder />;
+    
+    const extension = path.extname(file.name).toLowerCase();
+    const type = getFileType(extension);
+    
+    switch (type) {
+      case 'image': return <FaFileImage />;
+      case 'text': return <FaFileAlt />;
+      case 'pdf': return <FaFilePdf />;
+      case 'video': return <FaFileVideo />;
+      case 'audio': return <FaFileAudio />;
+      default: return <FaFileGeneric />;
+    }
+  };
+
+  const zoomIn = () => {
+    setZoom(prevZoom => Math.min(prevZoom + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setZoom(prevZoom => Math.max(prevZoom - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setZoom(1);
+  };
+
+  const renderPreview = () => {
+    if (!selectedFile) return null;
+    
+    switch (fileType) {
+      case 'image':
+        return (
+          <PreviewContent $centered>
+            <ImagePreviewContainer ref={imageContainerRef}>
+              <ZoomControls>
+                <ZoomButton onClick={zoomIn} title="Zoom In">
+                  <FaSearchPlus />
+                </ZoomButton>
+                <ZoomButton onClick={zoomOut} title="Zoom Out">
+                  <FaSearchMinus />
+                </ZoomButton>
+                <ZoomButton onClick={resetZoom} title="Reset Zoom">
+                  <FaRedo />
+                </ZoomButton>
+              </ZoomControls>
+              <ImagePreview 
+                src={`data:image;base64,${base64Content}`} 
+                alt={selectedFile.name} 
+                $zoom={zoom}
+              />
+            </ImagePreviewContainer>
+          </PreviewContent>
+        );
+        
+      case 'pdf':
+        return (
+          <PreviewContent>
+            <PdfPreview src={`data:application/pdf;base64,${base64Content}`} title={selectedFile.name} />
+          </PreviewContent>
+        );
+        
+      case 'video':
+        return (
+          <PreviewContent $centered>
+            <VideoPreview controls>
+              <source src={`data:video;base64,${base64Content}`} type="video/mp4" />
+              Your browser does not support the video tag.
+            </VideoPreview>
+          </PreviewContent>
+        );
+        
+      case 'audio':
+        return (
+          <PreviewContent $centered>
+            <AudioPreview controls>
+              <source src={`data:audio;base64,${base64Content}`} type="audio/mpeg" />
+              Your browser does not support the audio tag.
+            </AudioPreview>
+          </PreviewContent>
+        );
+        
+      case 'text':
+        return (
+          <PreviewContent $monospace>
+            {fileContent}
+          </PreviewContent>
+        );
+        
+      default:
+        return (
+          <UnsupportedPreview>
+            <FaFileGeneric style={{ fontSize: '48px', opacity: 0.5, marginBottom: '20px' }} />
+            <h3>Preview not available</h3>
+            <p>This file type cannot be previewed directly.</p>
+            <PreviewActions>
+              <Button onClick={() => handleShareFile(selectedFile)}>
+                <FaShare /> Share File
+              </Button>
+            </PreviewActions>
+          </UnsupportedPreview>
+        );
+    }
   };
 
   return (
@@ -546,7 +775,7 @@ function FileExplorer() {
               filteredFiles.map((file, index) => (
                 <FileItem key={index} onClick={() => handleFileClick(file)}>
                   <FileIcon $isDirectory={file.isDirectory}>
-                    {file.isDirectory ? <FaFolder /> : <FaFile />}
+                    {getFileIcon(file)}
                   </FileIcon>
                   <FileInfo>
                     <FileName>{file.name}</FileName>
@@ -605,15 +834,15 @@ function FileExplorer() {
         </EmptyState>
       )}
 
-      {selectedFile && fileContent && (
+      {selectedFile && (fileContent || base64Content) && (
         <FilePreview>
           <PreviewHeader>
             <PreviewTitle>
-              <FaFile /> {selectedFile.name}
+              {getFileIcon(selectedFile)} {selectedFile.name}
             </PreviewTitle>
             <Button onClick={closePreview}>Close Preview</Button>
           </PreviewHeader>
-          <PreviewContent>{fileContent}</PreviewContent>
+          {renderPreview()}
         </FilePreview>
       )}
     </Container>

@@ -336,7 +336,7 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:*"]
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data:; media-src 'self' data:; object-src 'self' data:;"]
       }
     });
   });
@@ -421,6 +421,30 @@ ipcMain.handle('read-file', async (event, filePath) => {
     
     return { success: true, content };
   } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Read file binary (for images, PDFs, videos, audio)
+ipcMain.handle('read-file-binary', async (event, filePath) => {
+  try {
+    // Make sure the file exists first
+    if (!FileUtils.fileExists(filePath)) {
+      return { success: false, error: 'File does not exist' };
+    }
+    
+    // Read the file as binary data
+    const buffer = fs.readFileSync(filePath);
+    
+    // Convert to base64 for sending through IPC
+    const base64Content = buffer.toString('base64');
+    
+    // Log file access
+    await logAccess('read_file', filePath, { binary: true });
+    
+    return { success: true, content: base64Content };
+  } catch (error) {
+    console.error(`Error reading binary file ${filePath}:`, error);
     return { success: false, error: error.message };
   }
 });
