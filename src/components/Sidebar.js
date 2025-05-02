@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { styled } from 'styled-components';
-import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar } from 'react-icons/fa';
+import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar, FaSignOutAlt, FaCog } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
   background-color: #2c3e50;
@@ -125,8 +125,26 @@ const Overlay = styled.div`
   }
 `;
 
-function Sidebar() {
+const LockButton = styled.button`
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  color: white;
+  background-color: #e74c3c;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #c0392b;
+  }
+`;
+
+function Sidebar({ selectedIndex, onSelect, onLock }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
   
   const toggleSidebar = () => {
@@ -139,6 +157,14 @@ function Sidebar() {
     }
   };
   
+  const handleNavigation = (path, index) => {
+    navigate(path);
+    if (onSelect) {
+      onSelect(index);
+    }
+    closeSidebar();
+  };
+
   const collapsed = !isOpen;
 
   return (
@@ -153,34 +179,34 @@ function Sidebar() {
           <NavLink 
             to="/" 
             $active={location.pathname === '/' ? "true" : undefined}
-            onClick={closeSidebar}
+            onClick={() => handleNavigation('/', 0)}
           >
             <NavIcon $collapsed={collapsed}><FaFolder /></NavIcon>
             <NavText $collapsed={collapsed}>File Explorer</NavText>
           </NavLink>
           
           <NavLink 
-            to="/encrypted" 
-            $active={location.pathname === '/encrypted' ? "true" : undefined}
-            onClick={closeSidebar}
-          >
-            <NavIcon $collapsed={collapsed}><FaLock /></NavIcon>
-            <NavText $collapsed={collapsed}>Encrypted Files</NavText>
-          </NavLink>
-          
-          <NavLink 
             to="/share" 
             $active={location.pathname === '/share' ? "true" : undefined}
-            onClick={closeSidebar}
+            onClick={() => handleNavigation('/share', 1)}
           >
             <NavIcon $collapsed={collapsed}><FaShareAlt /></NavIcon>
             <NavText $collapsed={collapsed}>File Sharing</NavText>
           </NavLink>
           
           <NavLink 
+            to="/encrypted" 
+            $active={location.pathname === '/encrypted' ? "true" : undefined}
+            onClick={() => handleNavigation('/encrypted', 2)}
+          >
+            <NavIcon $collapsed={collapsed}><FaLock /></NavIcon>
+            <NavText $collapsed={collapsed}>Encrypted Files</NavText>
+          </NavLink>
+          
+          <NavLink 
             to="/analytics" 
             $active={location.pathname === '/analytics' ? "true" : undefined}
-            onClick={closeSidebar}
+            onClick={() => handleNavigation('/analytics', 3)}
           >
             <NavIcon $collapsed={collapsed}><FaChartBar /></NavIcon>
             <NavText $collapsed={collapsed}>Analytics</NavText>
@@ -189,12 +215,26 @@ function Sidebar() {
           <NavLink 
             to="/logs" 
             $active={location.pathname === '/logs' ? "true" : undefined}
-            onClick={closeSidebar}
+            onClick={() => handleNavigation('/logs', 4)}
           >
             <NavIcon $collapsed={collapsed}><FaListAlt /></NavIcon>
             <NavText $collapsed={collapsed}>Access Logs</NavText>
           </NavLink>
+          
+          <NavLink 
+            to="/settings" 
+            $active={location.pathname === '/settings' ? "true" : undefined}
+            onClick={() => handleNavigation('/settings', 5)}
+          >
+            <NavIcon $collapsed={collapsed}><FaCog /></NavIcon>
+            <NavText $collapsed={collapsed}>Settings</NavText>
+          </NavLink>
         </Navigation>
+        
+        <LockButton onClick={onLock}>
+          <NavIcon $collapsed={collapsed}><FaSignOutAlt /></NavIcon>
+          <NavText $collapsed={collapsed}>Lock App</NavText>
+        </LockButton>
         
         <AppInfo $collapsed={collapsed}>
           v1.0.0 | Secure File Manager
