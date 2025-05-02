@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { styled } from 'styled-components';
-import { FaLock, FaUnlock, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
+import { FaDownload, FaLock, FaUnlock, FaExclamationTriangle, FaMoon, FaShieldAlt } from 'react-icons/fa';
 
 const LockContainer = styled.div`
   position: fixed;
@@ -9,54 +9,78 @@ const LockContainer = styled.div`
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 2000;
   padding: 20px;
+  animation: fadeIn 0.3s ease;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 `;
 
 const LockForm = styled.div`
   background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   width: 100%;
-  max-width: 400px;
-  padding: 30px;
+  max-width: 420px;
+  padding: 40px;
   text-align: center;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+  }
 `;
 
 const LockIcon = styled.div`
-  font-size: 48px;
+  font-size: 56px;
   color: #3498db;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  height: 80px;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(52, 152, 219, 0.1);
+  border-radius: 50%;
+  margin: 0 auto 25px auto;
 `;
 
 const LockTitle = styled.h2`
   margin: 0 0 20px 0;
   color: #2c3e50;
+  font-size: 28px;
 `;
 
 const LockMessage = styled.p`
   margin-bottom: 30px;
   color: #7f8c8d;
+  font-size: 16px;
 `;
 
 const PasswordInput = styled.input`
   width: 100%;
-  padding: 12px 15px;
+  padding: 14px 20px;
   border: 2px solid #ddd;
-  border-radius: 6px;
+  border-radius: 12px;
   margin-bottom: 20px;
   font-size: 16px;
-  transition: border-color 0.3s;
+  transition: all 0.3s;
+  background-color: #f8f9fa;
   
   &:focus {
     border-color: #3498db;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    background-color: white;
   }
 `;
 
@@ -64,8 +88,8 @@ const UnlockButton = styled.button`
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 12px 20px;
+  border-radius: 12px;
+  padding: 16px 20px;
   font-size: 16px;
   font-weight: 600;
   width: 100%;
@@ -74,15 +98,41 @@ const UnlockButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
   
   &:hover {
     background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
   
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  &:active:after {
+    opacity: 0.2;
   }
 `;
 
@@ -94,6 +144,10 @@ const ErrorMessage = styled.div`
   justify-content: center;
   gap: 8px;
   font-size: 14px;
+  background-color: rgba(231, 76, 60, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  border-left: 3px solid #e74c3c;
 `;
 
 const LockInfo = styled.div`
@@ -101,32 +155,86 @@ const LockInfo = styled.div`
   font-size: 13px;
   color: #7f8c8d;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 `;
 
 const TimeDisplay = styled.div`
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 40px;
+  right: 40px;
   color: white;
-  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  animation: slideIn 0.5s ease;
+  
+  @keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+`;
+
+const CurrentTime = styled.div`
+  font-size: 48px;
   font-weight: 300;
+`;
+
+const CurrentDate = styled.div`
+  font-size: 16px;
   opacity: 0.7;
+  margin-top: 5px;
+`;
+
+const LoadingIndicator = styled.div`
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
+
+const SecurityMessage = styled.div`
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 `;
 
 const LockScreen = ({ onUnlock, password }) => {
   const [inputPassword, setInputPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [currentTime, setCurrentTime] = useState(new Date());
   
   React.useEffect(() => {
     // Update the time every second
     const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
+      setCurrentTime(new Date());
     }, 1000);
     
     return () => clearInterval(timer);
   }, []);
+  
+  const formatDate = (date) => {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    return date.toLocaleDateString(undefined, options);
+  };
   
   const handleUnlock = () => {
     setIsSubmitting(true);
@@ -137,10 +245,10 @@ const LockScreen = ({ onUnlock, password }) => {
       if (inputPassword === password) {
         onUnlock();
       } else {
-        setError('Incorrect password');
+        setError('Incorrect password. Please try again.');
         setIsSubmitting(false);
       }
-    }, 500);
+    }, 800);
   };
   
   const handleKeyDown = (e) => {
@@ -151,7 +259,10 @@ const LockScreen = ({ onUnlock, password }) => {
   
   return (
     <LockContainer>
-      <TimeDisplay>{currentTime}</TimeDisplay>
+      <TimeDisplay>
+        <CurrentTime>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</CurrentTime>
+        <CurrentDate>{formatDate(currentTime)}</CurrentDate>
+      </TimeDisplay>
       
       <LockForm>
         <LockIcon>
@@ -181,7 +292,11 @@ const LockScreen = ({ onUnlock, password }) => {
           onClick={handleUnlock}
           disabled={isSubmitting || !inputPassword}
         >
-          {isSubmitting ? 'Unlocking...' : (
+          {isSubmitting ? (
+            <>
+              <LoadingIndicator /> Unlocking...
+            </>
+          ) : (
             <>
               <FaUnlock /> Unlock
             </>
@@ -189,9 +304,13 @@ const LockScreen = ({ onUnlock, password }) => {
         </UnlockButton>
         
         <LockInfo>
-          The application was locked due to inactivity
+          <FaMoon /> The application was locked due to inactivity
         </LockInfo>
       </LockForm>
+      
+      <SecurityMessage>
+        <FaShieldAlt /> Secured with encryption. Your data is protected.
+      </SecurityMessage>
     </LockContainer>
   );
 };
