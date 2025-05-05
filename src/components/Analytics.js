@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
 import { FaChartBar, FaFolderOpen, FaLock, FaShare, FaFile, FaFileAlt, FaFileImage, FaFileVideo, FaFileAudio, FaFileArchive, FaFileCode, FaFilePdf, FaSync, FaExclamationTriangle, FaInfoCircle, FaChartPie, FaChartLine, FaDatabase, FaTimes } from 'react-icons/fa';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import path from 'path-browserify';
 
 const Container = styled.div`
@@ -378,7 +378,6 @@ function Analytics() {
   const [fileStats, setFileStats] = useState(null);
   const [activityStats, setActivityStats] = useState(null);
   const [storageUsage, setStorageUsage] = useState(null);
-  const [trendData, setTrendData] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(null);
   
   useEffect(() => {
@@ -398,9 +397,6 @@ function Analytics() {
       
       // Load real storage usage
       await fetchStorageUsage();
-      
-      // Load trend data (still using simulated data for trends)
-      await fetchTrendData();
       
       setLastRefreshed(new Date());
     } catch (err) {
@@ -639,68 +635,6 @@ function Analytics() {
     }
   };
   
-  const fetchTrendData = async () => {
-    try {
-      // Get daily file activity from the logs
-      const result = await window.electron.fileManager.getActivityTrends();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch trend data');
-      }
-      
-      const { activityTrends, growthTrends } = result;
-      
-      // Set the trend data
-      setTrendData({
-        fileActivity: activityTrends,
-        growth: {
-          fileCount: growthTrends
-        }
-      });
-      
-    } catch (err) {
-      console.error('Error fetching trend data:', err);
-      
-      // If real trend data fails, fall back to simulated data
-      const generateDates = () => {
-        const dates = [];
-        const now = new Date();
-        for (let i = 29; i >= 0; i--) {
-          const date = new Date(now);
-          date.setDate(date.getDate() - i);
-          dates.push(date.toISOString().split('T')[0]);
-        }
-        return dates;
-      };
-      
-      const dates = generateDates();
-      
-      // Create fallback data
-      const fileActivity = dates.map(date => {
-        return {
-          date,
-          reads: Math.floor(Math.random() * 50) + 20,
-          shares: Math.floor(Math.random() * 5) + 1,
-          encryptions: Math.floor(Math.random() * 3)
-        };
-      });
-      
-      const growthData = {
-        fileCount: dates.map((date, index) => {
-          return {
-            date,
-            count: 1000 + Math.floor(Math.random() * 20) * (index + 1)
-          };
-        })
-      };
-      
-      setTrendData({
-        fileActivity: fileActivity.slice(-7), // Only the last 7 days
-        growth: growthData
-      });
-    }
-  };
-  
   // Format bytes to human-readable size
   const formatBytes = (bytes, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
@@ -741,22 +675,6 @@ function Analytics() {
   const getActivityData = () => {
     if (!activityStats) return [];
     return activityStats.activityByDay;
-  };
-  
-  // Get trend data for line chart
-  const getTrendData = () => {
-    if (!trendData) return [];
-    
-    // Return the last 7 days of activity
-    return trendData.fileActivity;
-  };
-  
-  // Get growth data for line chart
-  const getGrowthData = () => {
-    if (!trendData) return [];
-    
-    // Return the file count growth for the last 30 days
-    return trendData.growth.fileCount;
   };
   
   return (
@@ -1000,61 +918,6 @@ function Analytics() {
               </ChartContainer>
             </CardContent>
           </Card>
-          
-          {/* Historical Trends */}
-          <DashboardGrid>
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <FaChartLine /> File Activity (Last 7 Days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={getTrendData()}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Line type="monotone" dataKey="reads" stroke="#3498db" name="Reads" activeDot={{ r: 8 }} />
-                      <Line type="monotone" dataKey="shares" stroke="#e74c3c" name="Shares" />
-                      <Line type="monotone" dataKey="encryptions" stroke="#2ecc71" name="Encryptions" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <FaChartLine /> Growth Trend
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={getGrowthData()}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Line type="monotone" dataKey="count" stroke="#8e44ad" name="File Count" activeDot={{ r: 8 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </DashboardGrid>
           
           {/* Recent Activity */}
           <Card>
