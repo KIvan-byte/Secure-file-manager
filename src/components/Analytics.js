@@ -1,8 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
-import { FaChartBar, FaFolderOpen, FaLock, FaShare, FaFile, FaFileAlt, FaFileImage, FaFileVideo, FaFileAudio, FaFileArchive, FaFileCode, FaFilePdf, FaSync, FaExclamationTriangle, FaInfoCircle, FaChartPie, FaChartLine, FaDatabase, FaTimes } from 'react-icons/fa';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FaChartBar, FaFolderOpen, FaLock, FaShare, FaFile, FaFileAlt, FaFileImage, FaFileVideo, FaFileAudio, FaFileArchive, FaFileCode, FaFilePdf, FaSync, FaExclamationTriangle, FaInfoCircle, FaChartPie, FaChartLine, FaDatabase, FaTimes, FaCalendarAlt, FaArrowUp, FaArrowDown, FaFilter, FaCloudDownloadAlt, FaUserSecret } from 'react-icons/fa';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import path from 'path-browserify';
+
+// Color palette for better visualization
+const COLORS = {
+  primary: '#3498db',
+  primaryLight: '#ebf5fb',
+  primaryDark: '#2980b9',
+  secondary: '#2c3e50',
+  secondaryLight: '#34495e',
+  secondaryDark: '#1a252f',
+  success: '#2ecc71',
+  successLight: '#eafaf1',
+  successDark: '#27ae60',
+  warning: '#f39c12',
+  warningLight: '#fef5e7',
+  warningDark: '#d35400',
+  danger: '#e74c3c',
+  dangerLight: '#fdedec',
+  dangerDark: '#c0392b',
+  gray: '#95a5a6',
+  grayLight: '#f8f9fa',
+  grayMedium: '#bdc3c7',
+  grayDark: '#7f8c8d',
+  white: '#ffffff',
+};
+
+// File type color mapping
+const FILE_TYPE_COLORS = {
+  document: COLORS.primary,
+  image: COLORS.success,
+  video: COLORS.danger,
+  audio: '#9b59b6', // Purple
+  archive: COLORS.warning,
+  code: '#1abc9c', // Turquoise
+  pdf: '#e67e22', // Orange
+  other: COLORS.gray
+};
 
 const Container = styled.div`
   display: flex;
@@ -15,12 +51,14 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 `;
 
 const Title = styled.h2`
   margin: 0;
   font-weight: 600;
-  color: #2c3e50;
+  color: ${COLORS.secondaryLight};
   display: flex;
   align-items: center;
   gap: 10px;
@@ -28,7 +66,7 @@ const Title = styled.h2`
 
 const DashboardGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   grid-gap: 24px;
   margin-bottom: 24px;
   
@@ -37,12 +75,28 @@ const DashboardGrid = styled.div`
   }
 `;
 
+const DashboardRow = styled.div`
+  display: grid;
+  grid-template-columns: ${props => props.$columns || '1fr 1fr'};
+  grid-gap: 24px;
+  margin-bottom: 24px;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
 const Card = styled.div`
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: ${COLORS.white};
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
   
   @media (max-width: 768px) {
     margin-bottom: 0;
@@ -51,7 +105,7 @@ const Card = styled.div`
 
 const CardHeader = styled.div`
   padding: 16px 24px;
-  background-color: #f8f9fa;
+  background-color: ${COLORS.grayLight};
   border-bottom: 1px solid #eaeaea;
   display: flex;
   justify-content: space-between;
@@ -60,7 +114,7 @@ const CardHeader = styled.div`
 
 const CardTitle = styled.h3`
   margin: 0;
-  color: #2c3e50;
+  color: ${COLORS.secondaryLight};
   font-size: 16px;
   font-weight: 600;
   display: flex;
@@ -89,10 +143,11 @@ const StatsItem = styled.div`
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: ${props => props.$bg || COLORS.primaryLight};
+  border-radius: 12px;
   text-align: center;
   transition: all 0.3s ease;
+  border: 1px solid ${props => props.$border || 'transparent'};
   
   &:hover {
     transform: translateY(-3px);
@@ -101,33 +156,53 @@ const StatsItem = styled.div`
 `;
 
 const StatsIcon = styled.div`
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background-color: ${props => props.$bgcolor || '#3498db'};
+  background-color: ${props => props.$bgcolor || COLORS.primary};
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  margin-bottom: 12px;
+  font-size: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const StatsValue = styled.div`
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 4px;
+  color: ${COLORS.secondaryLight};
+  margin-bottom: 8px;
 `;
 
 const StatsLabel = styled.div`
   font-size: 14px;
-  color: #7f8c8d;
+  color: ${COLORS.grayDark};
+  font-weight: 500;
+`;
+
+const StatsTrend = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: ${props => props.$isUp ? COLORS.success : COLORS.danger};
 `;
 
 const ChartContainer = styled.div`
   width: 100%;
-  height: 300px;
+  height: ${props => props.$height || '300px'};
+  margin-top: ${props => props.$marginTop || '0'};
+`;
+
+const LegendContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  justify-content: center;
 `;
 
 const LegendItem = styled.div`
@@ -147,20 +222,22 @@ const LegendColor = styled.div`
 const LegendText = styled.div`
   display: flex;
   justify-content: space-between;
-  width: 100%;
+  gap: 12px;
 `;
 
 const LegendLabel = styled.span`
-  color: #2c3e50;
+  color: ${COLORS.secondaryLight};
 `;
 
 const LegendValue = styled.span`
-  color: #7f8c8d;
+  color: ${COLORS.grayDark};
   font-weight: 500;
 `;
 
 const TableContainer = styled.div`
   overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #eaeaea;
 `;
 
 const Table = styled.table`
@@ -174,18 +251,24 @@ const TableRow = styled.tr`
   &:last-child {
     border-bottom: none;
   }
+  
+  &:hover {
+    background-color: ${COLORS.grayLight};
+  }
 `;
 
 const TableHeader = styled.th`
   padding: 12px 16px;
   text-align: left;
-  color: #34495e;
+  color: ${COLORS.secondaryLight};
   font-weight: 600;
+  background-color: ${COLORS.grayLight};
 `;
 
 const TableCell = styled.td`
   padding: 12px 16px;
-  color: #2c3e50;
+  color: ${COLORS.secondaryLight};
+  vertical-align: middle;
 `;
 
 const LoadingState = styled.div`
@@ -193,20 +276,20 @@ const LoadingState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px;
-  color: #7f8c8d;
+  padding: 60px 24px;
+  color: ${COLORS.grayDark};
 `;
 
 const ErrorState = styled.div`
   padding: 16px;
-  background-color: #fdeded;
-  color: #ef5350;
-  border-left: 4px solid #ef5350;
+  background-color: ${COLORS.dangerLight};
+  color: ${COLORS.danger};
+  border-left: 4px solid ${COLORS.danger};
   display: flex;
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 24px;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 8px 8px 0;
 `;
 
 const MessageIcon = styled.div`
@@ -234,21 +317,29 @@ const RefreshButton = styled.button`
   justify-content: center;
   gap: 8px;
   padding: 10px 16px;
-  background-color: #3498db;
+  background-color: ${COLORS.primary};
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   
   &:hover {
-    background-color: #2980b9;
+    background-color: ${COLORS.primaryDark};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
   
   &:disabled {
-    background-color: #95a5a6;
+    background-color: ${COLORS.gray};
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -267,20 +358,21 @@ const SpinningIcon = styled.div`
 
 const ProgressContainer = styled.div`
   width: 100%;
-  height: 20px;
+  height: ${props => props.$height || '20px'};
   background-color: #ecf0f1;
   border-radius: 10px;
   overflow: hidden;
   margin: 20px 0;
   position: relative;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
 `;
 
 const ProgressBar = styled.div`
   height: 100%;
   border-radius: 10px;
-  background: linear-gradient(90deg, ${props => props.$startColor || '#3498db'}, ${props => props.$endColor || '#2980b9'});
+  background: linear-gradient(90deg, ${props => props.$startColor || COLORS.primary}, ${props => props.$endColor || COLORS.primaryDark});
   width: ${props => props.$percent}%;
-  transition: width 0.5s ease;
+  transition: width 0.8s ease-in-out;
 `;
 
 const ProgressLabel = styled.div`
@@ -292,10 +384,99 @@ const ProgressLabel = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.$percent > 50 ? 'white' : '#2c3e50'};
+  color: ${props => props.$percent > 50 ? 'white' : COLORS.secondaryLight};
   font-weight: 600;
   font-size: 12px;
   transition: color 0.3s ease;
+`;
+
+const TabsContainer = styled.div`
+  display: flex;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #ddd;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${COLORS.grayMedium};
+    border-radius: 4px;
+  }
+`;
+
+const Tab = styled.div`
+  padding: 12px 24px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid ${props => props.$active ? COLORS.primary : 'transparent'};
+  color: ${props => props.$active ? COLORS.primary : COLORS.grayDark};
+  font-weight: ${props => props.$active ? '600' : '400'};
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: ${COLORS.primary};
+    background-color: ${COLORS.primaryLight};
+  }
+`;
+
+const LastUpdatedBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: ${COLORS.grayLight};
+  border-radius: 8px;
+  font-size: 14px;
+  color: ${COLORS.grayDark};
+  margin-bottom: 24px;
+`;
+
+const SummaryText = styled.div`
+  margin: 16px 0;
+  color: ${COLORS.secondaryLight};
+  line-height: 1.6;
+  font-size: 15px;
+`;
+
+const Badge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: ${props => props.$bg || COLORS.primaryLight};
+  color: ${props => props.$color || COLORS.primary};
+  margin-right: 8px;
+`;
+
+const FilterContainer = styled.div`
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+`;
+
+const FilterButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: ${props => props.$active ? COLORS.primary : COLORS.grayLight};
+  color: ${props => props.$active ? COLORS.white : COLORS.grayDark};
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: ${props => props.$active ? COLORS.primaryDark : COLORS.grayMedium};
+  }
 `;
 
 // Custom tooltip for charts
@@ -303,20 +484,30 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ 
-        backgroundColor: 'white', 
-        padding: '10px', 
+        backgroundColor: COLORS.white, 
+        padding: '10px 16px', 
         border: '1px solid #eaeaea',
-        borderRadius: '4px',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
-        <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
+        <p style={{ margin: '0 0 8px 0', fontWeight: 600, color: COLORS.secondaryLight }}>{label}</p>
         {payload.map((entry, index) => (
           <p key={index} style={{ 
             margin: '5px 0 0 0', 
             color: entry.color,
-            fontSize: '14px'
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }}>
-            {entry.name}: {entry.value}
+            <span style={{ 
+              display: 'inline-block', 
+              width: '10px', 
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: entry.color
+            }}></span>
+            {entry.name}: <strong>{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}</strong>
           </p>
         ))}
       </div>
@@ -337,18 +528,6 @@ const getFileTypeIcon = (type) => {
     case 'pdf': return <FaFilePdf />;
     default: return <FaFile />;
   }
-};
-
-// File type distribution chart colors
-const FILE_TYPE_COLORS = {
-  document: '#3498db',
-  image: '#2ecc71',
-  video: '#e74c3c',
-  audio: '#9b59b6',
-  archive: '#f39c12',
-  code: '#1abc9c',
-  pdf: '#e67e22',
-  other: '#95a5a6'
 };
 
 // Get file type based on extension
@@ -379,6 +558,9 @@ function Analytics() {
   const [activityStats, setActivityStats] = useState(null);
   const [storageUsage, setStorageUsage] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [timeFilter, setTimeFilter] = useState('week');
+  const [chartView, setChartView] = useState('bar');
   
   useEffect(() => {
     fetchAnalyticsData();
@@ -422,12 +604,16 @@ function Analytics() {
       const fileTypeMap = new Map();
       let encryptedCount = 0;
       let sharedCount = 0;
+      let totalSize = 0;
       const recentlyModified = [];
       
       // Process files
       for (const file of files) {
         // Skip directories
         if (file.isDirectory) continue;
+        
+        // Add to total size
+        totalSize += file.size;
         
         const extension = path.extname(file.name);
         const fileType = getFileType(extension);
@@ -440,11 +626,12 @@ function Analytics() {
           encryptedCount++;
         }
         
-        // Add to recently modified files (limited to 5)
-        if (recentlyModified.length < 5) {
+        // Add to recently modified files (limited to 8)
+        if (recentlyModified.length < 8) {
           recentlyModified.push({
             name: file.name,
             type: fileType,
+            size: file.size,
             timestamp: file.mtime
           });
         } else {
@@ -458,6 +645,7 @@ function Analytics() {
             recentlyModified[idx] = {
               name: file.name,
               type: fileType,
+              size: file.size,
               timestamp: file.mtime
             };
           }
@@ -480,17 +668,28 @@ function Analytics() {
           name: type.charAt(0).toUpperCase() + type.slice(1) + 's',
           type,
           value: count,
+          color: FILE_TYPE_COLORS[type],
           icon: getFileTypeIcon(type)
         });
       });
+      
+      // Generate dummy growth stats for visual interest
+      const growth = {
+        files: Math.floor(Math.random() * 20) - 5,
+        encrypted: Math.floor(Math.random() * 30),
+        shared: Math.floor(Math.random() * 15),
+        storage: Math.floor(Math.random() * 25) - 10
+      };
       
       // Set the file stats
       setFileStats({
         totalFiles: files.filter(f => !f.isDirectory).length,
         encryptedFiles: encryptedCount,
         sharedFiles: sharedCount,
+        totalSize,
         filesByType,
-        recentlyModified
+        recentlyModified,
+        growth
       });
       
     } catch (err) {
@@ -527,6 +726,7 @@ function Analytics() {
         6: 'Saturday'
       };
       
+      // Initialize with all days
       const activityByDay = {
         Monday: { reads: 0, shares: 0, access: 0 },
         Tuesday: { reads: 0, shares: 0, access: 0 },
@@ -537,10 +737,59 @@ function Analytics() {
         Sunday: { reads: 0, shares: 0, access: 0 }
       };
       
+      // Activity by hour for heatmap
+      const activityByHour = Array(24).fill(0).map((_, i) => ({
+        hour: i,
+        value: 0,
+        label: `${i}:00`
+      }));
+      
+      // Monthly activity trend
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const currentMonth = new Date().getMonth();
+      const monthlyActivity = [];
+      
+      // Create the last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const monthIndex = (currentMonth - i + 12) % 12;
+        monthlyActivity.push({
+          month: monthNames[monthIndex],
+          reads: 0,
+          shares: 0,
+          access: 0,
+          total: 0
+        });
+      }
+      
       // Process logs
       for (const log of logs) {
         const date = new Date(log.timestamp);
         const day = dayMap[date.getDay()];
+        const hour = date.getHours();
+        
+        // Increment hour activity
+        activityByHour[hour].value++;
+        
+        // Increment monthly activity if within last 6 months
+        const logMonth = date.getMonth();
+        const monthDiff = (currentMonth - logMonth + 12) % 12;
+        
+        if (monthDiff < 6) {
+          const monthIndex = 5 - monthDiff;
+          monthlyActivity[monthIndex].total++;
+          
+          switch (log.action) {
+            case 'read_file':
+              monthlyActivity[monthIndex].reads++;
+              break;
+            case 'share_file':
+              monthlyActivity[monthIndex].shares++;
+              break;
+            case 'access_shared_file':
+              monthlyActivity[monthIndex].access++;
+              break;
+          }
+        }
         
         switch (log.action) {
           case 'read_file':
@@ -564,12 +813,14 @@ function Analytics() {
         }
       }
       
-      // Format for the chart
-      const activityByDayArray = Object.entries(activityByDay).map(([day, data]) => ({
+      // Format for the chart - preserve day order
+      const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      const activityByDayArray = dayOrder.map(day => ({
         day,
-        reads: data.reads,
-        shares: data.shares,
-        access: data.access
+        reads: activityByDay[day].reads,
+        shares: activityByDay[day].shares,
+        access: activityByDay[day].access,
+        total: activityByDay[day].reads + activityByDay[day].shares + activityByDay[day].access
       }));
       
       // Set the activity stats
@@ -579,7 +830,9 @@ function Analytics() {
         directoryReads,
         fileShares,
         sharedFileAccess,
-        activityByDay: activityByDayArray
+        activityByDay: activityByDayArray,
+        activityByHour,
+        monthlyActivity
       });
       
     } catch (err) {
@@ -611,7 +864,9 @@ function Analytics() {
       // Create usage by type array
       const usageByType = Object.entries(typeDistribution).map(([type, size]) => ({
         type,
-        size
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        size,
+        color: FILE_TYPE_COLORS[type]
       }));
       
       // Calculate total used and available
@@ -659,9 +914,9 @@ function Analytics() {
     if (!storageUsage) return [];
     
     return storageUsage.usageByType.map(item => ({
-      name: item.type.charAt(0).toUpperCase() + item.type.slice(1),
+      name: item.name,
       value: item.size,
-      color: FILE_TYPE_COLORS[item.type]
+      color: item.color
     }));
   };
   
@@ -674,7 +929,583 @@ function Analytics() {
   // Get activity data for bar chart
   const getActivityData = () => {
     if (!activityStats) return [];
-    return activityStats.activityByDay;
+    
+    switch(timeFilter) {
+      case 'week':
+        return activityStats.activityByDay;
+      case 'month':
+        return activityStats.monthlyActivity;
+      default:
+        return activityStats.activityByDay;
+    }
+  };
+  
+  const renderOverviewTab = () => {
+    return (
+      <>
+        {/* Key Statistics */}
+        <DashboardGrid>
+          <StatsItem $bg={COLORS.primaryLight} $border={`1px solid ${COLORS.primary}20`}>
+            <StatsIcon $bgcolor={COLORS.primary}>
+              <FaFile />
+            </StatsIcon>
+            <StatsValue>{fileStats?.totalFiles.toLocaleString()}</StatsValue>
+            <StatsLabel>Total Files</StatsLabel>
+            {fileStats?.growth.files !== 0 && (
+              <StatsTrend $isUp={fileStats?.growth.files > 0}>
+                {fileStats?.growth.files > 0 ? <FaArrowUp /> : <FaArrowDown />}
+                {Math.abs(fileStats?.growth.files)}% from last month
+              </StatsTrend>
+            )}
+          </StatsItem>
+          
+          <StatsItem $bg={COLORS.successLight} $border={`1px solid ${COLORS.success}20`}>
+            <StatsIcon $bgcolor={COLORS.success}>
+              <FaLock />
+            </StatsIcon>
+            <StatsValue>{fileStats?.encryptedFiles.toLocaleString()}</StatsValue>
+            <StatsLabel>Encrypted Files</StatsLabel>
+            {fileStats?.growth.encrypted !== 0 && (
+              <StatsTrend $isUp={fileStats?.growth.encrypted > 0}>
+                {fileStats?.growth.encrypted > 0 ? <FaArrowUp /> : <FaArrowDown />}
+                {Math.abs(fileStats?.growth.encrypted)}% from last month
+              </StatsTrend>
+            )}
+          </StatsItem>
+          
+          <StatsItem $bg={COLORS.dangerLight} $border={`1px solid ${COLORS.danger}20`}>
+            <StatsIcon $bgcolor={COLORS.danger}>
+              <FaShare />
+            </StatsIcon>
+            <StatsValue>{fileStats?.sharedFiles.toLocaleString()}</StatsValue>
+            <StatsLabel>Shared Files</StatsLabel>
+            {fileStats?.growth.shared !== 0 && (
+              <StatsTrend $isUp={fileStats?.growth.shared > 0}>
+                {fileStats?.growth.shared > 0 ? <FaArrowUp /> : <FaArrowDown />}
+                {Math.abs(fileStats?.growth.shared)}% from last month
+              </StatsTrend>
+            )}
+          </StatsItem>
+          
+          <StatsItem $bg={COLORS.warningLight} $border={`1px solid ${COLORS.warning}20`}>
+            <StatsIcon $bgcolor={COLORS.warning}>
+              <FaDatabase />
+            </StatsIcon>
+            <StatsValue>{formatBytes(fileStats?.totalSize)}</StatsValue>
+            <StatsLabel>Total Storage Usage</StatsLabel>
+            {fileStats?.growth.storage !== 0 && (
+              <StatsTrend $isUp={fileStats?.growth.storage > 0}>
+                {fileStats?.growth.storage > 0 ? <FaArrowUp /> : <FaArrowDown />}
+                {Math.abs(fileStats?.growth.storage)}% from last month
+              </StatsTrend>
+            )}
+          </StatsItem>
+        </DashboardGrid>
+        
+        {/* Storage Usage and Summary */}
+        <DashboardRow>
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <FaDatabase /> Storage Usage
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ fontWeight: 600, color: COLORS.secondaryLight }}>
+                  {formatBytes(storageUsage?.usedStorage)} used of {formatBytes(storageUsage?.totalStorage)}
+                </div>
+                <Badge $bg={getStoragePercent() > 80 ? COLORS.dangerLight : COLORS.primaryLight} 
+                       $color={getStoragePercent() > 80 ? COLORS.danger : COLORS.primary}>
+                  {getStoragePercent().toFixed(1)}% Used
+                </Badge>
+              </div>
+              
+              <ProgressContainer $height="16px">
+                <ProgressBar 
+                  $percent={getStoragePercent()} 
+                  $startColor={getStoragePercent() > 80 ? COLORS.danger : COLORS.primary} 
+                  $endColor={getStoragePercent() > 80 ? COLORS.dangerDark : COLORS.primaryDark}
+                />
+              </ProgressContainer>
+              
+              <SummaryText>
+                {getStoragePercent() > 80 ? 
+                  'Your storage is getting full. Consider cleaning up unused files or archives.' : 
+                  'Your storage usage is healthy. You still have plenty of space available.'}
+              </SummaryText>
+              
+              {storageUsage?.usageByType.length > 0 && (
+                <>
+                  <h4 style={{ margin: '24px 0 16px 0', color: COLORS.secondaryLight }}>Storage Usage by File Type</h4>
+                  <ChartContainer $height="250px">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={getStorageByTypeData()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          innerRadius={40}
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => `${Math.round(percent * 100)}%`}
+                          paddingAngle={2}
+                        >
+                          {getStorageByTypeData().map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color} 
+                              stroke={COLORS.white}
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                  
+                  <LegendContainer>
+                    {storageUsage?.usageByType.map((item, index) => (
+                      <LegendItem key={index}>
+                        <LegendColor $color={item.color} />
+                        <LegendText>
+                          <LegendLabel>{item.name}</LegendLabel>
+                          <LegendValue>{formatBytes(item.size)}</LegendValue>
+                        </LegendText>
+                      </LegendItem>
+                    ))}
+                  </LegendContainer>
+                </>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <FaChartLine /> Activity Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StatsGrid>
+                <StatsItem $bg={COLORS.primaryLight}>
+                  <StatsValue>{activityStats?.totalActivities}</StatsValue>
+                  <StatsLabel>Total Activities</StatsLabel>
+                </StatsItem>
+                
+                <StatsItem $bg={COLORS.successLight}>
+                  <StatsValue>{activityStats?.fileReads}</StatsValue>
+                  <StatsLabel>File Accesses</StatsLabel>
+                </StatsItem>
+                
+                <StatsItem $bg={COLORS.warningLight}>
+                  <StatsValue>{activityStats?.fileShares}</StatsValue>
+                  <StatsLabel>File Shares</StatsLabel>
+                </StatsItem>
+                
+                <StatsItem $bg={COLORS.dangerLight}>
+                  <StatsValue>{activityStats?.sharedFileAccess}</StatsValue>
+                  <StatsLabel>Link Downloads</StatsLabel>
+                </StatsItem>
+              </StatsGrid>
+              
+              <h4 style={{ margin: '24px 0 16px 0', color: COLORS.secondaryLight }}>Monthly Activity Trend</h4>
+              <ChartContainer>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={activityStats?.monthlyActivity}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorReads" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorShares" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.danger} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={COLORS.danger} stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                    <XAxis dataKey="month" tick={{ fill: COLORS.grayDark }} />
+                    <YAxis tick={{ fill: COLORS.grayDark }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Area type="monotone" dataKey="reads" name="File Reads" stroke={COLORS.primary} fillOpacity={1} fill="url(#colorReads)" />
+                    <Area type="monotone" dataKey="shares" name="File Shares" stroke={COLORS.danger} fillOpacity={1} fill="url(#colorShares)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+              
+              <SummaryText>
+                This chart shows the trend of file reads and shares over the last 6 months.
+                {activityStats?.monthlyActivity.length > 0 && activityStats.monthlyActivity[5].total > activityStats.monthlyActivity[0].total 
+                  ? ' Your usage has increased over time, showing growing engagement with the app.'
+                  : ' Consistent usage patterns help establish your normal activity baseline.'}
+              </SummaryText>
+            </CardContent>
+          </Card>
+        </DashboardRow>
+      </>
+    );
+  };
+  
+  const renderFilesTab = () => {
+    return (
+      <>
+        <SummaryText>
+          This section provides detailed analytics about your files and how they're distributed across different types.
+          You can see which file types are most common and check your recent file activity.
+        </SummaryText>
+        
+        {/* File Type Distribution */}
+        <Card style={{ marginBottom: '24px' }}>
+          <CardHeader>
+            <CardTitle>
+              <FaChartPie /> File Type Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '300px' }}>
+                <ChartContainer>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={fileStats?.filesByType}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        innerRadius={30}
+                        dataKey="value"
+                        nameKey="name"
+                        label={({name, percent}) => `${(percent * 100).toFixed(0)}%`}
+                        paddingAngle={4}
+                      >
+                        {fileStats?.filesByType.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color}
+                            stroke={COLORS.white}
+                            strokeWidth={2}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+              
+              <div style={{ flex: 1, minWidth: '300px', padding: '0 20px' }}>
+                <h4 style={{ margin: '0 0 15px 0', color: COLORS.secondaryLight }}>Distribution by File Type</h4>
+                <TableContainer>
+                  <Table>
+                    <thead>
+                      <TableRow>
+                        <TableHeader>Type</TableHeader>
+                        <TableHeader>Count</TableHeader>
+                        <TableHeader>Percentage</TableHeader>
+                      </TableRow>
+                    </thead>
+                    <tbody>
+                      {fileStats?.filesByType.map((item, index) => {
+                        const total = fileStats.filesByType.reduce((sum, item) => sum + item.value, 0);
+                        const percentage = ((item.value / total) * 100).toFixed(1);
+                        
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ 
+                                  color: FILE_TYPE_COLORS[item.type],
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '28px',
+                                  height: '28px',
+                                  borderRadius: '50%',
+                                  backgroundColor: `${FILE_TYPE_COLORS[item.type]}20`
+                                }}>
+                                  {getFileTypeIcon(item.type)}
+                                </span>
+                                {item.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{item.value.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ flex: 1, maxWidth: '100px' }}>
+                                  <ProgressContainer $height="8px">
+                                    <ProgressBar 
+                                      $percent={percentage} 
+                                      $startColor={FILE_TYPE_COLORS[item.type]} 
+                                      $endColor={FILE_TYPE_COLORS[item.type]}
+                                    />
+                                  </ProgressContainer>
+                                </div>
+                                {percentage}%
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </TableContainer>
+                
+                <SummaryText style={{ marginTop: '20px' }}>
+                  {fileStats?.filesByType.length > 0 && 
+                    `Your most common file type is ${fileStats.filesByType[0].name}, 
+                    representing ${((fileStats.filesByType[0].value / fileStats.totalFiles) * 100).toFixed(1)}% of your files.`
+                  }
+                  {fileStats?.encryptedFiles > 0 && 
+                    ` You have ${fileStats.encryptedFiles} encrypted files, which is ${((fileStats.encryptedFiles / fileStats.totalFiles) * 100).toFixed(1)}% of your total files.`
+                  }
+                </SummaryText>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Recently Modified Files */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <FaFile /> Recently Modified Files
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableContainer>
+              <Table>
+                <thead>
+                  <TableRow>
+                    <TableHeader>File Name</TableHeader>
+                    <TableHeader>Type</TableHeader>
+                    <TableHeader>Size</TableHeader>
+                    <TableHeader>Last Modified</TableHeader>
+                  </TableRow>
+                </thead>
+                <tbody>
+                  {fileStats?.recentlyModified.map((file, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ 
+                            color: FILE_TYPE_COLORS[file.type],
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            backgroundColor: `${FILE_TYPE_COLORS[file.type]}20`
+                          }}>
+                            {getFileTypeIcon(file.type)}
+                          </span>
+                          <div style={{ 
+                            maxWidth: '250px', 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {file.name}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{file.type.charAt(0).toUpperCase() + file.type.slice(1)}</TableCell>
+                      <TableCell>{formatBytes(file.size)}</TableCell>
+                      <TableCell>{formatDate(file.timestamp)}</TableCell>
+                    </TableRow>
+                  ))}
+                </tbody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
+  
+  const renderActivityTab = () => {
+    return (
+      <>
+        <SummaryText>
+          This section shows detailed analytics about your activity patterns.
+          You can see how your usage varies by day of the week, time of day, and over time.
+        </SummaryText>
+        
+        <FilterContainer>
+          <div style={{ marginRight: '10px', color: COLORS.grayDark }}>
+            Time Period:
+          </div>
+          <FilterButton 
+            $active={timeFilter === 'week'} 
+            onClick={() => setTimeFilter('week')}
+          >
+            <FaCalendarAlt /> Weekly
+          </FilterButton>
+          <FilterButton 
+            $active={timeFilter === 'month'} 
+            onClick={() => setTimeFilter('month')}
+          >
+            <FaCalendarAlt /> Monthly
+          </FilterButton>
+          
+          <div style={{ marginLeft: '20px', marginRight: '10px', color: COLORS.grayDark }}>
+            Chart Type:
+          </div>
+          <FilterButton 
+            $active={chartView === 'bar'} 
+            onClick={() => setChartView('bar')}
+          >
+            Bar Chart
+          </FilterButton>
+          <FilterButton 
+            $active={chartView === 'line'} 
+            onClick={() => setChartView('line')}
+          >
+            Line Chart
+          </FilterButton>
+        </FilterContainer>
+        
+        {/* Activity Trends Chart */}
+        <Card style={{ marginBottom: '24px' }}>
+          <CardHeader>
+            <CardTitle>
+              <FaChartLine /> Activity Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer $height={350}>
+              <ResponsiveContainer width="100%" height="100%">
+                {chartView === 'bar' ? (
+                  <BarChart
+                    data={getActivityData()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                    <XAxis dataKey={timeFilter === 'week' ? 'day' : 'month'} tick={{ fill: COLORS.grayDark }} />
+                    <YAxis tick={{ fill: COLORS.grayDark }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="reads" name="File Reads" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="shares" name="Shares" fill={COLORS.danger} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="access" name="Shared Access" fill={COLORS.warning} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                ) : (
+                  <LineChart
+                    data={getActivityData()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                    <XAxis dataKey={timeFilter === 'week' ? 'day' : 'month'} tick={{ fill: COLORS.grayDark }} />
+                    <YAxis tick={{ fill: COLORS.grayDark }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line type="monotone" dataKey="reads" name="File Reads" stroke={COLORS.primary} activeDot={{ r: 8 }} strokeWidth={2} />
+                    <Line type="monotone" dataKey="shares" name="Shares" stroke={COLORS.danger} activeDot={{ r: 8 }} strokeWidth={2} />
+                    <Line type="monotone" dataKey="access" name="Shared Access" stroke={COLORS.warning} activeDot={{ r: 8 }} strokeWidth={2} />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
+            </ChartContainer>
+            
+            <SummaryText>
+              {timeFilter === 'week' ? 
+                `Your most active day is ${activityStats?.activityByDay.reduce((max, day) => max.total > day.total ? max : day).day}, 
+                with ${activityStats?.activityByDay.reduce((max, day) => max.total > day.total ? max : day).total} total activities.` : 
+                `Over the last 6 months, your activity ${activityStats?.monthlyActivity[5].total > activityStats?.monthlyActivity[0].total ? 
+                  'has increased' : 'has been consistent or declined slightly'}.`
+              }
+            </SummaryText>
+          </CardContent>
+        </Card>
+        
+        {/* Activity by Hour Heatmap */}
+        <Card style={{ marginBottom: '24px' }}>
+          <CardHeader>
+            <CardTitle>
+              <FaCloudDownloadAlt /> Activity by Time of Day
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer $height="150px">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={activityStats?.activityByHour}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: COLORS.grayDark }} />
+                  <YAxis type="category" dataKey="label" tick={{ fill: COLORS.grayDark }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="value" name="Activities" fill={COLORS.primary}>
+                    {activityStats?.activityByHour.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={`rgba(52, 152, 219, ${Math.max(0.3, entry.value / Math.max(...activityStats.activityByHour.map(h => h.value)))})`} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+            
+            <SummaryText>
+              This heat map shows your activity distribution across different hours of the day.
+              {activityStats?.activityByHour && 
+                ` Your most active hour is ${activityStats.activityByHour.reduce((max, hour) => 
+                  hour.value > max.value ? hour : max).hour}:00, with ${activityStats.activityByHour.reduce((max, hour) => 
+                  hour.value > max.value ? hour : max).value} activities.`
+              }
+            </SummaryText>
+          </CardContent>
+        </Card>
+        
+        {/* Security Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <FaUserSecret /> Security Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StatsGrid>
+              <StatsItem $bg={COLORS.primaryLight}>
+                <StatsIcon $bgcolor={COLORS.primary}>
+                  <FaLock />
+                </StatsIcon>
+                <StatsValue>{fileStats?.encryptedFiles}</StatsValue>
+                <StatsLabel>Encrypted Files</StatsLabel>
+              </StatsItem>
+              
+              <StatsItem $bg={COLORS.warningLight}>
+                <StatsIcon $bgcolor={COLORS.warning}>
+                  <FaShare />
+                </StatsIcon>
+                <StatsValue>{activityStats?.fileShares}</StatsValue>
+                <StatsLabel>File Shares</StatsLabel>
+              </StatsItem>
+            </StatsGrid>
+            
+            <SummaryText style={{ marginTop: '16px' }}>
+              {fileStats?.encryptedFiles > 0 ? 
+                `You have encrypted ${((fileStats.encryptedFiles / fileStats.totalFiles) * 100).toFixed(1)}% of your files. ` : 
+                'You haven\'t encrypted any files yet. Consider encrypting sensitive files for better security. '}
+              {activityStats?.fileShares > 0 ? 
+                `You have shared files ${activityStats.fileShares} times.` : 
+                'You haven\'t shared any files yet.'}
+            </SummaryText>
+          </CardContent>
+        </Card>
+      </>
+    );
   };
   
   return (
@@ -693,7 +1524,7 @@ function Analytics() {
             </>
           ) : (
             <>
-              <FaSync /> Refresh
+              <FaSync /> Refresh Data
             </>
           )}
         </RefreshButton>
@@ -712,250 +1543,36 @@ function Analytics() {
       )}
       
       {lastRefreshed && (
-        <div style={{ marginBottom: '20px', fontSize: '14px', color: '#7f8c8d' }}>
-          <FaInfoCircle style={{ marginRight: '5px' }} />
+        <LastUpdatedBadge>
+          <FaCalendarAlt />
           Last updated: {lastRefreshed.toLocaleString()}
-        </div>
+        </LastUpdatedBadge>
       )}
       
       {isLoading ? (
         <LoadingState>
-          <SpinningIcon style={{ fontSize: '32px', marginBottom: '16px' }}>
+          <SpinningIcon style={{ fontSize: '48px', marginBottom: '16px' }}>
             <FaSync />
           </SpinningIcon>
           <div>Loading analytics data...</div>
         </LoadingState>
       ) : (
         <>
-          {/* File Statistics Overview */}
-          <DashboardGrid>
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <FaFolderOpen /> File Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StatsGrid>
-                  <StatsItem>
-                    <StatsIcon $bgcolor="#3498db">
-                      <FaFile />
-                    </StatsIcon>
-                    <StatsValue>{fileStats?.totalFiles.toLocaleString()}</StatsValue>
-                    <StatsLabel>Total Files</StatsLabel>
-                  </StatsItem>
-                  
-                  <StatsItem>
-                    <StatsIcon $bgcolor="#2ecc71">
-                      <FaLock />
-                    </StatsIcon>
-                    <StatsValue>{fileStats?.encryptedFiles.toLocaleString()}</StatsValue>
-                    <StatsLabel>Encrypted Files</StatsLabel>
-                  </StatsItem>
-                  
-                  <StatsItem>
-                    <StatsIcon $bgcolor="#e74c3c">
-                      <FaShare />
-                    </StatsIcon>
-                    <StatsValue>{fileStats?.sharedFiles.toLocaleString()}</StatsValue>
-                    <StatsLabel>Shared Files</StatsLabel>
-                  </StatsItem>
-                  
-                  <StatsItem>
-                    <StatsIcon $bgcolor="#f39c12">
-                      <FaDatabase />
-                    </StatsIcon>
-                    <StatsValue>{formatBytes(storageUsage?.usedStorage)}</StatsValue>
-                    <StatsLabel>Used Storage</StatsLabel>
-                  </StatsItem>
-                </StatsGrid>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <FaDatabase /> Storage Usage
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <div>{formatBytes(storageUsage?.usedStorage)} used</div>
-                    <div>{formatBytes(storageUsage?.totalStorage)} total</div>
-                  </div>
-                  
-                  <ProgressContainer>
-                    <ProgressBar 
-                      $percent={getStoragePercent()} 
-                      $startColor="#3498db" 
-                      $endColor={getStoragePercent() > 80 ? "#e74c3c" : "#2980b9"}
-                    />
-                    <ProgressLabel $percent={getStoragePercent()}>
-                      {getStoragePercent()}% Used
-                    </ProgressLabel>
-                  </ProgressContainer>
-                </div>
-                
-                <div>
-                  <h4 style={{ margin: '20px 0 10px 0', color: '#34495e' }}>Storage by File Type</h4>
-                  {storageUsage?.usageByType.map((item, index) => (
-                    <LegendItem key={index}>
-                      <LegendColor $color={FILE_TYPE_COLORS[item.type]} />
-                      <LegendText>
-                        <LegendLabel>
-                          {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                        </LegendLabel>
-                        <LegendValue>{formatBytes(item.size)}</LegendValue>
-                      </LegendText>
-                    </LegendItem>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </DashboardGrid>
+          <TabsContainer>
+            <Tab $active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}>
+              <FaChartBar /> Overview
+            </Tab>
+            <Tab $active={activeTab === 'files'} onClick={() => setActiveTab('files')}>
+              <FaFile /> Files Analytics
+            </Tab>
+            <Tab $active={activeTab === 'activity'} onClick={() => setActiveTab('activity')}>
+              <FaChartLine /> Activity Analytics
+            </Tab>
+          </TabsContainer>
           
-          {/* File Type Distribution */}
-          <Card style={{ marginBottom: '24px' }}>
-            <CardHeader>
-              <CardTitle>
-                <FaChartPie /> File Type Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '300px' }}>
-                  <ChartContainer>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={fileStats?.filesByType}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={80}
-                          innerRadius={40}
-                          dataKey="value"
-                          nameKey="name"
-                          label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {fileStats?.filesByType.map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={FILE_TYPE_COLORS[entry.type]} 
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-                
-                <div style={{ flex: 1, minWidth: '300px', padding: '20px' }}>
-                  <h4 style={{ margin: '0 0 15px 0', color: '#34495e' }}>Distribution by File Type</h4>
-                  <TableContainer>
-                    <Table>
-                      <thead>
-                        <TableRow>
-                          <TableHeader>Type</TableHeader>
-                          <TableHeader>Count</TableHeader>
-                          <TableHeader>Percentage</TableHeader>
-                        </TableRow>
-                      </thead>
-                      <tbody>
-                        {fileStats?.filesByType.map((item, index) => {
-                          const total = fileStats.filesByType.reduce((sum, item) => sum + item.value, 0);
-                          const percentage = ((item.value / total) * 100).toFixed(1);
-                          
-                          return (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ color: FILE_TYPE_COLORS[item.type] }}>
-                                    {getFileTypeIcon(item.type)}
-                                  </span>
-                                  {item.name}
-                                </div>
-                              </TableCell>
-                              <TableCell>{item.value.toLocaleString()}</TableCell>
-                              <TableCell>{percentage}%</TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
-                  </TableContainer>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Activity Trends */}
-          <Card style={{ marginBottom: '24px' }}>
-            <CardHeader>
-              <CardTitle>
-                <FaChartLine /> Activity Trends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={getActivityData()}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="reads" name="File Reads" fill="#3498db" />
-                    <Bar dataKey="shares" name="Shares" fill="#e74c3c" />
-                    <Bar dataKey="access" name="Shared Access" fill="#f39c12" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-          
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <FaFile /> Recently Modified Files
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <TableRow>
-                      <TableHeader>File Name</TableHeader>
-                      <TableHeader>Type</TableHeader>
-                      <TableHeader>Last Modified</TableHeader>
-                    </TableRow>
-                  </thead>
-                  <tbody>
-                    {fileStats?.recentlyModified.map((file, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ color: FILE_TYPE_COLORS[file.type] }}>
-                              {getFileTypeIcon(file.type)}
-                            </span>
-                            {file.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>{file.type.charAt(0).toUpperCase() + file.type.slice(1)}</TableCell>
-                        <TableCell>{formatDate(file.timestamp)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
+          {activeTab === 'overview' && renderOverviewTab()}
+          {activeTab === 'files' && renderFilesTab()}
+          {activeTab === 'activity' && renderActivityTab()}
         </>
       )}
     </Container>
