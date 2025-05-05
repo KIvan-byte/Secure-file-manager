@@ -1349,28 +1349,6 @@ function SecureNotes() {
               </PasswordEye>
             </PasswordInput>
             
-            {initialLoad && masterPassword && (
-              <PasswordStrengthContainer>
-                <PasswordStrengthBar>
-                  <PasswordStrengthIndicator 
-                    $percent={strengthPercent} 
-                    $strength={passwordStrength} 
-                  />
-                </PasswordStrengthBar>
-                <PasswordStrengthText>
-                  <PasswordStrengthLabel $strength={passwordStrength}>
-                    {getStrengthLabel()}
-                  </PasswordStrengthLabel>
-                  <span>{strengthPercent.toFixed(0)}%</span>
-                </PasswordStrengthText>
-                {passwordStrength === 'weak' && (
-                  <PasswordRequirements>
-                    For a strong password, use at least 12 characters with uppercase, lowercase, numbers, and special characters.
-                  </PasswordRequirements>
-                )}
-              </PasswordStrengthContainer>
-            )}
-            
             {authError && <ErrorText>{authError}</ErrorText>}
             
             <ActionButton 
