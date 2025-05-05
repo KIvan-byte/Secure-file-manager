@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome } from 'react-icons/fa';
+import { useNavigate, useLocation } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
 import FileEncryptionModal from './FileEncryptionModal';
@@ -546,12 +546,14 @@ function FileExplorer() {
   const [zoom, setZoom] = useState(1);
   const imageContainerRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAdvancedSearchVisible, setIsAdvancedSearchVisible] = useState(false);
   const [searchContent, setSearchContent] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
   const [encryptionFile, setEncryptionFile] = useState(null);
@@ -570,12 +572,40 @@ function FileExplorer() {
   const [statusMessage, setStatusMessage] = useState('');
   const [showStatusMessage, setShowStatusMessage] = useState(false);
   const fileListRef = useRef(null);
+  const mounted = useRef(false);
 
   useEffect(() => {
-    if (currentPath) {
-      loadDirectory(currentPath);
+    mounted.current = true;
+    
+    // Check if we're returning to the component with a saved path
+    const savedPath = localStorage.getItem('lastBrowsedPath');
+    
+    // Check if there's a specific directory to open from location state
+    if (location.state?.openDirectory) {
+      setCurrentPath(location.state.openDirectory);
+    } else if (savedPath && !currentPath) {
+      setCurrentPath(savedPath);
     }
-  }, [currentPath]);
+    
+    setInitialLoadDone(true);
+    
+    return () => {
+      mounted.current = false;
+      // Clean up any pending operations
+      setDraggedFile(null);
+      setDragOverFile(null);
+      setIsDragging(false);
+      setIsDraggingOver(false);
+    };
+  }, [location.state]);
+
+  useEffect(() => {
+    if (currentPath && initialLoadDone) {
+      loadDirectory(currentPath);
+      // Save the current path to localStorage for persistence
+      localStorage.setItem('lastBrowsedPath', currentPath);
+    }
+  }, [currentPath, initialLoadDone]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -599,31 +629,45 @@ function FileExplorer() {
     } catch (error) {
       setError(`Error browsing directory: ${error.message}`);
     } finally {
-      setIsLoading(false);
+      if (mounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 
-  const loadDirectory = async (directoryPath) => {
+  const loadDirectory = useCallback(async (directoryPath) => {
     try {
       setIsLoading(true);
       setSelectedFile(null);
       setFileContent('');
       setBase64Content('');
       
+      // Check if directoryPath is valid
+      if (!directoryPath) {
+        setError('Invalid directory path');
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await window.electron.fileManager.readDirectory(directoryPath);
-      if (result.success) {
-        setFiles(result.items);
-        setFilteredFiles(result.items);
+      if (result.success && mounted.current) {
+        setFiles(result.items || []);
+        setFilteredFiles(result.items || []);
         setError(null);
-      } else {
-        setError(`Error reading directory: ${result.error}`);
+      } else if (mounted.current) {
+        setError(`Error reading directory: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
-      setError(`Error reading directory: ${error.message}`);
+      console.error('Error reading directory:', error);
+      if (mounted.current) {
+        setError(`Error reading directory: ${error.message}`);
+      }
     } finally {
-      setIsLoading(false);
+      if (mounted.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
   const handleFileClick = async (file) => {
     if (file.isDirectory) {
@@ -641,38 +685,44 @@ function FileExplorer() {
         if (type === 'image' || type === 'pdf' || type === 'video' || type === 'audio') {
           try {
             const result = await window.electron.fileManager.readFileBinary(file.path);
-            if (result.success) {
+            if (result.success && mounted.current) {
               setBase64Content(result.content);
               setFileContent('');
               setError(null);
-            } else {
-              setError(`Error reading file: ${result.error}`);
+            } else if (mounted.current) {
+              setError(`Error reading file: ${result.error || 'Unknown error'}`);
               setBase64Content('');
               setFileContent('');
             }
           } catch (error) {
-            setError(`Error reading file: ${error.message}`);
-            setBase64Content('');
-            setFileContent('');
+            if (mounted.current) {
+              setError(`Error reading file: ${error.message}`);
+              setBase64Content('');
+              setFileContent('');
+            }
           }
         } else {
           const result = await window.electron.fileManager.readFile(file.path);
-          if (result.success) {
+          if (result.success && mounted.current) {
             setFileContent(result.content);
             setBase64Content('');
             setError(null);
-          } else {
-            setError(`Error reading file: ${result.error}`);
+          } else if (mounted.current) {
+            setError(`Error reading file: ${result.error || 'Unknown error'}`);
             setFileContent('');
             setBase64Content('');
           }
         }
       } catch (error) {
-        setError(`Error reading file: ${error.message}`);
-        setFileContent('');
-        setBase64Content('');
+        if (mounted.current) {
+          setError(`Error reading file: ${error.message}`);
+          setFileContent('');
+          setBase64Content('');
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted.current) {
+          setIsLoading(false);
+        }
       }
     }
   };
@@ -931,17 +981,21 @@ function FileExplorer() {
         options
       });
       
-      if (result.success) {
+      if (result.success && mounted.current) {
         setSearchResults(result.results);
         setShowSearchResults(true);
-      } else {
-        setError(`Error searching files: ${result.error}`);
+      } else if (mounted.current) {
+        setError(`Error searching files: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error during search:', error);
-      setError(`Error searching files: ${error.message}`);
+      if (mounted.current) {
+        setError(`Error searching files: ${error.message}`);
+      }
     } finally {
-      setIsSearching(false);
+      if (mounted.current) {
+        setIsSearching(false);
+      }
     }
   };
 
@@ -1087,21 +1141,25 @@ function FileExplorer() {
           destinationPath
         });
         
-        if (result.success) {
+        if (result.success && mounted.current) {
           setStatusMessage('File moved successfully');
           // Refresh the current directory
           loadDirectory(currentPath);
-        } else {
-          setStatusMessage(`Error moving file: ${result.error}`);
-          setError(`Error moving file: ${result.error}`);
+        } else if (mounted.current) {
+          setStatusMessage(`Error moving file: ${result.error || 'Unknown error'}`);
+          setError(`Error moving file: ${result.error || 'Unknown error'}`);
         }
       } catch (error) {
-        setStatusMessage(`Error moving file: ${error.message}`);
-        setError(`Error moving file: ${error.message}`);
+        if (mounted.current) {
+          setStatusMessage(`Error moving file: ${error.message}`);
+          setError(`Error moving file: ${error.message}`);
+        }
       } finally {
-        setTimeout(() => {
-          setShowStatusMessage(false);
-        }, 3000);
+        if (mounted.current) {
+          setTimeout(() => {
+            setShowStatusMessage(false);
+          }, 3000);
+        }
       }
     }
     
@@ -1152,20 +1210,24 @@ function FileExplorer() {
           }
         }
         
-        if (successCount > 0) {
+        if (successCount > 0 && mounted.current) {
           setStatusMessage(`${successCount} file(s) copied successfully`);
           // Refresh the current directory
           loadDirectory(currentPath);
-        } else {
+        } else if (mounted.current) {
           setStatusMessage('No files were copied');
         }
       } catch (error) {
-        setStatusMessage(`Error copying files: ${error.message}`);
-        setError(`Error copying files: ${error.message}`);
+        if (mounted.current) {
+          setStatusMessage(`Error copying files: ${error.message}`);
+          setError(`Error copying files: ${error.message}`);
+        }
       } finally {
-        setTimeout(() => {
-          setShowStatusMessage(false);
-        }, 3000);
+        if (mounted.current) {
+          setTimeout(() => {
+            setShowStatusMessage(false);
+          }, 3000);
+        }
       }
     }
   };
@@ -1193,6 +1255,9 @@ function FileExplorer() {
           <>
             <Button onClick={navigateUp}>
               <FaArrowUp /> Up
+            </Button>
+            <Button onClick={() => setCurrentPath(localStorage.getItem('homeDirectory') || '/')}>
+              <FaHome /> Home
             </Button>
             <SearchButton 
               onClick={toggleAdvancedSearch}
