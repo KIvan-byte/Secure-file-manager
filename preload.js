@@ -1,5 +1,33 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Use localStorage for demo persistence
+function getStoredMasterPassword() {
+  try {
+    return localStorage.getItem('secureNotesMasterPassword');
+  } catch {
+    return null;
+  }
+}
+function setStoredMasterPassword(pw) {
+  try {
+    localStorage.setItem('secureNotesMasterPassword', pw);
+  } catch {}
+}
+function getStoredEntries() {
+  try {
+    const raw = localStorage.getItem('secureNotesEntries');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+function setStoredEntries(entries) {
+  try {
+    localStorage.setItem('secureNotesEntries', JSON.stringify(entries));
+  } catch {}
+}
+let secureNotesEntries = getStoredEntries();
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld(
@@ -42,10 +70,64 @@ contextBridge.exposeInMainWorld(
       // Secure Notes functions
       secureNotes: {
         validateMasterPassword: (password) => ipcRenderer.invoke('secure-notes:validate-master-password', password),
-        setupVault: (password) => ipcRenderer.invoke('secure-notes:setup-vault', password),
+        setupVault: async (password) => {
+          setStoredMasterPassword(password);
+          return { success: true };
+        },
         getEntries: (password) => ipcRenderer.invoke('secure-notes:get-entries', password),
         saveEntry: (params) => ipcRenderer.invoke('secure-notes:save-entry', params),
         deleteEntry: (params) => ipcRenderer.invoke('secure-notes:delete-entry', params),
+      }
+    },
+    auth: {
+      validateMasterPassword: async (password) => {
+        const stored = getStoredMasterPassword();
+        if (!stored) {
+          return { success: false, newUser: true };
+        }
+        if (password === stored) {
+          return { success: true };
+        }
+        return { success: false, error: 'Invalid password' };
+      }
+    },
+    secureNotes: {
+      setupVault: async (password) => {
+        setStoredMasterPassword(password);
+        return { success: true };
+      },
+      getEntries: async (password) => {
+        const stored = getStoredMasterPassword();
+        if (!stored || password !== stored) {
+          return { success: false, error: 'Invalid master password' };
+        }
+        secureNotesEntries = getStoredEntries();
+        return { success: true, entries: secureNotesEntries };
+      },
+      saveEntry: async (entry, password) => {
+        const stored = getStoredMasterPassword();
+        if (!stored || password !== stored) {
+          return { success: false, error: 'Invalid master password' };
+        }
+        secureNotesEntries = getStoredEntries();
+        const idx = secureNotesEntries.findIndex(e => e.id === entry.id);
+        if (idx !== -1) {
+          secureNotesEntries[idx] = entry;
+        } else {
+          secureNotesEntries.push(entry);
+        }
+        setStoredEntries(secureNotesEntries);
+        return { success: true };
+      },
+      deleteEntry: async (id, password) => {
+        const stored = getStoredMasterPassword();
+        if (!stored || password !== stored) {
+          return { success: false, error: 'Invalid master password' };
+        }
+        secureNotesEntries = getStoredEntries();
+        secureNotesEntries = secureNotesEntries.filter(e => e.id !== id);
+        setStoredEntries(secureNotesEntries);
+        return { success: true };
       }
     }
   }

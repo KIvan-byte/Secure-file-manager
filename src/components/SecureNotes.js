@@ -807,6 +807,12 @@ function SecureNotes() {
   const [showMasterPassword, setShowMasterPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingPassword, setIsCreatingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState('');
+  const [strengthPercent, setStrengthPercent] = useState(0);
   
   // Data state
   const [entries, setEntries] = useState([]);
@@ -822,8 +828,6 @@ function SecureNotes() {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(null);
   const [revealedFields, setRevealedFields] = useState({});
-  const [passwordStrength, setPasswordStrength] = useState('');
-  const [strengthPercent, setStrengthPercent] = useState(0);
   const [sortOrder, setSortOrder] = useState('newest');
   
   // Track initial load
@@ -892,6 +896,18 @@ function SecureNotes() {
       calculatePasswordStrength(masterPassword);
     }
   }, [masterPassword, initialLoad]);
+  
+  // При монтировании сразу проверяем наличие мастер-пароля
+  useEffect(() => {
+    (async () => {
+      if (window.electron && window.electron.auth && typeof window.electron.auth.validateMasterPassword === 'function') {
+        const result = await window.electron.auth.validateMasterPassword('');
+        if (result && result.newUser) {
+          setIsCreatingPassword(true);
+        }
+      }
+    })();
+  }, []);
   
   // Calculate password strength
   const calculatePasswordStrength = (password) => {
@@ -972,33 +988,61 @@ function SecureNotes() {
       setIsLoading(true);
       setAuthError('');
       
-      const result = await window.electron.secureNotes.validateMasterPassword(masterPassword);
+      if (!window.electron || !window.electron.auth || typeof window.electron.auth.validateMasterPassword !== 'function') {
+        setIsCreatingPassword(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      const result = await window.electron.auth.validateMasterPassword(masterPassword);
       
       if (result.success) {
         setIsLocked(false);
       } else if (result.newUser) {
-        // This is a new user setup
-        if (passwordStrength === 'weak') {
-          setAuthError('Please use a stronger password for better security');
-          return;
-        }
-        
-        const setupResult = await window.electron.secureNotes.setupVault(masterPassword);
-        
-        if (setupResult.success) {
-          setIsLocked(false);
-          setMessage({
-            type: 'success',
-            text: 'Secure notes vault created successfully!'
-          });
-        } else {
-          setAuthError(`Failed to setup vault: ${setupResult.error}`);
-        }
+        setIsCreatingPassword(true);
       } else {
         setAuthError('Incorrect password');
       }
     } catch (error) {
       setAuthError(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreatePassword = async (e) => {
+    e.preventDefault();
+    setCreateError('');
+    if (!newPassword || !confirmPassword) {
+      setCreateError('Please fill in both fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setCreateError('Passwords do not match');
+      return;
+    }
+    calculatePasswordStrength(newPassword);
+    if (passwordStrength === 'weak') {
+      setCreateError('Password is too weak');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      if (!window.electron || !window.electron.secureNotes || typeof window.electron.secureNotes.setupVault !== 'function') {
+        setCreateError('Secure API is not available.');
+        setIsLoading(false);
+        return;
+      }
+      const result = await window.electron.secureNotes.setupVault(newPassword);
+      if (result.success) {
+        setIsCreatingPassword(false);
+        setMasterPassword(newPassword);
+        setIsLocked(false);
+      } else {
+        setCreateError(result.error || 'Failed to create vault');
+      }
+    } catch (err) {
+      setCreateError('Error: ' + (err.message || err.toString()));
     } finally {
       setIsLoading(false);
     }
@@ -1208,6 +1252,69 @@ function SecureNotes() {
   
   // Render the locked screen
   if (isLocked) {
+    if (isCreatingPassword) {
+      return (
+        <Container>
+          <Header>
+            <Title>
+              <FaLock /> Secure Notes & Passwords
+            </Title>
+          </Header>
+          <LockScreen>
+            <LockIcon>
+              <FaLock />
+            </LockIcon>
+            <LockTitle>Create Master Password</LockTitle>
+            <LockSubtitle>
+              Set a strong password to protect your secure notes. Remember it — you won’t be able to recover it!
+            </LockSubtitle>
+            <form onSubmit={handleCreatePassword} style={{ width: '100%' }}>
+              <PasswordInput>
+                <Input
+                  type={showMasterPassword ? 'text' : 'password'}
+                  placeholder="Enter new master password"
+                  value={newPassword}
+                  onChange={e => { setNewPassword(e.target.value); calculatePasswordStrength(e.target.value); }}
+                />
+                <PasswordEye onClick={() => setShowMasterPassword(!showMasterPassword)}>
+                  {showMasterPassword ? <FaEyeSlash /> : <FaEye />}
+                </PasswordEye>
+              </PasswordInput>
+              <PasswordInput>
+                <Input
+                  type={showMasterPassword ? 'text' : 'password'}
+                  placeholder="Confirm master password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                />
+              </PasswordInput>
+              {newPassword && (
+                <PasswordStrengthContainer>
+                  <PasswordStrengthBar>
+                    <PasswordStrengthIndicator $percent={strengthPercent} $strength={passwordStrength} />
+                  </PasswordStrengthBar>
+                  <PasswordStrengthText>
+                    <PasswordStrengthLabel $strength={passwordStrength}>
+                      {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                    </PasswordStrengthLabel>
+                    <span>{strengthPercent.toFixed(0)}%</span>
+                  </PasswordStrengthText>
+                  {passwordStrength === 'weak' && (
+                    <PasswordRequirements>
+                      For a strong password, use at least 12 characters with uppercase, lowercase, numbers, and special characters.
+                    </PasswordRequirements>
+                  )}
+                </PasswordStrengthContainer>
+              )}
+              {createError && <ErrorText>{createError}</ErrorText>}
+              <ActionButton $primary type="submit" style={{ width: '100%' }} disabled={isLoading}>
+                {isLoading ? 'Creating...' : 'Create Password'}
+              </ActionButton>
+            </form>
+          </LockScreen>
+        </Container>
+      );
+    }
     return (
       <Container>
         <Header>
