@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { styled, keyframes } from 'styled-components';
-import { FaLock, FaUnlock, FaExclamationTriangle, FaMoon, FaShieldAlt, FaFingerprint, FaQuestion, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaLock, FaUnlock, FaExclamationTriangle, FaMoon, FaShieldAlt, FaQuestion, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -190,22 +190,6 @@ const UnlockButton = styled.button`
   }
 `;
 
-const BiometricButton = styled(UnlockButton)`
-  flex: 0 0 60px;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
-  
-  &:hover {
-    background: linear-gradient(135deg, #219955 0%, #25a25a 100%);
-    box-shadow: 0 7px 15px rgba(46, 204, 113, 0.4);
-  }
-  
-  &:disabled {
-    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
-    box-shadow: 0 4px 10px rgba(149, 165, 166, 0.3);
-  }
-`;
-
 const ForgotPasswordLink = styled.button`
   background: none;
   border: none;
@@ -322,26 +306,12 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [attempts, setAttempts] = useState(5);
   const [showPassword, setShowPassword] = useState(false);
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
   
   useEffect(() => {
     // Update the time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
-    // Check if biometric auth is available
-    // This is a placeholder. In a real app, you'd check actual device capabilities
-    const checkBiometricAvailability = () => {
-      // Simulate checking biometric capability
-      setTimeout(() => {
-        // Randomly determine if biometric is available for demo purposes
-        const available = Math.random() > 0.5;
-        setBiometricAvailable(available);
-      }, 500);
-    };
-    
-    checkBiometricAvailability();
     
     return () => clearInterval(timer);
   }, []);
@@ -373,23 +343,6 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
         setIsSubmitting(false);
       }
     }, 800);
-  };
-  
-  const handleBiometricAuth = () => {
-    setIsSubmitting(true);
-    setError('');
-    
-    // Simulate biometric authentication process
-    setTimeout(() => {
-      const success = Math.random() > 0.3; // 70% chance of success for demo
-      
-      if (success) {
-        onUnlock();
-      } else {
-        setError('Biometric authentication failed. Please try again or use your password.');
-        setIsSubmitting(false);
-      }
-    }, 1500);
   };
   
   const handleKeyDown = (e) => {
@@ -434,7 +387,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
             placeholder="Enter password"
             onKeyDown={handleKeyDown}
             autoFocus
-            error={!!error}
+            error={!!error ? true : undefined}
             disabled={isSubmitting || attempts <= 0}
           />
           <PasswordToggle 
@@ -462,7 +415,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
             onClick={handleUnlock}
             disabled={isSubmitting || !inputPassword || attempts <= 0}
           >
-            {isSubmitting && !biometricAvailable ? (
+            {isSubmitting ? (
               <>
                 <LoadingIndicator /> Unlocking...
               </>
@@ -472,16 +425,6 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
               </>
             )}
           </UnlockButton>
-          
-          {biometricAvailable && (
-            <BiometricButton
-              onClick={handleBiometricAuth}
-              disabled={isSubmitting || attempts <= 0}
-              aria-label="Use fingerprint to unlock"
-            >
-              {isSubmitting ? <LoadingIndicator /> : <FaFingerprint />}
-            </BiometricButton>
-          )}
         </ButtonGroup>
         
         <ForgotPasswordLink onClick={handleForgotPassword}>
