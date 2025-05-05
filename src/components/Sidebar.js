@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { styled } from 'styled-components';
 import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar, FaSignOutAlt, FaCog, FaStickyNote } from 'react-icons/fa';
@@ -7,13 +7,14 @@ const SidebarContainer = styled.div`
   background-color: #2c3e50;
   color: white;
   width: ${props => props.$isOpen ? '240px' : '70px'};
-  transition: width 0.3s ease;
+  transition: all 0.3s ease;
   position: relative;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  z-index: 1000;
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   
   @media (max-width: 768px) {
     position: fixed;
@@ -21,6 +22,8 @@ const SidebarContainer = styled.div`
     height: 100vh;
     top: 0;
     left: 0;
+    transform: translateX(${props => props.$isOpen ? '0' : '-100%'});
+    opacity: 1;
   }
 `;
 
@@ -80,20 +83,22 @@ const Navigation = styled.nav`
 `;
 
 const ToggleButton = styled.button`
-  position: absolute;
+  position: fixed;
   top: 10px;
-  right: ${props => props.$isOpen ? '10px' : '-40px'};
+  left: ${props => props.$isOpen ? '250px' : '10px'};
   background-color: #34495e;
   color: white;
   border: none;
-  border-radius: ${props => props.$isOpen ? '4px' : '0 4px 4px 0'};
-  width: 30px;
-  height: 30px;
+  border-radius: 4px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 100;
+  z-index: 1001;
+  transition: left 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   
   @media (min-width: 769px) {
     display: none;
@@ -116,9 +121,10 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 90;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 999;
   display: ${props => props.$isOpen ? 'block' : 'none'};
+  transition: opacity 0.3s ease;
   
   @media (min-width: 769px) {
     display: none;
@@ -145,14 +151,32 @@ const LockButton = styled.button`
 function Sidebar({ selectedIndex, onSelect, onLock }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(window.innerWidth > 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      
+      // Auto-close sidebar on mobile or keep it open on desktop
+      if (mobile && isOpen) {
+        setIsOpen(false);
+      } else if (!mobile && !isOpen) {
+        setIsOpen(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
   
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
   
   const closeSidebar = () => {
-    if (window.innerWidth <= 768) {
+    if (isMobile) {
       setIsOpen(false);
     }
   };
@@ -169,6 +193,12 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
 
   return (
     <>
+      <Overlay $isOpen={isOpen && isMobile} onClick={() => setIsOpen(false)} />
+      
+      <ToggleButton onClick={toggleSidebar} $isOpen={isOpen}>
+        {isOpen ? <FaTimes /> : <FaBars />}
+      </ToggleButton>
+      
       <SidebarContainer $isOpen={isOpen}>
         <AppTitle $collapsed={collapsed}>
           <AppTitleText $collapsed={collapsed}>Secure File Manager</AppTitleText>
@@ -248,13 +278,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
         <AppInfo $collapsed={collapsed}>
           v1.0.0 | Secure File Manager
         </AppInfo>
-        
-        <ToggleButton onClick={toggleSidebar} $isOpen={isOpen}>
-          {isOpen ? <FaTimes /> : <FaBars />}
-        </ToggleButton>
       </SidebarContainer>
-      
-      <Overlay $isOpen={isOpen} onClick={() => setIsOpen(false)} />
     </>
   );
 }
