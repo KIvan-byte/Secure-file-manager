@@ -268,9 +268,42 @@ const RadioOption = styled.label`
   }
 `;
 
+const CustomTimeInput = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
+const NumberInput = styled.input`
+  width: 80px;
+  text-align: center;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  
+  &:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+  
+  /* Hide spinner buttons */
+  &::-webkit-inner-spin-button, 
+  &::-webkit-outer-spin-button { 
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  &[type=number] {
+    -moz-appearance: textfield;
+  }
+`;
+
 function Settings() {
   const [autoLockEnabled, setAutoLockEnabled] = useState(true);
   const [lockTimeout, setLockTimeout] = useState(5); // minutes
+  const [customTimeout, setCustomTimeout] = useState('5');
   const [lockPassword, setLockPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState(null);
@@ -304,7 +337,16 @@ function Settings() {
       if (storedSettings) {
         const parsedSettings = JSON.parse(storedSettings);
         setAutoLockEnabled(parsedSettings.autoLock ?? true);
-        setLockTimeout(parsedSettings.timeout ?? 5);
+        
+        // Check if timeout is a standard option or custom
+        const timeout = parsedSettings.timeout ?? 5;
+        if ([1, 5, 10, 15, 30].includes(timeout)) {
+          setLockTimeout(timeout);
+        } else {
+          setLockTimeout('custom');
+          setCustomTimeout(timeout.toString());
+        }
+        
         setLockPassword(parsedSettings.password ?? '');
         setConfirmPassword(parsedSettings.password ?? '');
       }
@@ -339,11 +381,23 @@ function Settings() {
         return;
       }
       
+      // Validate custom timeout
+      if (lockTimeout === 'custom') {
+        const customTimeoutValue = parseInt(customTimeout, 10);
+        if (isNaN(customTimeoutValue) || customTimeoutValue <= 0) {
+          setMessage({
+            type: 'error',
+            text: 'Please enter a valid timeout value (greater than 0)'
+          });
+          return;
+        }
+      }
+      
       setIsLoading(true);
       
       const securitySettings = {
         autoLock: autoLockEnabled,
-        timeout: lockTimeout,
+        timeout: lockTimeout === 'custom' ? parseInt(customTimeout, 10) : lockTimeout,
         password: lockPassword
       };
       
@@ -488,7 +542,29 @@ function Settings() {
                     />
                     30 minutes
                   </RadioOption>
+                  <RadioOption $checked={lockTimeout === 'custom'}>
+                    <input 
+                      type="radio" 
+                      name="timeout" 
+                      value="custom"
+                      checked={lockTimeout === 'custom'}
+                      onChange={() => setLockTimeout('custom')}
+                    />
+                    Custom
+                  </RadioOption>
                 </TimeoutRadio>
+                {lockTimeout === 'custom' && (
+                  <CustomTimeInput>
+                    <NumberInput 
+                      type="number" 
+                      value={customTimeout}
+                      onChange={(e) => setCustomTimeout(e.target.value)}
+                      min="1"
+                      placeholder="Minutes"
+                    />
+                    <span>minutes</span>
+                  </CustomTimeInput>
+                )}
               </FormGroup>
               
               <FormGroup>
