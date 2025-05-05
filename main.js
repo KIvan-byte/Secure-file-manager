@@ -14,6 +14,28 @@ const EncryptionUtils = require('./utils/encryption-utils');
 const CompressionUtils = require('./utils/compression-utils');
 const util = require('util');
 const { exec } = require('child_process');
+const net = require('net');
+
+// Override the GPU requirements to fix GL errors
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('use-gl', 'desktop');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-vsync');
+app.commandLine.appendSwitch('ignore-gpu-blacklist');
+app.commandLine.appendSwitch('force-high-performance-gpu', 'false');
+
+// Remove any conflicting GL settings
+app.commandLine.removeSwitch('use-angle');
+app.commandLine.removeSwitch('use-metal');
+
+// Enable hardware acceleration if possible, but provide fallbacks - update these settings
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('use-angle', 'gl');
+} else if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('use-gl', 'egl');
+} else if (process.platform === 'darwin') {
+  app.commandLine.appendSwitch('use-metal');
+}
 
 // We'll create a separate module loader for lowdb using dynamic imports
 // since lowdb v5 is an ES Module
@@ -441,6 +463,184 @@ function startFileServer() {
   return serverAddress;
 }
 
+// Function to check if a port is in use
+function isPortInUse(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+      .once('error', () => {
+        resolve(true);
+      })
+      .once('listening', () => {
+        server.close();
+        resolve(false);
+      })
+      .listen(port);
+  });
+}
+
+// Function to wait for the development server to be ready
+const waitForDevServer = (port, retries = 30, interval = 1000) => {
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+
+    const checkServer = () => {
+      const req = http.get(`http://localhost:${port}`, (res) => {
+        if (res.statusCode === 200) {
+          console.log(`Dev server is ready on port ${port}`);
+          resolve(true);
+        } else {
+          attemptConnection();
+        }
+      });
+
+      req.on('error', () => {
+        attemptConnection();
+      });
+    };
+
+    const attemptConnection = () => {
+      attempts++;
+      if (attempts >= retries) {
+        console.error(`Dev server not ready after ${retries} attempts`);
+        reject(new Error("Dev server not ready"));
+        return;
+      }
+      console.log(`Waiting for dev server on port 3000... (${attempts}/${retries})`);
+      setTimeout(checkServer, interval);
+    };
+
+    checkServer();
+  });
+};
+
+let mainWindow;
+
+async function createWindow() {
+  // Create the browser window.
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      webSecurity: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    show: false,
+    // Set backgroundColor to prevent white flash
+    backgroundColor: '#f5f6fa'
+  });
+
+  console.log('Preload path:', path.join(__dirname, 'preload.js'));
+  console.log('Is packaged:', app.isPackaged);
+  console.log('Is dev:', isDev);
+
+  try {
+    // In dev mode, we need to wait for the React dev server
+    if (isDev) {
+      // Check if port 3000 is already in use
+      const isPortBusy = await isPortInUse(3000);
+      if (!isPortBusy) {
+        console.log('Starting React development server...');
+        // If port is not in use, start the React dev server
+        const reactProcess = exec('npm run start-react', { 
+          cwd: __dirname 
+        });
+        
+        reactProcess.stdout.on('data', (data) => {
+          console.log(`React dev server: ${data}`);
+        });
+        
+        reactProcess.stderr.on('data', (data) => {
+          console.error(`React dev server error: ${data}`);
+        });
+        
+        // Wait for the dev server to be ready
+        await waitForDevServer(3000);
+      } else {
+        console.log('React development server is already running');
+      }
+    }
+
+    const startUrl = isDev
+      ? 'http://localhost:3000'
+      : `file://${path.join(__dirname, 'build', 'index.html')}`;
+    
+    console.log('Loading URL:', startUrl);
+    
+    // Load the URL
+    mainWindow.loadURL(startUrl).catch(err => {
+      console.error('Failed to load URL:', err);
+      // Show error in window
+      mainWindow.loadURL(`data:text/html;charset=utf-8,
+        <html>
+          <head><title>Error</title></head>
+          <body>
+            <h1>Error Loading App</h1>
+            <p>${err.message}</p>
+            <p>Please check that the React development server is running.</p>
+          </body>
+        </html>
+      `);
+    });
+
+    // Show window when ready
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.show();
+      mainWindow.focus();
+
+      // Open DevTools in dev mode
+      if (isDev) {
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+      }
+    });
+
+    // Set up proper Content-Security-Policy
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': ["default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data:; media-src 'self' data:; object-src 'self' data:;"]
+        }
+      });
+    });
+
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
+
+    mainWindow.webContents.on('did-finish-load', () => {
+      console.log('Page finished loading');
+    });
+    
+    // Log errors
+    mainWindow.webContents.on('console-message', (event, level, message) => {
+      console.log('Renderer Console:', message);
+    });
+
+    // Initialize database and other services
+    console.log('App is ready, initializing database...');
+    
+    try {
+      const dbInitialized = await initDb();
+      console.log('Database initialized successfully');
+      
+      // Set up file server for sharing
+      const fileServerURL = startFileServer();
+      console.log(`File sharing server started at: ${fileServerURL}`);
+      
+    } catch (error) {
+      console.error('Error initializing services:', error);
+    }
+  } catch (error) {
+    console.error('Error in createWindow:', error);
+  }
+}
+
 // Initialize the database
 async function initDb() {
   try {
@@ -467,110 +667,20 @@ async function initDb() {
   }
 }
 
-let mainWindow;
-
-// Function to check if React development server is running
-const waitForReactDevServer = (url, callback, timeout = 30000, interval = 1000) => {
-  const startTime = Date.now();
-  const checkServer = () => {
-    http.get(url, (res) => {
-      if (res.statusCode === 200) {
-        callback(true);
-      } else {
-        checkWithinTimeout();
-      }
-    }).on('error', () => {
-      checkWithinTimeout();
-    });
-  };
-
-  const checkWithinTimeout = () => {
-    if (Date.now() - startTime > timeout) {
-      console.error('Timeout waiting for React development server');
-      callback(false);
-      return;
-    }
-    setTimeout(checkServer, interval);
-  };
-
-  checkServer();
-};
-
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-      webSecurity: true, // Enable web security even in development
-      allowRunningInsecureContent: false // Disable running insecure content
-    }
-  });
-
-  // Log information for debugging
-  console.log('Preload path:', path.join(__dirname, 'preload.js'));
-  console.log('Is packaged:', app.isPackaged);
-  console.log('Is dev:', isDev);
-
-  const startUrl = isDev 
-    ? 'http://localhost:3000' 
-    : `file://${path.join(__dirname, '../build/index.html')}`;
-
-  console.log('Loading URL:', startUrl);
-  
-  mainWindow.loadURL(startUrl);
-
-  // Open DevTools in development mode
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
+async function startApp() {
+  try {
+    await app.whenReady();
+    await createWindow();
     
-    // Add event listener to detect loading errors
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-      console.error('Failed to load:', errorCode, errorDescription);
+    app.on('activate', function () {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
+  } catch (error) {
+    console.error('Error starting app:', error);
   }
-
-  // Set proper Content-Security-Policy
-  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data:; media-src 'self' data:; object-src 'self' data:;"]
-      }
-    });
-  });
-
-  // Log when page is finished loading
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('Page finished loading');
-  });
-  
-  // Log errors
-  mainWindow.webContents.on('console-message', (event, level, message) => {
-    console.log('Renderer Console:', message);
-  });
 }
 
-app.whenReady().then(async () => {
-  console.log('App is ready, initializing database...');
-  const dbInitialized = await initDb();
-  if (dbInitialized) {
-    console.log('Database initialized successfully');
-    // Start the file sharing server
-    const serverUrl = startFileServer();
-    console.log(`File sharing server started at: ${serverUrl}`);
-    createWindow();
-  } else {
-    console.error('Application failed to start due to database initialization error.');
-    app.quit();
-  }
-  
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+startApp();
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
@@ -1720,4 +1830,10 @@ ipcMain.handle('secure-notes:delete-entry', async (event, { entryId, password })
       error: error.message
     };
   }
+});
+
+// Make sure to stop the file server when the app quits
+app.on('will-quit', () => {
+  // Clean up any resources
+  console.log('App is quitting, cleaning up resources...');
 });

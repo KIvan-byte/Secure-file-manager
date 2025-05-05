@@ -122,17 +122,22 @@ function App() {
         />
       ) : (
         <>
-          <Sidebar selectedIndex={selectedPage} onSelect={setSelectedPage} onLock={lockApplication} />
+          <Sidebar 
+            selectedIndex={selectedPage} 
+            onSelect={setSelectedPage} 
+            onLock={lockApplication} 
+          />
           <MainContent>
             <Routes>
               <Route path="/" element={<FileExplorer />} />
+              <Route path="/notes" element={<SecureNotes />} />
               <Route path="/share" element={<FileSharing />} />
-              <Route path="/logs" element={<AccessLogs />} />
               <Route path="/encrypted" element={<EncryptedFiles />} />
               <Route path="/secure-notes" element={<SecureNotes />} />
               <Route path="/analytics" element={<Analytics />} />
-              <Route path="/access/:token" element={<AccessSharedFile />} />
+              <Route path="/logs" element={<AccessLogs />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/access/:token" element={<AccessSharedFile />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </MainContent>
