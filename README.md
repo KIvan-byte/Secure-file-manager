@@ -1,48 +1,52 @@
-# SecureFileManager
+# 🔐 SecureFileManager
 
-A comprehensive file management application with advanced security features built with Electron and React.
+> A comprehensive file management application with advanced security features built with Electron and React.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Electron](https://img.shields.io/badge/Electron-24.0.0-blue.svg)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 
-### File Management
-- Browse and navigate through your file system
-- View detailed file information (size, date modified, etc.)
-- Preview files within the application (images, text, PDFs, etc.)
-- Drag and drop file operations
-- Search for files by name and content
+## ✨ Features
 
-### Security
-- End-to-end file encryption using AES-256-CBC
-- Password protection for sensitive files
-- No password storage - only you have access to your encrypted data
-- Secure file sharing with optional decryption
-- One-time access links for shared files
+### 📁 File Management
+- 📂 Browse and navigate through your file system
+- 📊 View detailed file information (size, date modified, etc.)
+- 👁️ Preview files within the application (images, text, PDFs, etc.)
+- 🖱️ Drag and drop file operations
+- 🔍 Search for files by name and content
 
-### Compression
-- Compress files and folders into ZIP or TAR.GZ archives
-- Extract compressed archives
-- Password protection for archives
+### 🔒 Security
+- 🛡️ End-to-end file encryption using AES-256-CBC
+- 🔑 Password protection for sensitive files
+- 🕵️ No password storage - only you have access to your encrypted data
+- 🔗 Secure file sharing with optional decryption
+- ⏱️ One-time access links for shared files
 
-### Analytics
-- Track file usage and activity
-- View storage usage by file type
-- Monitor security activity (encryptions, shares)
-- Visualize usage patterns with interactive charts
-- Activity logs for tracking file operations
+### 📦 Compression
+- 🗜️ Compress files and folders into ZIP or TAR.GZ archives
+- 📤 Extract compressed archives
+- 🔐 Password protection for archives
 
-### Additional Features
-- Responsive design for different screen sizes
-- Dark mode support
-- Cross-platform compatibility (Windows, macOS, Linux)
-- Secure local storage of application settings
+### 📊 Analytics
+- 📈 Track file usage and activity
+- 💾 View storage usage by file type
+- 🔍 Monitor security activity (encryptions, shares)
+- 📊 Visualize usage patterns with interactive charts
+- 📝 Activity logs for tracking file operations
 
-## Getting Started
+### 🌟 Additional Features
+- 📱 Responsive design for different screen sizes
+- 🌙 Dark mode support
+- 💻 Cross-platform compatibility (Windows, macOS, Linux)
+- 🔐 Secure local storage of application settings
 
-### Prerequisites
+## 🚀 Getting Started
+
+### 📋 Prerequisites
 - Node.js (v14.x or higher)
 - npm (v7.x or higher)
 
-### Installation
+### ⚙️ Installation
 
 1. Clone the repository
 ```bash
@@ -70,9 +74,9 @@ npm run build
 npm run package
 ```
 
-## Usage
+## 📖 Usage
 
-### File Explorer
+### 📂 File Explorer
 
 The main file explorer interface allows you to:
 - Browse directories by clicking on folder icons
@@ -80,7 +84,7 @@ The main file explorer interface allows you to:
 - Use the search bar to find files quickly
 - Right-click on files for additional options
 
-### File Encryption
+### 🔒 File Encryption
 
 1. Navigate to the file you want to encrypt
 2. Click the lock icon in the file actions
@@ -93,7 +97,7 @@ To decrypt:
 3. Enter the original password
 4. Click "Decrypt File"
 
-### File Compression
+### 📦 File Compression
 
 1. Select multiple files using the checkboxes
 2. Click "Compress" button in the toolbar
@@ -101,7 +105,7 @@ To decrypt:
 4. Specify output location
 5. Click "Compress Files"
 
-### File Sharing
+### 🔗 File Sharing
 
 1. Navigate to the file you want to share
 2. Click the share icon
@@ -109,7 +113,7 @@ To decrypt:
 4. Click "Generate Secure Share Link"
 5. Copy and share the one-time use link
 
-### Analytics Dashboard
+### 📊 Analytics Dashboard
 
 The analytics section provides:
 - Overview of file statistics
@@ -117,19 +121,19 @@ The analytics section provides:
 - Activity trends and patterns
 - Security metrics
 
-## Configuration
+## ⚙️ Configuration
 
 Application settings can be configured through the Settings interface:
 - Default directories
 - Security preferences
 - UI preferences
 
-## Security Considerations
+## 🛡️ Security Considerations
 
 - All encryption is performed locally; no keys are sent to any servers
 - Passwords are never stored, ensure you remember them for encrypted files
 - One-time use links expire after being accessed once
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details
