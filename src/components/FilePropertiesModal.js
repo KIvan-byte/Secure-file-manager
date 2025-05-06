@@ -172,9 +172,17 @@ const formatSize = (size) => {
 const formatDate = (dateString) => {
   if (!dateString) return 'Not available';
   
-  const date = new Date(dateString);
-  // Check if date is valid before formatting
-  return isNaN(date.getTime()) ? 'Not available' : date.toLocaleString();
+  try {
+    const date = new Date(dateString);
+    // A more thorough check for valid dates
+    if (isNaN(date.getTime()) || date.getFullYear() <= 1970) {
+      return 'Not available';
+    }
+    return date.toLocaleString();
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Not available';
+  }
 };
 
 const formatMode = (mode) => {
