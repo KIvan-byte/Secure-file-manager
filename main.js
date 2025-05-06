@@ -1832,6 +1832,79 @@ ipcMain.handle('secure-notes:delete-entry', async (event, { entryId, password })
   }
 });
 
+// Add the get-file-details handler
+ipcMain.handle('get-file-details', async (event, filePath) => {
+  try {
+    const stats = fs.promises.stat(filePath);
+    
+    const details = {
+      size: stats.size,
+      mode: stats.mode,
+      uid: stats.uid,
+      gid: stats.gid,
+      atime: stats.atime,
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      birthtime: stats.birthtime
+    };
+    
+    // Try to get owner and group names if on Unix-like systems
+    if (process.platform !== 'win32') {
+      try {
+        const { execSync } = require('child_process');
+        details.owner = execSync(`stat -c "%U" "${filePath}"`).toString().trim();
+        details.group = execSync(`stat -c "%G" "${filePath}"`).toString().trim();
+      } catch (error) {
+        console.error('Error getting file owner/group:', error);
+      }
+    }
+    
+    // Try to get MIME type
+    try {
+      const { execSync } = require('child_process');
+      if (process.platform === 'win32') {
+        // On Windows, use file extension to guess MIME type
+        const ext = path.extname(filePath).toLowerCase();
+        const mimeTypes = {
+          '.txt': 'text/plain',
+          '.html': 'text/html',
+          '.css': 'text/css',
+          '.js': 'text/javascript',
+          '.json': 'application/json',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.svg': 'image/svg+xml',
+          '.pdf': 'application/pdf',
+          '.mp4': 'video/mp4',
+          '.mp3': 'audio/mpeg',
+          '.zip': 'application/zip',
+          '.doc': 'application/msword',
+          '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        };
+        details.mime = mimeTypes[ext] || 'application/octet-stream';
+      } else {
+        // On Unix-like systems, use file command
+        details.mime = execSync(`file --mime-type -b "${filePath}"`).toString().trim();
+      }
+    } catch (error) {
+      console.error('Error getting MIME type:', error);
+    }
+    
+    return { 
+      success: true, 
+      details
+    };
+  } catch (error) {
+    console.error('Error getting file details:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+});
+
 // Make sure to stop the file server when the app quits
 app.on('will-quit', () => {
   // Clean up any resources

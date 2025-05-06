@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
 import FileEncryptionModal from './FileEncryptionModal';
 import FileCompressionModal from './FileCompressionModal';
+// Import the FilePropertiesModal component
+import FilePropertiesModal from './FilePropertiesModal';
 
 const Container = styled.div`
   display: flex;
@@ -20,10 +22,147 @@ const Header = styled.div`
   margin-bottom: 24px;
 `;
 
+// Add FilePropertiesModal component styles
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #eaeaea;
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ModalBody = styled.div`
+  padding: 20px;
+`;
+
+const ModalCloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #7f8c8d;
+  padding: 5px;
+  
+  &:hover {
+    color: #34495e;
+  }
+`;
+
+const PropertyRow = styled.div`
+  display: flex;
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const PropertyLabel = styled.div`
+  flex: 0 0 30%;
+  font-weight: 600;
+  color: #34495e;
+`;
+
+const PropertyValue = styled.div`
+  flex: 0 0 70%;
+  word-break: break-all;
+`;
+
 const Title = styled.h2`
   margin: 0;
   font-weight: 600;
   color: #2c3e50;
+`;
+
+// Add sorting components
+const SortDropdown = styled.div`
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+`;
+
+const SortButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #e9ecef;
+  }
+`;
+
+const SortIcon = styled.span`
+  display: flex;
+  align-items: center;
+  transform: ${props => props.$descending ? 'rotate(180deg)' : 'none'};
+  transition: transform 0.2s ease;
+`;
+
+const SortMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  display: ${props => props.$show ? 'block' : 'none'};
+`;
+
+const SortMenuItem = styled.div`
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
+  
+  ${props => props.$active && `
+    background-color: #ebf5fb;
+    color: #3498db;
+    font-weight: 500;
+  `}
 `;
 
 const ActionBar = styled.div`
@@ -564,6 +703,9 @@ function FileExplorer() {
   const [compressionMode, setCompressionMode] = useState('compress');
   const [selectedFiles, setSelectedFiles] = useState([]);
   
+  const [showPropertiesModal, setShowPropertiesModal] = useState(false);
+  const [propertiesFile, setPropertiesFile] = useState(null);
+  
   // Drag and Drop state
   const [draggedFile, setDraggedFile] = useState(null);
   const [dragOverFile, setDragOverFile] = useState(null);
@@ -573,6 +715,16 @@ function FileExplorer() {
   const [showStatusMessage, setShowStatusMessage] = useState(false);
   const fileListRef = useRef(null);
   const mounted = useRef(false);
+
+  // Add sorting state
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  
+  // Add keyboard shortcut handling
+  const fileExplorerRef = useRef(null);
+  const [clipboard, setClipboard] = useState(null);
+  const [clipboardOperation, setClipboardOperation] = useState(null); // 'copy' or 'cut'
 
   useEffect(() => {
     mounted.current = true;
@@ -617,6 +769,84 @@ function FileExplorer() {
       setFilteredFiles(files);
     }
   }, [searchTerm, files]);
+
+  // Sort files based on current sort settings
+  const sortFiles = useCallback((filesToSort) => {
+    if (!filesToSort || filesToSort.length === 0) return [];
+    
+    const sorted = [...filesToSort].sort((a, b) => {
+      // Always show directories first
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      
+      switch (sortBy) {
+        case 'name':
+          return sortDirection === 'asc' 
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name);
+        case 'size':
+          return sortDirection === 'asc' 
+            ? a.size - b.size
+            : b.size - a.size;
+        case 'date':
+          return sortDirection === 'asc' 
+            ? new Date(a.mtime) - new Date(b.mtime)
+            : new Date(b.mtime) - new Date(a.mtime);
+        case 'type':
+          // Compare file extensions
+          const extA = a.isDirectory ? '' : path.extname(a.name).toLowerCase() || '';
+          const extB = b.isDirectory ? '' : path.extname(b.name).toLowerCase() || '';
+          return sortDirection === 'asc' 
+            ? extA.localeCompare(extB) || a.name.localeCompare(b.name)
+            : extB.localeCompare(extA) || b.name.localeCompare(a.name);
+        default:
+          return 0;
+      }
+    });
+    
+    return sorted;
+  }, [sortBy, sortDirection]);
+  
+  // Apply sorting when files change
+  useEffect(() => {
+    setFilteredFiles(sortFiles(filteredFiles));
+  }, [sortBy, sortDirection, sortFiles]);
+  
+  // Update filtered files when search or sorting changes
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = files.filter(file => 
+        file.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredFiles(sortFiles(filtered));
+    } else {
+      setFilteredFiles(sortFiles(files));
+    }
+  }, [searchTerm, files, sortFiles]);
+  
+  // Toggle sort direction or change sort property
+  const handleSort = (property) => {
+    if (sortBy === property) {
+      // Toggle direction if same property
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Change property and reset to ascending
+      setSortBy(property);
+      setSortDirection('asc');
+    }
+    setShowSortMenu(false);
+  };
+  
+  // Get sort icon and label
+  const getSortLabel = () => {
+    switch (sortBy) {
+      case 'name': return 'Name';
+      case 'size': return 'Size';
+      case 'date': return 'Date Modified';
+      case 'type': return 'Type';
+      default: return 'Name';
+    }
+  };
 
   const browseDirectory = async () => {
     try {
@@ -1232,6 +1462,15 @@ function FileExplorer() {
     }
   };
 
+  const handleShowProperties = (file) => {
+    setPropertiesFile(file);
+    setShowPropertiesModal(true);
+  };
+
+  const closePropertiesModal = () => {
+    setShowPropertiesModal(false);
+  };
+
   return (
     <Container>
       <Header>
@@ -1466,6 +1705,17 @@ function FileExplorer() {
                       >
                         <FaShare />
                       </ActionButton>
+                      <ActionButton 
+                        $color="#34495e" 
+                        $hoverColor="#2c3e50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShowProperties(file);
+                        }}
+                        title="File Properties"
+                      >
+                        <FaInfoCircle />
+                      </ActionButton>
                     </FileActions>
                   )}
                   {dragOverFile && dragOverFile.path === file.path && <DragIndicator $visible={true} />}
@@ -1525,6 +1775,12 @@ function FileExplorer() {
         onClose={closeCompressionModal}
         files={compressionFiles}
         mode={compressionMode}
+      />
+
+      <FilePropertiesModal 
+        isOpen={showPropertiesModal}
+        onClose={closePropertiesModal}
+        file={propertiesFile}
       />
 
       <StatusBadge $visible={showStatusMessage}>

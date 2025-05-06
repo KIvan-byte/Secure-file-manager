@@ -77,7 +77,10 @@ contextBridge.exposeInMainWorld(
         getEntries: (password) => ipcRenderer.invoke('secure-notes:get-entries', password),
         saveEntry: (params) => ipcRenderer.invoke('secure-notes:save-entry', params),
         deleteEntry: (params) => ipcRenderer.invoke('secure-notes:delete-entry', params),
-      }
+      },
+
+      // Get detailed file properties (size, permissions, dates, etc.)
+      getFileDetails: (filePath) => ipcRenderer.invoke('get-file-details', filePath)
     },
     auth: {
       validateMasterPassword: async (password) => {
