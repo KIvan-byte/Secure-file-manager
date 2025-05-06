@@ -170,8 +170,11 @@ const formatSize = (size) => {
 };
 
 const formatDate = (dateString) => {
+  if (!dateString) return 'Not available';
+  
   const date = new Date(dateString);
-  return date.toLocaleString();
+  // Check if date is valid before formatting
+  return isNaN(date.getTime()) ? 'Not available' : date.toLocaleString();
 };
 
 const formatMode = (mode) => {

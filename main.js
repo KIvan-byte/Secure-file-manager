@@ -1832,20 +1832,21 @@ ipcMain.handle('secure-notes:delete-entry', async (event, { entryId, password })
   }
 });
 
-// Add the get-file-details handler
+// Fix the get-file-details handler to properly use await with async fs operations
 ipcMain.handle('get-file-details', async (event, filePath) => {
   try {
-    const stats = fs.promises.stat(filePath);
+    // Use await to ensure stats are properly retrieved before using them
+    const stats = await fs.promises.stat(filePath);
     
     const details = {
       size: stats.size,
       mode: stats.mode,
       uid: stats.uid,
       gid: stats.gid,
-      atime: stats.atime,
-      mtime: stats.mtime,
-      ctime: stats.ctime,
-      birthtime: stats.birthtime
+      atime: stats.atime.toISOString(), // Convert Date to ISO string for reliable serialization
+      mtime: stats.mtime.toISOString(),
+      ctime: stats.ctime.toISOString(),
+      birthtime: stats.birthtime.toISOString()
     };
     
     // Try to get owner and group names if on Unix-like systems
