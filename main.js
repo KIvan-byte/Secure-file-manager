@@ -130,15 +130,28 @@ function startFileServer() {
         return res.status(400).send('Missing token or encryption key');
       }
       
-      await db.read();
-      
-      const shareInfo = db.data.sharedLinks.find(link => 
-        link.id === token && !link.isUsed
-      );
-      
+      await db.read(); // Ensure fresh data
+      let shareInfo = db.data.sharedLinks.find(link => link.id === token);
+
       if (!shareInfo) {
-        return res.status(404).send('Link not found or already used');
+        return res.status(404).send('<html><body>Link not found.</body></html>');
       }
+
+      // Check if it's a one-time link (no expiresAt) and it's already used
+      if (!shareInfo.expiresAt && shareInfo.isUsed) {
+        return res.status(410).send('<html><body>Link already used.</body></html>'); // 410 Gone is appropriate
+      }
+
+      // Now, handle expiration IF expiresAt is set
+      if (shareInfo.expiresAt) {
+        if (new Date() > new Date(shareInfo.expiresAt)) {
+          // Optionally mark as isExpired = true or even remove from DB if desired
+          // For now, just prevent access
+          return res.status(410).send('<html><body>Link has expired.</body></html>');
+        }
+      }
+      // If we reach here, the link is valid (either one-time and not used, or timed and not expired)
+      // ... then proceed to check encryptionKey, serve file, etc.
       
       if (shareInfo.encryptionKey !== key) {
         return res.status(401).send('Invalid encryption key');
@@ -317,10 +330,14 @@ function startFileServer() {
             return res.redirect(`/share/${token}?key=${key}&error=Invalid password or corrupted file`);
           }
           
-          // Mark link as used only after successful decryption
-          const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
-          db.data.sharedLinks[linkIndex].isUsed = true;
-          await db.write();
+          // Mark link as used only after successful decryption if it's a one-time link
+          if (!shareInfo.expiresAt) { // This is a one-time link
+            const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
+            if (linkIndex !== -1) {
+                db.data.sharedLinks[linkIndex].isUsed = true;
+                await db.write();
+            }
+          }
           
           // Log access
           await logAccess('access_shared_file', filePath, { token, remote: true, decrypted: true });
@@ -375,9 +392,14 @@ function startFileServer() {
       
       // For non-decryptable files, continue with the original logic
       // Mark link as used (one-time access) only if the file exists and is about to be served
-      const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
-      db.data.sharedLinks[linkIndex].isUsed = true;
-      await db.write();
+      // and it's a one-time link
+      if (!shareInfo.expiresAt) { // This is a one-time link
+        const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
+        if (linkIndex !== -1) {
+            db.data.sharedLinks[linkIndex].isUsed = true;
+            await db.write();
+        }
+      }
       
       // Log access
       await logAccess('access_shared_file', filePath, { token, remote: true });
@@ -761,25 +783,30 @@ ipcMain.handle('read-file-binary', async (event, filePath) => {
 });
 
 // Share file with one-time link
-ipcMain.handle('share-file', async (event, filePath) => {
+ipcMain.handle('share-file', async (event, params) => {
   try {
     // Create a unique token for this share
     const token = uuidv4();
     const encryptionKey = crypto.randomBytes(32).toString('hex');
     
-    // Store share information
-    db.data.sharedLinks.push({
+    const linkData = {
       id: token,
-      filePath,
+      filePath: params.filePath,
       createdAt: new Date().toISOString(),
       encryptionKey,
       isUsed: false
-    });
+    };
+
+    if (params.daysValid && parseInt(params.daysValid, 10) > 0) {
+      const validityMs = parseInt(params.daysValid, 10) * 24 * 60 * 60 * 1000;
+      linkData.expiresAt = new Date(Date.now() + validityMs).toISOString();
+    }
     
-    await db.write();
+    db.data.sharedLinks.push(linkData);
+    await db.write(); // Make sure to write after update
     
     // Log the share
-    await logAccess('share_file', filePath, { token });
+    await logAccess('share_file', params.filePath, { token });
     
     // Return share link with network address
     const shareUrl = `${serverAddress}/share/${token}?key=${encryptionKey}`;
@@ -798,23 +825,32 @@ ipcMain.handle('share-file', async (event, filePath) => {
 ipcMain.handle('access-shared-file', async (event, { token, encryptionKey }) => {
   try {
     await db.read();
-    
-    const shareInfo = db.data.sharedLinks.find(link => 
-      link.id === token && !link.isUsed
-    );
-    
+    let shareInfo = db.data.sharedLinks.find(link => link.id === token); // token comes from input params
+
     if (!shareInfo) {
-      return { success: false, error: 'Link not found or already used' };
+      return { success: false, error: 'Link not found' };
+    }
+
+    if (!shareInfo.expiresAt && shareInfo.isUsed) {
+      return { success: false, error: 'Link already used' };
+    }
+
+    if (shareInfo.expiresAt && new Date() > new Date(shareInfo.expiresAt)) {
+      return { success: false, error: 'Link expired' };
     }
     
     if (shareInfo.encryptionKey !== encryptionKey) {
       return { success: false, error: 'Invalid encryption key' };
     }
     
-    // Mark link as used (one-time access)
-    const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
-    db.data.sharedLinks[linkIndex].isUsed = true;
-    await db.write();
+    // Mark link as used only if it's a one-time link
+    if (!shareInfo.expiresAt) {
+       const linkIndex = db.data.sharedLinks.findIndex(link => link.id === token);
+       if (linkIndex !== -1) {
+           db.data.sharedLinks[linkIndex].isUsed = true;
+           await db.write();
+       }
+    }
     
     // Get file content - use FileUtils for safer handling
     const filePath = shareInfo.filePath;

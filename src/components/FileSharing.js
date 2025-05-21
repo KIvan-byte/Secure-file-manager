@@ -371,6 +371,7 @@ function FileSharing() {
   const [currentDirectory, setCurrentDirectory] = useState('');
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [daysValid, setDaysValid] = useState('');
 
   useEffect(() => {
     if (location.state?.filePath) {
@@ -437,7 +438,10 @@ function FileSharing() {
     }
 
     try {
-      const result = await window.electron.fileManager.shareFile(filePath);
+      const result = await window.electron.fileManager.shareFile({
+        filePath,
+        daysValid: daysValid ? parseInt(daysValid, 10) : null
+      });
       if (result.success) {
         setShareLink(result.shareLink);
         showAlert('success', 'Share link generated successfully!');
@@ -605,6 +609,18 @@ function FileSharing() {
           </FormGroup>
 
           <FormGroup>
+            <Label htmlFor="daysValidInput">Link valid for (days):</Label>
+            <Input
+              id="daysValidInput"
+              type="number"
+              value={daysValid}
+              onChange={e => setDaysValid(e.target.value)}
+              placeholder="Enter number of days (optional, leave blank for one-time link)"
+              min="1"
+            />
+          </FormGroup>
+
+          <FormGroup>
             <Button $primary onClick={shareFile}>
               <FaShare /> Generate Secure Share Link
             </Button>
@@ -615,7 +631,7 @@ function FileSharing() {
               <ShareLinkContainer>
                 <ShareLinkHeader>
                   <ShareLinkTitle>
-                    <FaLink /> Share Link (One-time Use)
+                    <FaLink /> Share Link {daysValid && parseInt(daysValid, 10) > 0 ? `(Expires in ${daysValid} days)` : '(One-time Use)'}
                   </ShareLinkTitle>
                 </ShareLinkHeader>
                 <ShareLinkContent>
@@ -647,7 +663,11 @@ function FileSharing() {
               <InfoText>
                 <h4>Security Information</h4>
                 <ul>
-                  <li>This link can only be used <strong>once</strong>. After someone downloads the file, the link will expire.</li>
+                  {daysValid && parseInt(daysValid, 10) > 0 ? (
+                    <li>This link will expire after <strong>{daysValid} days</strong>. It can be accessed multiple times until this expiration date.</li>
+                  ) : (
+                    <li>This link can only be used <strong>once</strong>. After someone downloads the file, the link will expire.</li>
+                  )}
                   <li>Anyone with this link can download the file - share it only with trusted recipients.</li>
                   <li>The link includes an encryption key that helps protect the file during transfer.</li>
                   <li>This application must remain running for the link to work, as the file is served directly from your computer.</li>
