@@ -80,7 +80,10 @@ contextBridge.exposeInMainWorld(
       },
 
       // Get detailed file properties (size, permissions, dates, etc.)
-      getFileDetails: (filePath) => ipcRenderer.invoke('get-file-details', filePath)
+      getFileDetails: (filePath) => ipcRenderer.invoke('get-file-details', filePath),
+      // Manage Active Shares
+      listActiveShares: () => ipcRenderer.invoke('list-active-shares'),
+      revokeShareLink: (tokenId) => ipcRenderer.invoke('revoke-share-link', tokenId)
     },
     auth: {
       validateMasterPassword: async (password) => {

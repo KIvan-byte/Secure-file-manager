@@ -743,6 +743,29 @@ ipcMain.handle('read-directory', async (event, dirPath) => {
   }
 });
 
+// IPC handler to revoke a shared link
+ipcMain.handle('revoke-share-link', async (event, tokenId) => {
+  try {
+    await db.read();
+    const allLinks = db.data.sharedLinks || [];
+    
+    const linkIndex = allLinks.findIndex(link => link.id === tokenId);
+    
+    if (linkIndex !== -1) {
+      allLinks.splice(linkIndex, 1);
+      db.data.sharedLinks = allLinks; // Assign the modified array back
+      await db.write();
+    }
+    // If linkIndex is -1, the link to revoke doesn't exist, which means it's already "revoked".
+    // So, we can consider this a success.
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error revoking share link:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // File operations
 ipcMain.handle('read-file', async (event, filePath) => {
   try {
@@ -1946,4 +1969,34 @@ ipcMain.handle('get-file-details', async (event, filePath) => {
 app.on('will-quit', () => {
   // Clean up any resources
   console.log('App is quitting, cleaning up resources...');
+});
+
+// IPC handler to list active shared links
+ipcMain.handle('list-active-shares', async () => {
+  try {
+    await db.read();
+    const now = new Date();
+    const allLinks = db.data.sharedLinks || []; // Ensure it's an array
+
+    const activeLinks = allLinks.filter(link => {
+      if (link.expiresAt) {
+        // It's a timed link, check if it's expired
+        return new Date(link.expiresAt) > now;
+      } else {
+        // It's a one-time link, check if it's used
+        return !link.isUsed;
+      }
+    });
+    
+    // Add the serverAddress to each link for easier use on the client-side
+    const linksWithFullUrl = activeLinks.map(link => ({
+      ...link,
+      shareUrl: `${serverAddress}/share/${link.id}?key=${link.encryptionKey}`
+    }));
+
+    return { success: true, links: linksWithFullUrl };
+  } catch (error) {
+    console.error('Error listing active shares:', error);
+    return { success: false, error: error.message };
+  }
 });
