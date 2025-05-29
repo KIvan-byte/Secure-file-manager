@@ -322,6 +322,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [twoFactorError, setTwoFactorError] = useState('');
+  const [passwordVerified, setPasswordVerified] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -338,10 +339,11 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
   const checkTwoFactorSetup = async () => {
     try {
       const result = await window.electron.auth.checkTwoFactorSetup();
-      setShowTwoFactor(result.isSetup);
+      // Don't show 2FA immediately, only after password is verified
+      return result.isSetup;
     } catch (error) {
       console.error('Error checking 2FA setup:', error);
-      setShowTwoFactor(false);
+      return false;
     }
   };
 
@@ -358,9 +360,10 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
 
     try {
       if (inputPassword === password) {
-        // Check if 2FA is enabled
-        const result = await window.electron.auth.checkTwoFactorSetup();
-        if (result.isSetup) {
+        setPasswordVerified(true);
+        // Check if 2FA is enabled after password verification
+        const has2FA = await checkTwoFactorSetup();
+        if (has2FA) {
           setShowTwoFactor(true);
         } else {
           // No 2FA setup, unlock directly
