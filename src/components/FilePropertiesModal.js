@@ -34,25 +34,21 @@ const ModalOverlay = styled.div`
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: ${fadeIn} 0.3s ease;
   padding: 20px;
 `;
 
 const ModalContent = styled.div`
   background-color: white;
   border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   width: 100%;
   max-width: 650px;
   max-height: 85vh;
   overflow-y: auto;
   position: relative;
-  animation: ${slideUp} 0.4s ease;
   display: flex;
   flex-direction: column;
   
