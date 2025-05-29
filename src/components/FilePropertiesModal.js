@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { styled, keyframes } from 'styled-components';
 import { FaInfoCircle, FaTimes, FaCalendarAlt, FaUserAlt, FaLock, FaTag, FaDatabase, 
   FaFileImage, FaFileVideo, FaFileAudio, FaFileAlt, FaFilePdf, FaCode, FaFileArchive, 
-  FaFile, FaCheck, FaExclamationTriangle, FaCopy, FaExternalLinkAlt, FaShieldAlt } from 'react-icons/fa';
+  FaFile, FaCheck, FaExclamationTriangle, FaCopy, FaExternalLinkAlt, FaShieldAlt, FaKey, FaCalculator, FaFolder } from 'react-icons/fa';
 import path from 'path-browserify';
 
 // Animation keyframes
@@ -140,6 +140,64 @@ const Tab = styled.button`
   &:hover {
     color: #3498db;
     background-color: rgba(52, 152, 219, 0.05);
+  }
+`;
+
+const HashContainer = styled.div`
+  margin-bottom: 16px;
+`;
+
+const HashRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+`;
+
+const HashLabel = styled.div`
+  font-weight: 600;
+  color: #34495e;
+  min-width: 60px;
+`;
+
+const HashValue = styled.div`
+  flex: 1;
+  font-family: monospace;
+  font-size: 13px;
+  color: #2c3e50;
+  word-break: break-all;
+  background-color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+`;
+
+const HashButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  
+  &:hover {
+    background-color: #2980b9;
+  }
+  
+  &:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
   }
 `;
 
@@ -539,11 +597,63 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
   const [copiedItem, setCopiedItem] = useState(null);
   const [pathCopied, setPathCopied] = useState(false);
   
+  // Hash calculation state
+  const [hashCalculations, setHashCalculations] = useState({
+    md5: { value: '', isCalculating: false },
+    sha1: { value: '', isCalculating: false },
+    sha256: { value: '', isCalculating: false }
+  });
+
   useEffect(() => {
     if (isOpen && file) {
       fetchFileDetails();
+      // Reset hash calculations when modal opens
+      setHashCalculations({
+        md5: { value: '', isCalculating: false },
+        sha1: { value: '', isCalculating: false },
+        sha256: { value: '', isCalculating: false }
+      });
     }
   }, [isOpen, file]);
+
+  const calculateHash = async (algorithm) => {
+    if (!file || file.isDirectory) return;
+
+    setHashCalculations(prev => ({
+      ...prev,
+      [algorithm]: { ...prev[algorithm], isCalculating: true }
+    }));
+
+    try {
+      const result = await window.electron.fileManager.calculateFileHash(file.path, algorithm);
+      
+      if (result.success) {
+        setHashCalculations(prev => ({
+          ...prev,
+          [algorithm]: { 
+            value: result.hash, 
+            isCalculating: false 
+          }
+        }));
+      } else {
+        setHashCalculations(prev => ({
+          ...prev,
+          [algorithm]: { 
+            value: 'Error', 
+            isCalculating: false 
+          }
+        }));
+      }
+    } catch (error) {
+      setHashCalculations(prev => ({
+        ...prev,
+        [algorithm]: { 
+          value: 'Error', 
+          isCalculating: false 
+        }
+      }));
+    }
+  };
   
   const fetchFileDetails = async () => {
     try {
@@ -566,6 +676,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
   };
   
   const copyToClipboard = (text, item) => {
+    if (!text || text === 'Error' || text === 'Not calculated') return;
     navigator.clipboard.writeText(text);
     setCopiedItem(item);
     setTimeout(() => setCopiedItem(null), 2000);
@@ -635,6 +746,12 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
             onClick={() => setActiveTab('permissions')}
           >
             <FaLock /> Permissions
+          </Tab>
+          <Tab 
+            $active={activeTab === 'checksums'} 
+            onClick={() => setActiveTab('checksums')}
+          >
+            <FaKey /> Checksums
           </Tab>
         </PropertyTabs>
         
@@ -872,6 +989,79 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                     </Property>
                   )}
                 </PropertyGrid>
+              </PropertySection>
+            )}
+          </TabContent>
+
+          {/* Checksums Tab */}
+          <TabContent $active={activeTab === 'checksums'}>
+            {file && !file.isDirectory && (
+              <PropertySection>
+                <SectionTitle>
+                  <FaKey /> File Checksums
+                </SectionTitle>
+                
+                <HashContainer>
+                  {['md5', 'sha1', 'sha256'].map(algorithm => (
+                    <HashRow key={algorithm}>
+                      <HashLabel>{algorithm.toUpperCase()}</HashLabel>
+                      
+                      <HashValue>
+                        {hashCalculations[algorithm].value || 'Not calculated'}
+                      </HashValue>
+                      
+                      <HashButton
+                        onClick={() => calculateHash(algorithm)}
+                        disabled={hashCalculations[algorithm].isCalculating}
+                      >
+                        {hashCalculations[algorithm].isCalculating ? (
+                          <>
+                            <Spinner /> Calculating...
+                          </>
+                        ) : (
+                          <>
+                            <FaCalculator /> Calculate
+                          </>
+                        )}
+                      </HashButton>
+                      
+                      {hashCalculations[algorithm].value && hashCalculations[algorithm].value !== 'Error' && hashCalculations[algorithm].value !== 'Not calculated' && (
+                        <HashButton
+                          onClick={() => copyToClipboard(hashCalculations[algorithm].value, `${algorithm}_hash`)}
+                          style={{ backgroundColor: '#2ecc71' }}
+                        >
+                          {copiedItem === `${algorithm}_hash` ? (
+                            <>
+                              <FaCheck /> Copied!
+                            </>
+                          ) : (
+                            <>
+                              <FaCopy /> Copy
+                            </>
+                          )}
+                        </HashButton>
+                      )}
+                    </HashRow>
+                  ))}
+                </HashContainer>
+                
+                <div style={{ marginTop: '20px', backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
+                  <strong>About Checksums:</strong><br />
+                  • MD5: 128-bit hash (fast, suitable for file integrity)<br />
+                  • SHA1: 160-bit hash (more secure than MD5)<br />
+                  • SHA256: 256-bit hash (most secure, recommended for cryptographic purposes)
+                </div>
+              </PropertySection>
+            )}
+            
+            {file && file.isDirectory && (
+              <PropertySection>
+                <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
+                  <div style={{ fontSize: '40px', color: '#7f8c8d', marginBottom: '10px' }}>
+                    <FaFolder />
+                  </div>
+                  <p>Checksum calculation is not available for directories.</p>
+                </div>
               </PropertySection>
             )}
           </TabContent>

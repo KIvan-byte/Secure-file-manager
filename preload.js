@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld(
 
       // Get detailed file properties (size, permissions, dates, etc.)
       getFileDetails: (filePath) => ipcRenderer.invoke('get-file-details', filePath),
+      calculateFileHash: (filePath, algorithm) => ipcRenderer.invoke('calculate-file-hash', filePath, algorithm),
       // Manage Active Shares
       listActiveShares: () => ipcRenderer.invoke('list-active-shares'),
       revokeShareLink: (tokenId) => ipcRenderer.invoke('revoke-share-link', tokenId)

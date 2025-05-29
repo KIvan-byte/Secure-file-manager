@@ -51,6 +51,33 @@ let db;
 // Initialize 2FA
 const twoFactorAuth = new TwoFactorAuth();
 
+// Hash calculation for files
+ipcMain.handle('calculate-file-hash', async (event, filePath, algorithm) => {
+  try {
+    const hash = crypto.createHash(algorithm);
+    const stream = fs.createReadStream(filePath);
+    
+    return new Promise((resolve, reject) => {
+      stream.on('data', data => {
+        hash.update(data);
+      });
+      
+      stream.on('end', () => {
+        const hashValue = hash.digest('hex');
+        resolve({ success: true, hash: hashValue });
+      });
+      
+      stream.on('error', error => {
+        console.error(`Error calculating ${algorithm} hash:`, error);
+        resolve({ success: false, error: error.message });
+      });
+    });
+  } catch (error) {
+    console.error(`Error calculating ${algorithm} hash:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Set up Express server for file sharing
 const expressApp = express();
 const PORT = 3001;
