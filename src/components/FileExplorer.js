@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes, FaCalendarAlt, FaList, FaThLarge } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
@@ -20,6 +20,138 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+`;
+
+const ContextMenu = styled.div`
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  display: ${props => props.$show ? 'block' : 'none'};
+  left: ${props => props.$x}px;
+  top: ${props => props.$y}px;
+`;
+
+const ContextMenuItem = styled.div`
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: ${props => props.$disabled ? '#bbb' : '#2c3e50'};
+  border-bottom: 1px solid #f0f0f0;
+  
+  &:hover {
+    background-color: ${props => props.$disabled ? 'transparent' : '#f8f9fa'};
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  ${props => props.$disabled && `
+    cursor: not-allowed;
+    opacity: 0.5;
+  `}
+`;
+
+const ContextMenuSeparator = styled.div`
+  height: 1px;
+  background-color: #eee;
+  margin: 4px 0;
+`;
+
+const PathInput = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+`;
+
+const NavigationBar = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+`;
+
+const NavButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  color: ${props => props.$disabled ? '#bbb' : '#2c3e50'};
+  font-size: 18px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    background-color: ${props => props.$disabled ? 'white' : '#3498db'};
+    color: ${props => props.$disabled ? '#bbb' : 'white'};
+    transform: ${props => props.$disabled ? 'none' : 'translateY(-1px)'};
+    box-shadow: ${props => props.$disabled ? '0 1px 3px rgba(0, 0, 0, 0.05)' : '0 4px 8px rgba(52, 152, 219, 0.3)'};
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+  }
+  
+  &:active {
+    transform: ${props => props.$disabled ? 'none' : 'translateY(0)'};
+  }
+`;
+
+const ViewToggle = styled.div`
+  display: flex;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-left: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+`;
+
+const ViewButton = styled.button`
+  padding: 10px 16px;
+  border: none;
+  background: ${props => props.$active ? '#3498db' : 'white'};
+  color: ${props => props.$active ? 'white' : '#2c3e50'};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  justify-content: center;
+  
+  &:hover {
+    background: ${props => props.$active ? '#2980b9' : '#f8f9fa'};
+  }
+  
+  &:first-child {
+    border-right: 1px solid #ddd;
+  }
 `;
 
 // Add FilePropertiesModal component styles
@@ -117,14 +249,23 @@ const SortButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 16px;
   background-color: #f8f9fa;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  color: #2c3e50;
+  font-weight: 500;
+  transition: all 0.2s ease;
   
   &:hover {
     background-color: #e9ecef;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 `;
 
@@ -141,10 +282,12 @@ const SortMenu = styled.div`
   right: 0;
   z-index: 100;
   background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 180px;
   display: ${props => props.$show ? 'block' : 'none'};
+  margin-top: 4px;
 `;
 
 const SortMenuItem = styled.div`
@@ -294,12 +437,21 @@ const ActionButton = styled.button`
   width: 32px;
   height: 32px;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   background-color: ${props => props.$color || '#3498db'};
   color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
   
   &:hover {
     background-color: ${props => props.$hoverColor || '#2980b9'};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
   
   /* Ensure the icon is properly centered and sized */
@@ -315,21 +467,32 @@ const Button = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   background-color: ${props => props.$primary ? '#3498db' : '#2c3e50'};
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  min-height: 44px;
   
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   
   &:active {
-    transform: translateY(1px);
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -671,6 +834,67 @@ const StatusBadge = styled.div`
   transition: transform 0.3s ease;
 `;
 
+const FileGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+`;
+
+const FileGridItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: ${props => props.$isSelected ? '#f0f7ff' : 'transparent'};
+  border: 2px solid ${props => props.$isSelected ? '#3498db' : 'transparent'};
+  position: relative;
+  
+  &:hover {
+    background-color: ${props => props.$isSelected ? '#e3f2fd' : '#f9f9f9'};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const GridFileIcon = styled.div`
+  color: ${props => props.$isDirectory ? '#f39c12' : '#3498db'};
+  display: flex;
+  align-items: center;
+  font-size: 48px;
+  margin-bottom: 12px;
+`;
+
+const GridFileName = styled.div`
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+  word-break: break-word;
+  line-height: 1.3;
+  max-width: 100%;
+`;
+
+const GridFileDetails = styled.div`
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 12px;
+  margin-top: 8px;
+`;
+
+const GridCheckbox = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+`;
+
 function FileExplorer() {
   const [currentPath, setCurrentPath] = useState('');
   const [files, setFiles] = useState([]);
@@ -725,6 +949,12 @@ function FileExplorer() {
   const fileExplorerRef = useRef(null);
   const [clipboard, setClipboard] = useState(null);
   const [clipboardOperation, setClipboardOperation] = useState(null); // 'copy' or 'cut'
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, file: null });
+  const [isPathEditing, setIsPathEditing] = useState(false);
+  const [pathInputValue, setPathInputValue] = useState('');
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
   useEffect(() => {
     mounted.current = true;
@@ -741,15 +971,87 @@ function FileExplorer() {
     
     setInitialLoadDone(true);
     
+    // Add keyboard event listeners
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'c':
+            if (selectedFiles.length > 0) {
+              e.preventDefault();
+              handleCopy();
+            }
+            break;
+          case 'x':
+            if (selectedFiles.length > 0) {
+              e.preventDefault();
+              handleCut();
+            }
+            break;
+          case 'v':
+            if (clipboard) {
+              e.preventDefault();
+              handlePaste();
+            }
+            break;
+          case 'a':
+            e.preventDefault();
+            handleSelectAll();
+            break;
+          case 'r':
+            e.preventDefault();
+            if (currentPath) {
+              loadDirectory(currentPath);
+            }
+            break;
+          default:
+            break;
+        }
+      } else {
+        switch (e.key) {
+          case 'Delete':
+            if (selectedFiles.length > 0) {
+              handleDeleteFiles();
+            }
+            break;
+          case 'F2':
+            if (selectedFiles.length === 1) {
+              handleRenameFile(selectedFiles[0]);
+            }
+            break;
+          case 'Escape':
+            setContextMenu({ show: false, x: 0, y: 0, file: null });
+            setSelectedFiles([]);
+            break;
+          case 'Backspace':
+            if (!isPathEditing) {
+              navigateUp();
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    };
+    
+    // Add click handler to close context menu
+    const handleClick = () => {
+      setContextMenu({ show: false, x: 0, y: 0, file: null });
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleClick);
+    
     return () => {
       mounted.current = false;
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClick);
       // Clean up any pending operations
       setDraggedFile(null);
       setDragOverFile(null);
       setIsDragging(false);
       setIsDraggingOver(false);
     };
-  }, [location.state]);
+  }, [location.state, selectedFiles, clipboard, currentPath, isPathEditing]);
 
   useEffect(() => {
     if (currentPath && initialLoadDone) {
@@ -1471,6 +1773,161 @@ function FileExplorer() {
     setShowPropertiesModal(false);
   };
 
+  // Clipboard operations
+  const handleCopy = () => {
+    if (selectedFiles.length > 0) {
+      setClipboard(selectedFiles);
+      setClipboardOperation('copy');
+      setStatusMessage(`${selectedFiles.length} file(s) copied to clipboard`);
+      setShowStatusMessage(true);
+      setTimeout(() => setShowStatusMessage(false), 2000);
+    }
+  };
+
+  const handleCut = () => {
+    if (selectedFiles.length > 0) {
+      setClipboard(selectedFiles);
+      setClipboardOperation('cut');
+      setStatusMessage(`${selectedFiles.length} file(s) cut to clipboard`);
+      setShowStatusMessage(true);
+      setTimeout(() => setShowStatusMessage(false), 2000);
+    }
+  };
+
+  const handlePaste = async () => {
+    if (!clipboard || !currentPath) return;
+
+    try {
+      setStatusMessage('Pasting files...');
+      setShowStatusMessage(true);
+
+      for (const file of clipboard) {
+        const destinationPath = path.join(currentPath, file.name);
+        
+        if (clipboardOperation === 'copy') {
+          await window.electron.fileManager.copyFile({
+            sourcePath: file.path,
+            destinationPath
+          });
+        } else if (clipboardOperation === 'cut') {
+          await window.electron.fileManager.moveFile({
+            sourcePath: file.path,
+            destinationPath
+          });
+        }
+      }
+
+      // Clear clipboard if cut operation
+      if (clipboardOperation === 'cut') {
+        setClipboard(null);
+        setClipboardOperation(null);
+      }
+
+      setStatusMessage(`${clipboard.length} file(s) pasted successfully`);
+      loadDirectory(currentPath);
+    } catch (error) {
+      setStatusMessage(`Error pasting files: ${error.message}`);
+      setError(`Error pasting files: ${error.message}`);
+    } finally {
+      setTimeout(() => setShowStatusMessage(false), 3000);
+    }
+  };
+
+  const handleSelectAll = () => {
+    setSelectedFiles([...filteredFiles]);
+  };
+
+  const handleDeleteFiles = async () => {
+    if (selectedFiles.length === 0) return;
+
+    const confirmed = window.confirm(`Are you sure you want to delete ${selectedFiles.length} file(s)?`);
+    if (!confirmed) return;
+
+    try {
+      setStatusMessage('Deleting files...');
+      setShowStatusMessage(true);
+
+      for (const file of selectedFiles) {
+        await window.electron.fileManager.deleteFile(file.path);
+      }
+
+      setStatusMessage(`${selectedFiles.length} file(s) deleted successfully`);
+      setSelectedFiles([]);
+      loadDirectory(currentPath);
+    } catch (error) {
+      setStatusMessage(`Error deleting files: ${error.message}`);
+      setError(`Error deleting files: ${error.message}`);
+    } finally {
+      setTimeout(() => setShowStatusMessage(false), 3000);
+    }
+  };
+
+  const handleRenameFile = async (file) => {
+    const newName = prompt('Enter new file name:', file.name);
+    if (!newName || newName === file.name) return;
+
+    try {
+      const newPath = path.join(path.dirname(file.path), newName);
+      await window.electron.fileManager.moveFile({
+        sourcePath: file.path,
+        destinationPath: newPath
+      });
+
+      setStatusMessage('File renamed successfully');
+      setShowStatusMessage(true);
+      setTimeout(() => setShowStatusMessage(false), 2000);
+      loadDirectory(currentPath);
+    } catch (error) {
+      setStatusMessage(`Error renaming file: ${error.message}`);
+      setError(`Error renaming file: ${error.message}`);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    const folderName = prompt('Enter folder name:');
+    if (!folderName) return;
+
+    try {
+      const folderPath = path.join(currentPath, folderName);
+      await window.electron.fileManager.createDirectory(folderPath);
+
+      setStatusMessage('Folder created successfully');
+      setShowStatusMessage(true);
+      setTimeout(() => setShowStatusMessage(false), 2000);
+      loadDirectory(currentPath);
+    } catch (error) {
+      setStatusMessage(`Error creating folder: ${error.message}`);
+      setError(`Error creating folder: ${error.message}`);
+    }
+  };
+
+  // Context menu handlers
+  const handleContextMenu = (e, file) => {
+    e.preventDefault();
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      file
+    });
+  };
+
+  // Path editing
+  const handlePathEdit = () => {
+    setIsPathEditing(true);
+    setPathInputValue(currentPath);
+  };
+
+  const handlePathSubmit = (e) => {
+    if (e.key === 'Enter') {
+      setCurrentPath(pathInputValue);
+      setIsPathEditing(false);
+    } else if (e.key === 'Escape') {
+      setIsPathEditing(false);
+      setPathInputValue('');
+    }
+  };
+
   return (
     <Container>
       <Header>
@@ -1490,14 +1947,13 @@ function FileExplorer() {
         <Button $primary onClick={browseDirectory}>
           <FaFolder /> Browse Directory
         </Button>
+        
         {currentPath && (
           <>
-            <Button onClick={navigateUp}>
-              <FaArrowUp /> Up
+            <Button onClick={handleCreateFolder}>
+              <FaFolder /> New Folder
             </Button>
-            <Button onClick={() => setCurrentPath(localStorage.getItem('homeDirectory') || '/')}>
-              <FaHome /> Home
-            </Button>
+            
             <SearchButton 
               onClick={toggleAdvancedSearch}
               title="Search file contents"
@@ -1527,6 +1983,179 @@ function FileExplorer() {
           </>
         )}
       </ActionBar>
+
+      {currentPath && (
+        <>
+          <NavigationBar>
+            <NavButton 
+              onClick={navigateUp}
+              $disabled={!currentPath || currentPath === path.dirname(currentPath)}
+              title="Go Up (Backspace)"
+            >
+              <FaArrowUp />
+            </NavButton>
+            <NavButton 
+              onClick={() => loadDirectory(currentPath)}
+              title="Refresh (Ctrl+R)"
+            >
+              <FaRedo />
+            </NavButton>
+            <NavButton 
+              onClick={() => setCurrentPath(localStorage.getItem('homeDirectory') || '/')}
+              title="Home"
+            >
+              <FaHome />
+            </NavButton>
+            
+            <div style={{ flex: 1, margin: '0 12px' }}>
+              {isPathEditing ? (
+                <PathInput
+                  value={pathInputValue}
+                  onChange={(e) => setPathInputValue(e.target.value)}
+                  onKeyDown={handlePathSubmit}
+                  onBlur={() => setIsPathEditing(false)}
+                  autoFocus
+                />
+              ) : (
+                <div 
+                  onClick={handlePathEdit}
+                  style={{ 
+                    padding: '8px 12px', 
+                    background: '#f8f9fa', 
+                    borderRadius: '4px', 
+                    fontFamily: 'monospace',
+                    cursor: 'text',
+                    wordBreak: 'break-all'
+                  }}
+                >
+                  {currentPath}
+                </div>
+              )}
+            </div>
+            
+            <SortDropdown>
+              <SortButton onClick={() => setShowSortMenu(!showSortMenu)}>
+                Sort: {getSortLabel()}
+                <SortIcon $descending={sortDirection === 'desc'}>
+                  <FaArrowUp />
+                </SortIcon>
+              </SortButton>
+              <SortMenu $show={showSortMenu}>
+                <SortMenuItem 
+                  $active={sortBy === 'name'} 
+                  onClick={() => handleSort('name')}
+                >
+                  <FaFileAlt /> Name
+                </SortMenuItem>
+                <SortMenuItem 
+                  $active={sortBy === 'size'} 
+                  onClick={() => handleSort('size')}
+                >
+                  <FaFile /> Size
+                </SortMenuItem>
+                <SortMenuItem 
+                  $active={sortBy === 'date'} 
+                  onClick={() => handleSort('date')}
+                >
+                  <FaCalendarAlt /> Date Modified
+                </SortMenuItem>
+                <SortMenuItem 
+                  $active={sortBy === 'type'} 
+                  onClick={() => handleSort('type')}
+                >
+                  <FaFileAlt /> Type
+                </SortMenuItem>
+              </SortMenu>
+            </SortDropdown>
+            
+            <ViewToggle>
+              <ViewButton 
+                $active={viewMode === 'list'} 
+                onClick={() => setViewMode('list')}
+              >
+                <FaList /> List
+              </ViewButton>
+              <ViewButton 
+                $active={viewMode === 'grid'} 
+                onClick={() => setViewMode('grid')}
+              >
+                <FaThLarge /> Grid
+              </ViewButton>
+            </ViewToggle>
+          </NavigationBar>
+          
+          {selectedFiles.length > 0 && (
+            <div style={{ 
+              padding: '16px 20px', 
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)', 
+              borderRadius: '12px', 
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              border: '1px solid #90caf9',
+              boxShadow: '0 2px 8px rgba(33, 150, 243, 0.1)'
+            }}>
+              <span style={{ 
+                fontWeight: '600', 
+                color: '#1565c0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FaCheck style={{ color: '#2196f3' }} />
+                {selectedFiles.length} file(s) selected
+              </span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <Button onClick={handleCopy} style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '13px', 
+                  minHeight: '36px',
+                  backgroundColor: '#2196f3'
+                }}>
+                  <FaClone /> Copy
+                </Button>
+                <Button onClick={handleCut} style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '13px', 
+                  minHeight: '36px',
+                  backgroundColor: '#ff9800'
+                }}>
+                  Cut
+                </Button>
+                {clipboard && (
+                  <Button onClick={handlePaste} style={{ 
+                    padding: '8px 16px', 
+                    fontSize: '13px', 
+                    minHeight: '36px',
+                    backgroundColor: '#4caf50'
+                  }}>
+                    Paste
+                  </Button>
+                )}
+                <Button onClick={handleDeleteFiles} style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '13px', 
+                  minHeight: '36px',
+                  backgroundColor: '#f44336' 
+                }}>
+                  <FaTimes /> Delete
+                </Button>
+                <Button onClick={clearSelection} style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '13px', 
+                  minHeight: '36px',
+                  backgroundColor: '#9e9e9e' 
+                }}>
+                  Clear
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {error && (
         <InfoMessage $type="error">
@@ -1591,151 +2220,221 @@ function FileExplorer() {
       {currentPath && !showSearchResults ? (
         <>
           {buildBreadcrumbs()}
-          <FileList 
-            ref={fileListRef}
-            onDragOver={handleFileListDragOver}
-            onDragLeave={handleFileListDragLeave}
-            onDrop={handleFileListDrop}
-          >
-            <FileListHeader>
-              <div></div>
-              <div>Type</div>
-              <div>Name</div>
-              <div>Size</div>
-              <div>Modified</div>
-            </FileListHeader>
-            
-            {isLoading ? (
-              <LoadingIndicator>Loading files...</LoadingIndicator>
-            ) : filteredFiles.length > 0 ? (
-              filteredFiles.map((file, index) => (
-                <FileItem 
-                  key={index}
-                  onClick={() => handleFileClick(file)}
-                  draggable={!file.isDirectory}
-                  onDragStart={(e) => handleDragStart(e, file)}
-                  onDragOver={(e) => handleDragOver(e, file)}
-                  onDragEnter={(e) => handleDragEnter(e, file)}
-                  onDragLeave={handleDragLeave}
-                  onDragEnd={handleDragEnd}
-                  onDrop={(e) => handleDrop(e, file)}
-                  $isDragging={draggedFile && draggedFile.path === file.path}
-                  $isOver={dragOverFile && dragOverFile.path === file.path}
-                  $isDragTarget={file.isDirectory}
-                  $isSelected={selectedFiles.some(f => f.path === file.path)}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedFiles.some(f => f.path === file.path)}
-                      onChange={(e) => toggleFileSelection(file, e)} 
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <FileIcon $isDirectory={file.isDirectory}>
-                    {getFileIcon(file)}
-                  </FileIcon>
-                  <FileInfo>
-                    <FileName>{file.name}</FileName>
-                    <FileDetails>
-                      <FileSize>{formatSize(file.size)}</FileSize>
-                      <FileDate>{formatDate(file.mtime)}</FileDate>
-                    </FileDetails>
-                  </FileInfo>
-                  {!file.isDirectory && (
-                    <FileActions onClick={(e) => e.stopPropagation()}>
-                      <ActionButton 
-                        $color="#3498db" 
-                        $hoverColor="#2980b9"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFileClick(file);
-                        }}
-                        title="View file"
-                      >
-                        <FaEye />
-                      </ActionButton>
-                      
-                      {isArchive(file.name) ? (
+          {viewMode === 'list' ? (
+            <FileList 
+              ref={fileListRef}
+              onDragOver={handleFileListDragOver}
+              onDragLeave={handleFileListDragLeave}
+              onDrop={handleFileListDrop}
+            >
+              <FileListHeader>
+                <div></div>
+                <div>Type</div>
+                <div>Name</div>
+                <div>Size</div>
+                <div>Modified</div>
+              </FileListHeader>
+              
+              {isLoading ? (
+                <LoadingIndicator>Loading files...</LoadingIndicator>
+              ) : filteredFiles.length > 0 ? (
+                filteredFiles.map((file, index) => (
+                  <FileItem 
+                    key={index}
+                    onClick={() => handleFileClick(file)}
+                    onContextMenu={(e) => handleContextMenu(e, file)}
+                    draggable={!file.isDirectory}
+                    onDragStart={(e) => handleDragStart(e, file)}
+                    onDragOver={(e) => handleDragOver(e, file)}
+                    onDragEnter={(e) => handleDragEnter(e, file)}
+                    onDragLeave={handleDragLeave}
+                    onDragEnd={handleDragEnd}
+                    onDrop={(e) => handleDrop(e, file)}
+                    $isDragging={draggedFile && draggedFile.path === file.path}
+                    $isOver={dragOverFile && dragOverFile.path === file.path}
+                    $isDragTarget={file.isDirectory}
+                    $isSelected={selectedFiles.some(f => f.path === file.path)}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedFiles.some(f => f.path === file.path)}
+                        onChange={(e) => toggleFileSelection(file, e)} 
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <FileIcon $isDirectory={file.isDirectory}>
+                      {getFileIcon(file)}
+                    </FileIcon>
+                    <FileInfo>
+                      <FileName>{file.name}</FileName>
+                      <FileDetails>
+                        <FileSize>{formatSize(file.size)}</FileSize>
+                        <FileDate>{formatDate(file.mtime)}</FileDate>
+                      </FileDetails>
+                    </FileInfo>
+                    {!file.isDirectory && (
+                      <FileActions onClick={(e) => e.stopPropagation()}>
                         <ActionButton 
-                          $color="#9b59b6" 
-                          $hoverColor="#8e44ad"
+                          $color="#3498db" 
+                          $hoverColor="#2980b9"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleExtractArchive(file);
+                            handleFileClick(file);
                           }}
-                          title="Extract archive"
+                          title="View file"
                         >
-                          <FaArchive />
+                          <FaEye />
                         </ActionButton>
-                      ) : isEncryptedFile(file.name) ? (
+                        
+                        {isArchive(file.name) ? (
+                          <ActionButton 
+                            $color="#9b59b6" 
+                            $hoverColor="#8e44ad"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExtractArchive(file);
+                            }}
+                            title="Extract archive"
+                          >
+                            <FaArchive />
+                          </ActionButton>
+                        ) : isEncryptedFile(file.name) ? (
+                          <ActionButton 
+                            $color="#27ae60" 
+                            $hoverColor="#219653"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDecryptFile(file);
+                            }}
+                            title="Decrypt file"
+                          >
+                            <FaLockOpen />
+                          </ActionButton>
+                        ) : (
+                          <ActionButton 
+                            $color="#f39c12" 
+                            $hoverColor="#d35400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEncryptFile(file);
+                            }}
+                            title="Encrypt file"
+                          >
+                            <FaLock />
+                          </ActionButton>
+                        )}
+                        
                         <ActionButton 
-                          $color="#27ae60" 
-                          $hoverColor="#219653"
+                          $color="#e74c3c" 
+                          $hoverColor="#c0392b"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDecryptFile(file);
+                            handleShareFile(file);
                           }}
-                          title="Decrypt file"
+                          title="Share file"
                         >
-                          <FaLockOpen />
+                          <FaShare />
                         </ActionButton>
-                      ) : (
                         <ActionButton 
-                          $color="#f39c12" 
-                          $hoverColor="#d35400"
+                          $color="#34495e" 
+                          $hoverColor="#2c3e50"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEncryptFile(file);
+                            handleShowProperties(file);
                           }}
-                          title="Encrypt file"
+                          title="File Properties"
                         >
-                          <FaLock />
+                          <FaInfoCircle />
                         </ActionButton>
-                      )}
-                      
-                      <ActionButton 
-                        $color="#e74c3c" 
-                        $hoverColor="#c0392b"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleShareFile(file);
-                        }}
-                        title="Share file"
-                      >
-                        <FaShare />
-                      </ActionButton>
-                      <ActionButton 
-                        $color="#34495e" 
-                        $hoverColor="#2c3e50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleShowProperties(file);
-                        }}
-                        title="File Properties"
-                      >
-                        <FaInfoCircle />
-                      </ActionButton>
-                    </FileActions>
-                  )}
-                  {dragOverFile && dragOverFile.path === file.path && <DragIndicator $visible={true} />}
-                </FileItem>
-              ))
-            ) : (
-              <EmptyState>
-                <IconContainer>
-                  <FaFolder />
-                </IconContainer>
-                <p>This directory is empty{searchTerm ? ' or no files match your search' : ''}</p>
-              </EmptyState>
-            )}
-            
-            {isDraggingOver && (
-              <DropOverlay>
-                <div>Drop files here to upload</div>
-              </DropOverlay>
-            )}
-          </FileList>
+                      </FileActions>
+                    )}
+                    {dragOverFile && dragOverFile.path === file.path && <DragIndicator $visible={true} />}
+                  </FileItem>
+                ))
+              ) : (
+                <EmptyState>
+                  <IconContainer>
+                    <FaFolder />
+                  </IconContainer>
+                  <p>This directory is empty{searchTerm ? ' or no files match your search' : ''}</p>
+                </EmptyState>
+              )}
+              
+              {isDraggingOver && (
+                <DropOverlay>
+                  <div>Drop files here to upload</div>
+                </DropOverlay>
+              )}
+            </FileList>
+          ) : (
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '8px', 
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
+              overflow: 'auto', 
+              position: 'relative',
+              minHeight: '400px'
+            }}>
+              {isLoading ? (
+                <LoadingIndicator>Loading files...</LoadingIndicator>
+              ) : filteredFiles.length > 0 ? (
+                <FileGrid>
+                  {filteredFiles.map((file, index) => (
+                    <FileGridItem 
+                      key={index}
+                      onClick={() => handleFileClick(file)}
+                      onContextMenu={(e) => handleContextMenu(e, file)}
+                      draggable={!file.isDirectory}
+                      onDragStart={(e) => handleDragStart(e, file)}
+                      onDragOver={(e) => handleDragOver(e, file)}
+                      onDragEnter={(e) => handleDragEnter(e, file)}
+                      onDragLeave={handleDragLeave}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(e, file)}
+                      $isSelected={selectedFiles.some(f => f.path === file.path)}
+                    >
+                      <GridCheckbox>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedFiles.some(f => f.path === file.path)}
+                          onChange={(e) => toggleFileSelection(file, e)} 
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </GridCheckbox>
+                      <GridFileIcon $isDirectory={file.isDirectory}>
+                        {getFileIcon(file)}
+                      </GridFileIcon>
+                      <GridFileName>{file.name}</GridFileName>
+                      <GridFileDetails>
+                        {file.isDirectory ? (
+                          <div>Folder</div>
+                        ) : (
+                          <>
+                            <div>{formatSize(file.size)}</div>
+                            <div>{formatDate(file.mtime)}</div>
+                          </>
+                        )}
+                      </GridFileDetails>
+                    </FileGridItem>
+                  ))}
+                </FileGrid>
+              ) : (
+                <EmptyState>
+                  <IconContainer>
+                    <FaFolder />
+                  </IconContainer>
+                  <p>This directory is empty{searchTerm ? ' or no files match your search' : ''}</p>
+                </EmptyState>
+              )}
+              
+              {isDraggingOver && (
+                <DropOverlay>
+                  <div>Drop files here to upload</div>
+                </DropOverlay>
+              )}
+            </div>
+          )}
         </>
       ) : null}
 
@@ -1791,6 +2490,86 @@ function FileExplorer() {
         )}
         {statusMessage}
       </StatusBadge>
+
+      <ContextMenu $show={contextMenu.show} $x={contextMenu.x} $y={contextMenu.y}>
+        {contextMenu.file && (
+          <>
+            <ContextMenuItem onClick={() => handleFileClick(contextMenu.file)}>
+              <FaEye /> {contextMenu.file.isDirectory ? 'Open' : 'View'}
+            </ContextMenuItem>
+            
+            <ContextMenuSeparator />
+            
+            <ContextMenuItem onClick={() => handleRenameFile(contextMenu.file)}>
+              <FaFileAlt /> Rename
+            </ContextMenuItem>
+            
+            {!contextMenu.file.isDirectory && (
+              <>
+                <ContextMenuItem onClick={() => handleShareFile(contextMenu.file)}>
+                  <FaShare /> Share
+                </ContextMenuItem>
+                
+                {isEncryptedFile(contextMenu.file.name) ? (
+                  <ContextMenuItem onClick={() => handleDecryptFile(contextMenu.file)}>
+                    <FaLockOpen /> Decrypt
+                  </ContextMenuItem>
+                ) : (
+                  <ContextMenuItem onClick={() => handleEncryptFile(contextMenu.file)}>
+                    <FaLock /> Encrypt
+                  </ContextMenuItem>
+                )}
+                
+                {isArchive(contextMenu.file.name) && (
+                  <ContextMenuItem onClick={() => handleExtractArchive(contextMenu.file)}>
+                    <FaArchive /> Extract
+                  </ContextMenuItem>
+                )}
+              </>
+            )}
+            
+            <ContextMenuSeparator />
+            
+            <ContextMenuItem onClick={() => {
+              setSelectedFiles([contextMenu.file]);
+              handleCopy();
+            }}>
+              <FaClone /> Copy
+            </ContextMenuItem>
+            
+            <ContextMenuItem onClick={() => {
+              setSelectedFiles([contextMenu.file]);
+              handleCut();
+            }}>
+              Cut
+            </ContextMenuItem>
+            
+            {clipboard && (
+              <ContextMenuItem onClick={handlePaste}>
+                Paste
+              </ContextMenuItem>
+            )}
+            
+            <ContextMenuSeparator />
+            
+            <ContextMenuItem onClick={() => handleShowProperties(contextMenu.file)}>
+              <FaInfoCircle /> Properties
+            </ContextMenuItem>
+            
+            <ContextMenuSeparator />
+            
+            <ContextMenuItem 
+              onClick={() => {
+                setSelectedFiles([contextMenu.file]);
+                handleDeleteFiles();
+              }}
+              style={{ color: '#e74c3c' }}
+            >
+              <FaTimes /> Delete
+            </ContextMenuItem>
+          </>
+        )}
+      </ContextMenu>
     </Container>
   );
 }
