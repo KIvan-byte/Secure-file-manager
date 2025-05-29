@@ -13,7 +13,7 @@ const slideUp = keyframes`
 `;
 
 const TwoFactorContainer = styled.div`
-  animation: ${fadeIn} 0.3s ease;
+  /* animation: ${fadeIn} 0.3s ease; */
 `;
 
 const StatusCard = styled.div`
@@ -33,7 +33,7 @@ const SetupCard = styled.div`
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 20px;
-  animation: ${slideUp} 0.4s ease;
+  /* animation: ${slideUp} 0.4s ease; */
 `;
 
 const QRContainer = styled.div`
@@ -42,7 +42,7 @@ const QRContainer = styled.div`
   border-radius: 8px;
   margin: 20px 0;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
 `;
 
 const SecretKey = styled.div`
