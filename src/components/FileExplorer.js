@@ -930,6 +930,13 @@ function FileExplorer() {
   const [showPropertiesModal, setShowPropertiesModal] = useState(false);
   const [propertiesFile, setPropertiesFile] = useState(null);
   
+  // Add modal states for folder creation and renaming
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameFile, setRenameFile] = useState(null);
+  const [folderName, setFolderName] = useState('');
+  const [newFileName, setNewFileName] = useState('');
+
   // Drag and Drop state
   const [draggedFile, setDraggedFile] = useState(null);
   const [dragOverFile, setDragOverFile] = useState(null);
@@ -1862,14 +1869,22 @@ function FileExplorer() {
     }
   };
 
-  const handleRenameFile = async (file) => {
-    const newName = prompt('Enter new file name:', file.name);
-    if (!newName || newName === file.name) return;
+  const handleRenameFile = (file) => {
+    setRenameFile(file);
+    setNewFileName(file.name);
+    setShowRenameModal(true);
+  };
+
+  const confirmRename = async () => {
+    if (!newFileName || newFileName === renameFile.name) {
+      setShowRenameModal(false);
+      return;
+    }
 
     try {
-      const newPath = path.join(path.dirname(file.path), newName);
+      const newPath = path.join(path.dirname(renameFile.path), newFileName);
       await window.electron.fileManager.moveFile({
-        sourcePath: file.path,
+        sourcePath: renameFile.path,
         destinationPath: newPath
       });
 
@@ -1877,6 +1892,7 @@ function FileExplorer() {
       setShowStatusMessage(true);
       setTimeout(() => setShowStatusMessage(false), 2000);
       loadDirectory(currentPath);
+      setShowRenameModal(false);
     } catch (error) {
       setStatusMessage(`Error renaming file: ${error.message}`);
       setError(`Error renaming file: ${error.message}`);
@@ -1884,7 +1900,10 @@ function FileExplorer() {
   };
 
   const handleCreateFolder = async () => {
-    const folderName = prompt('Enter folder name:');
+    setShowCreateFolderModal(true);
+  };
+
+  const confirmCreateFolder = async () => {
     if (!folderName) return;
 
     try {
@@ -1895,6 +1914,8 @@ function FileExplorer() {
       setShowStatusMessage(true);
       setTimeout(() => setShowStatusMessage(false), 2000);
       loadDirectory(currentPath);
+      setShowCreateFolderModal(false);
+      setFolderName('');
     } catch (error) {
       setStatusMessage(`Error creating folder: ${error.message}`);
       setError(`Error creating folder: ${error.message}`);
@@ -2481,6 +2502,118 @@ function FileExplorer() {
         onClose={closePropertiesModal}
         file={propertiesFile}
       />
+
+      {/* Create Folder Modal */}
+      {showCreateFolderModal && (
+        <ModalOverlay onClick={() => setShowCreateFolderModal(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>
+                <FaFolder /> Create New Folder
+              </ModalTitle>
+              <ModalCloseButton onClick={() => setShowCreateFolderModal(false)}>
+                <FaTimes />
+              </ModalCloseButton>
+            </ModalHeader>
+            <ModalBody>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Folder Name:
+                </label>
+                <input
+                  type="text"
+                  value={folderName}
+                  onChange={(e) => setFolderName(e.target.value)}
+                  placeholder="Enter folder name..."
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmCreateFolder();
+                    if (e.key === 'Escape') setShowCreateFolderModal(false);
+                  }}
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <Button
+                  onClick={() => setShowCreateFolderModal(false)}
+                  style={{ backgroundColor: '#95a5a6' }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  $primary
+                  onClick={confirmCreateFolder}
+                  disabled={!folderName.trim()}
+                >
+                  Create Folder
+                </Button>
+              </div>
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Rename File Modal */}
+      {showRenameModal && (
+        <ModalOverlay onClick={() => setShowRenameModal(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>
+                <FaFileAlt /> Rename File
+              </ModalTitle>
+              <ModalCloseButton onClick={() => setShowRenameModal(false)}>
+                <FaTimes />
+              </ModalCloseButton>
+            </ModalHeader>
+            <ModalBody>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  New Name:
+                </label>
+                <input
+                  type="text"
+                  value={newFileName}
+                  onChange={(e) => setNewFileName(e.target.value)}
+                  placeholder="Enter new file name..."
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmRename();
+                    if (e.key === 'Escape') setShowRenameModal(false);
+                  }}
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <Button
+                  onClick={() => setShowRenameModal(false)}
+                  style={{ backgroundColor: '#95a5a6' }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  $primary
+                  onClick={confirmRename}
+                  disabled={!newFileName.trim() || newFileName === renameFile?.name}
+                >
+                  Rename
+                </Button>
+              </div>
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
+      )}
 
       <StatusBadge $visible={showStatusMessage}>
         {statusMessage.includes('Error') ? (
