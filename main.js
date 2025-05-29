@@ -1331,6 +1331,42 @@ ipcMain.handle('getAllFiles', async () => {
   }
 });
 
+// Create directory handler
+ipcMain.handle('create-directory', async (event, dirPath) => {
+  try {
+    await fs.promises.mkdir(dirPath, { recursive: true });
+    return { success: true, path: dirPath };
+  } catch (error) {
+    console.error('Error creating directory:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Delete file or directory handler
+ipcMain.handle('delete-file', async (event, filePath) => {
+  try {
+    const stats = await fs.promises.stat(filePath);
+    
+    if (stats.isDirectory()) {
+      // Delete directory recursively
+      await fs.promises.rmdir(filePath, { recursive: true });
+    } else {
+      // Delete file
+      await fs.promises.unlink(filePath);
+    }
+    
+    // Log the deletion
+    await logAccess('delete_file', filePath, { 
+      type: stats.isDirectory() ? 'directory' : 'file' 
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting file/directory:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Helper function to scan directory with depth limit and performance optimization
 async function scanDirectory(dirPath, maxDepth = 2, currentDepth = 0) {
   if (currentDepth > maxDepth) return [];

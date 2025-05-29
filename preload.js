@@ -63,6 +63,8 @@ contextBridge.exposeInMainWorld(
       // File operations
       moveFile: (params) => ipcRenderer.invoke('moveFile', params),
       copyFileFromPath: (params) => ipcRenderer.invoke('copyFileFromPath', params),
+      createDirectory: (dirPath) => ipcRenderer.invoke('create-directory', dirPath),
+      deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
       
       // Analytics functions
       getAllFiles: () => ipcRenderer.invoke('getAllFiles'),
