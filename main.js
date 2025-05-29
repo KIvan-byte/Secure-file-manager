@@ -12,6 +12,7 @@ const ip = require('ip');
 const FileUtils = require('./utils/file-utils');
 const EncryptionUtils = require('./utils/encryption-utils');
 const CompressionUtils = require('./utils/compression-utils');
+const TwoFactorAuth = require('./utils/two-factor-auth');
 const util = require('util');
 const { exec } = require('child_process');
 const net = require('net');
@@ -46,6 +47,9 @@ app.commandLine.appendSwitch('enable-aggressive-domstorage-flushing');
 // We'll create a separate module loader for lowdb using dynamic imports
 // since lowdb v5 is an ES Module
 let db;
+
+// Initialize 2FA
+const twoFactorAuth = new TwoFactorAuth();
 
 // Set up Express server for file sharing
 const expressApp = express();
@@ -1163,49 +1167,84 @@ ipcMain.handle('get-encrypted-file-details', async (event, filePath) => {
   }
 });
 
-// Share encrypted file with option for automatic decryption
-ipcMain.handle('share-encrypted-file-with-decryption', async (event, { filePath, password, allowDecryption }) => {
+// 2FA Authentication handlers
+ipcMain.handle('auth:check-2fa-setup', async () => {
   try {
-    if (!filePath || !filePath.endsWith('.enc')) {
-      return { success: false, error: 'Invalid encrypted file path' };
-    }
+    const isSetup = twoFactorAuth.isSetup();
+    return { success: true, isSetup };
+  } catch (error) {
+    console.error('Error checking 2FA setup:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:generate-2fa-secret', async () => {
+  try {
+    const secret = twoFactorAuth.generateSecret();
+    const qrCodeDataURL = await twoFactorAuth.generateQRCodeURL(secret);
     
-    // Check if file exists
-    if (!FileUtils.fileExists(filePath)) {
-      return { success: false, error: 'File does not exist' };
-    }
-    
-    // Create a unique token for this share
-    const token = uuidv4();
-    const encryptionKey = crypto.randomBytes(32).toString('hex');
-    
-    // Store share information, including whether decryption is allowed and the password (if provided)
-    db.data.sharedLinks.push({
-      id: token,
-      filePath,
-      createdAt: new Date().toISOString(),
-      encryptionKey,
-      isUsed: false,
-      allowDecryption: allowDecryption === true,
-      decryptionPassword: allowDecryption && password ? password : null
-    });
-    
-    await db.write();
-    
-    // Log the share
-    await logAccess('share_file', filePath, { token, encryptedFile: true, allowDecryption });
-    
-    // Return share link with network address
-    const shareUrl = `${serverAddress}/share/${token}?key=${encryptionKey}`;
-    
-    return { 
-      success: true, 
-      shareLink: shareUrl,
-      encryptionKey,
-      token
+    return {
+      success: true,
+      secret,
+      qrCode: qrCodeDataURL
     };
   } catch (error) {
-    console.error(`Error sharing encrypted file:`, error);
+    console.error('Error generating 2FA secret:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:setup-2fa', async (event, { secret, code }) => {
+  try {
+    // Verify the code first
+    const isValid = twoFactorAuth.verifyTOTP(code, secret);
+    
+    if (!isValid) {
+      return { success: false, error: 'Invalid verification code' };
+    }
+    
+    // Save the configuration
+    const saved = twoFactorAuth.saveConfig(secret);
+    
+    if (!saved) {
+      return { success: false, error: 'Failed to save 2FA configuration' };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error setting up 2FA:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:verify-2fa-code', async (event, code) => {
+  try {
+    const config = twoFactorAuth.loadConfig();
+    
+    if (!config || !config.enabled) {
+      return { success: false, error: '2FA is not set up' };
+    }
+    
+    const isValid = twoFactorAuth.verifyTOTP(code, config.secret);
+    
+    return { success: isValid, error: isValid ? null : 'Invalid code' };
+  } catch (error) {
+    console.error('Error verifying 2FA code:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:disable-2fa', async () => {
+  try {
+    const disabled = twoFactorAuth.disable();
+    
+    if (!disabled) {
+      return { success: false, error: 'Failed to disable 2FA' };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error disabling 2FA:', error);
     return { success: false, error: error.message };
   }
 });

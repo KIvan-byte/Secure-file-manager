@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { styled, keyframes } from 'styled-components';
-import { FaLock, FaUnlock, FaExclamationTriangle, FaMoon, FaShieldAlt, FaQuestion, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaLock, FaUnlock, FaExclamationTriangle, FaShieldAlt, FaQuestion, FaEye, FaEyeSlash, FaArrowLeft, FaKey, FaInfo } from 'react-icons/fa';
 
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -16,6 +16,10 @@ const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
+`;
+
+const spin = keyframes`
+  to { transform: rotate(360deg); }
 `;
 
 const LockContainer = styled.div`
@@ -172,22 +176,6 @@ const UnlockButton = styled.button`
     transform: none;
     box-shadow: 0 4px 10px rgba(149, 165, 166, 0.3);
   }
-  
-  &:after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: white;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  
-  &:active:after {
-    opacity: 0.2;
-  }
 `;
 
 const ForgotPasswordLink = styled.button`
@@ -261,10 +249,6 @@ const CurrentDate = styled.div`
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 `;
 
-const spin = keyframes`
-  to { transform: rotate(360deg); }
-`;
-
 const LoadingIndicator = styled.div`
   display: inline-block;
   width: 20px;
@@ -291,153 +275,262 @@ const SecurityMessage = styled.div`
   animation: ${fadeIn} 1s ease;
 `;
 
-const AttemptCounter = styled.div`
-  color: ${props => props.attempts <= 2 ? '#e74c3c' : '#7f8c8d'};
-  font-size: 13px;
-  margin-top: 5px;
-  text-align: right;
-  animation: ${fadeIn} 0.3s ease;
+const TwoFactorSection = styled.div`
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ecf0f1;
+  display: ${props => props.$show ? 'block' : 'none'};
+  animation: ${slideUp} 0.4s ease;
+`;
+
+const TwoFactorTitle = styled.h3`
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 18px;
+  text-align: center;
+`;
+
+const TwoFactorInput = styled.input`
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid ${props => props.error ? '#e74c3c' : '#ddd'};
+  border-radius: 16px;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 0.5em;
+  transition: all 0.3s;
+  background-color: ${props => props.error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
+  
+  &:focus {
+    border-color: ${props => props.error ? '#e74c3c' : '#3498db'};
+    outline: none;
+    box-shadow: 0 0 0 3px ${props => props.error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
+    background-color: white;
+  }
+  
+  &::placeholder {
+    letter-spacing: normal;
+  }
 `;
 
 const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
   const [inputPassword, setInputPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [attempts, setAttempts] = useState(5);
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorError, setTwoFactorError] = useState('');
+
   useEffect(() => {
-    // Update the time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, []);
-  
-  const formatDate = (date) => {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    return date.toLocaleDateString(undefined, options);
+
+  useEffect(() => {
+    checkTwoFactorSetup();
+  }, []);
+
+  const checkTwoFactorSetup = async () => {
+    try {
+      const result = await window.electron.auth.checkTwoFactorSetup();
+      setShowTwoFactor(result.isSetup);
+    } catch (error) {
+      console.error('Error checking 2FA setup:', error);
+      setShowTwoFactor(false);
+    }
   };
-  
-  const handleUnlock = () => {
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!inputPassword) {
+      setError('Please enter password');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
-    
-    // Simple timeout to simulate checking
-    setTimeout(() => {
+
+    try {
       if (inputPassword === password) {
+        // Check if 2FA is enabled
+        const result = await window.electron.auth.checkTwoFactorSetup();
+        if (result.isSetup) {
+          setShowTwoFactor(true);
+        } else {
+          // No 2FA setup, unlock directly
+          onUnlock();
+        }
+      } else {
+        setError('Invalid password');
+      }
+    } catch (error) {
+      setError('Authentication error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTwoFactorSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!twoFactorCode || twoFactorCode.length !== 6) {
+      setTwoFactorError('Please enter a 6-digit code');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTwoFactorError('');
+
+    try {
+      const result = await window.electron.auth.verifyTwoFactorCode(twoFactorCode);
+      if (result.success) {
         onUnlock();
       } else {
-        setAttempts(prev => prev - 1);
-        if (attempts <= 1) {
-          setError('Too many failed attempts. Try again in 30 seconds.');
-          setTimeout(() => {
-            setAttempts(5);
-            setError('');
-          }, 30000);
-        } else {
-          setError(`Incorrect password. ${attempts - 1} ${attempts - 1 === 1 ? 'attempt' : 'attempts'} remaining.`);
-        }
-        setIsSubmitting(false);
+        setTwoFactorError('Invalid code. Please try again.');
       }
-    }, 800);
-  };
-  
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !isSubmitting && attempts > 0) {
-      handleUnlock();
+    } catch (error) {
+      setTwoFactorError('Error verifying code');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  const handleForgotPassword = () => {
-    if (onForgotPassword) {
-      onForgotPassword();
-    } else {
-      alert('Password recovery feature is currently unavailable. Please contact your administrator.');
-    }
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
-  
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
-  
+
   return (
     <LockContainer>
       <TimeDisplay>
-        <CurrentTime>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</CurrentTime>
+        <CurrentTime>{formatTime(currentTime)}</CurrentTime>
         <CurrentDate>{formatDate(currentTime)}</CurrentDate>
       </TimeDisplay>
-      
+
       <LockForm>
         <LockIcon>
           <FaLock />
         </LockIcon>
+        
         <LockTitle>Application Locked</LockTitle>
         <LockMessage>
-          Enter your password to continue working with your secure files
+          {showTwoFactor 
+            ? 'Enter the code from your authenticator app' 
+            : 'Enter your password to unlock the application'}
         </LockMessage>
-        
-        <InputWrapper>
-          <PasswordInput
-            type={showPassword ? "text" : "password"}
-            value={inputPassword}
-            onChange={(e) => setInputPassword(e.target.value)}
-            placeholder="Enter password"
-            onKeyDown={handleKeyDown}
-            autoFocus
-            error={!!error ? true : undefined}
-            disabled={isSubmitting || attempts <= 0}
-          />
-          <PasswordToggle 
-            onClick={togglePasswordVisibility} 
-            type="button"
-            aria-label={showPassword ? "Hide password" : "Show password"}
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
-          </PasswordToggle>
-          {error && attempts <= 2 && attempts > 0 && (
-            <AttemptCounter attempts={attempts}>
-              {attempts} {attempts === 1 ? 'attempt' : 'attempts'} remaining
-            </AttemptCounter>
-          )}
-        </InputWrapper>
-        
-        {error && (
-          <ErrorMessage>
-            <FaExclamationTriangle /> {error}
-          </ErrorMessage>
-        )}
-        
-        <ButtonGroup>
-          <UnlockButton 
-            onClick={handleUnlock}
-            disabled={isSubmitting || !inputPassword || attempts <= 0}
-          >
-            {isSubmitting ? (
-              <>
-                <LoadingIndicator /> Unlocking...
-              </>
-            ) : (
-              <>
-                <FaUnlock /> Unlock
-              </>
+
+        {!showTwoFactor ? (
+          <form onSubmit={handlePasswordSubmit}>
+            <InputWrapper>
+              <PasswordInput
+                type={showPassword ? 'text' : 'password'}
+                value={inputPassword}
+                onChange={(e) => setInputPassword(e.target.value)}
+                placeholder="Enter password"
+                error={error}
+                autoFocus
+              />
+              <PasswordToggle
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </PasswordToggle>
+            </InputWrapper>
+
+            {error && (
+              <ErrorMessage>
+                <FaExclamationTriangle />
+                {error}
+              </ErrorMessage>
             )}
-          </UnlockButton>
-        </ButtonGroup>
-        
-        <ForgotPasswordLink onClick={handleForgotPassword}>
-          <FaQuestion size={12} /> Forgot password?
-        </ForgotPasswordLink>
-        
+
+            <ButtonGroup>
+              <UnlockButton type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <LoadingIndicator /> : <FaUnlock />}
+                {isSubmitting ? 'Checking...' : 'Unlock'}
+              </UnlockButton>
+            </ButtonGroup>
+
+            {onForgotPassword && (
+              <ForgotPasswordLink onClick={onForgotPassword}>
+                <FaQuestion />
+                Forgot Password?
+              </ForgotPasswordLink>
+            )}
+          </form>
+        ) : (
+          <TwoFactorSection $show={showTwoFactor}>
+            <TwoFactorTitle>Two-Factor Authentication</TwoFactorTitle>
+            <form onSubmit={handleTwoFactorSubmit}>
+              <InputWrapper>
+                <TwoFactorInput
+                  type="text"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength="6"
+                  error={twoFactorError}
+                  autoFocus
+                />
+              </InputWrapper>
+
+              {twoFactorError && (
+                <ErrorMessage>
+                  <FaExclamationTriangle />
+                  {twoFactorError}
+                </ErrorMessage>
+              )}
+
+              <ButtonGroup>
+                <UnlockButton 
+                  type="button" 
+                  onClick={() => {
+                    setShowTwoFactor(false);
+                    setInputPassword('');
+                    setTwoFactorCode('');
+                    setTwoFactorError('');
+                  }}
+                  style={{background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)'}}
+                >
+                  <FaArrowLeft />
+                  Back
+                </UnlockButton>
+                <UnlockButton type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <LoadingIndicator /> : <FaUnlock />}
+                  {isSubmitting ? 'Verifying...' : 'Unlock'}
+                </UnlockButton>
+              </ButtonGroup>
+            </form>
+          </TwoFactorSection>
+        )}
+
         <LockInfo>
-          <FaMoon /> Your application was locked for security reasons
+          <FaInfo />
+          Application automatically locks for security
         </LockInfo>
       </LockForm>
-      
+
       <SecurityMessage>
-        <FaShieldAlt /> Secured with end-to-end encryption. Your data is protected.
+        <FaShieldAlt />
+        Your files are protected with end-to-end encryption
       </SecurityMessage>
     </LockContainer>
   );

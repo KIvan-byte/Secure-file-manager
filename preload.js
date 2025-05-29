@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Use localStorage for demo persistence
+// Use localStorage for secure notes data storage
 function getStoredMasterPassword() {
   try {
     return localStorage.getItem('secureNotesMasterPassword');
@@ -8,11 +8,13 @@ function getStoredMasterPassword() {
     return null;
   }
 }
+
 function setStoredMasterPassword(pw) {
   try {
     localStorage.setItem('secureNotesMasterPassword', pw);
   } catch {}
 }
+
 function getStoredEntries() {
   try {
     const raw = localStorage.getItem('secureNotesEntries');
@@ -21,11 +23,13 @@ function getStoredEntries() {
     return [];
   }
 }
+
 function setStoredEntries(entries) {
   try {
     localStorage.setItem('secureNotesEntries', JSON.stringify(entries));
   } catch {}
 }
+
 let secureNotesEntries = getStoredEntries();
 
 // Expose protected methods that allow the renderer process to use
@@ -89,13 +93,18 @@ contextBridge.exposeInMainWorld(
       validateMasterPassword: async (password) => {
         const stored = getStoredMasterPassword();
         if (!stored) {
-          return { success: false, newUser: true };
+          return { success: false, error: 'No password set' };
         }
         if (password === stored) {
           return { success: true };
         }
         return { success: false, error: 'Invalid password' };
-      }
+      },
+      checkTwoFactorSetup: () => ipcRenderer.invoke('auth:check-2fa-setup'),
+      generateTwoFactorSecret: () => ipcRenderer.invoke('auth:generate-2fa-secret'),
+      setupTwoFactor: (secret, code) => ipcRenderer.invoke('auth:setup-2fa', { secret, code }),
+      verifyTwoFactorCode: (code) => ipcRenderer.invoke('auth:verify-2fa-code', code),
+      disableTwoFactor: () => ipcRenderer.invoke('auth:disable-2fa')
     },
     secureNotes: {
       setupVault: async (password) => {

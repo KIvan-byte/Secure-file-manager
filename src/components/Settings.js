@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
-import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
+import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt } from 'react-icons/fa';
+import TwoFactorSettings from './TwoFactorSettings';
 
 const Container = styled.div`
   display: flex;
@@ -611,6 +612,17 @@ function Settings() {
               <li>Make sure to remember your password, as it cannot be recovered</li>
             </ul>
           </InfoBox>
+        </CardContent>
+      </SettingsCard>
+
+      <SettingsCard>
+        <CardHeader>
+          <CardTitle>
+            <FaMobileAlt /> Two-Factor Authentication
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TwoFactorSettings />
         </CardContent>
       </SettingsCard>
     </Container>
