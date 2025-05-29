@@ -16,26 +16,32 @@ const util = require('util');
 const { exec } = require('child_process');
 const net = require('net');
 
-// Override the GPU requirements to fix GL errors
+// Optimize for low power consumption and reduce heat generation
 app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('use-gl', 'desktop');
 app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-rasterization');
 app.commandLine.appendSwitch('disable-gpu-vsync');
-app.commandLine.appendSwitch('ignore-gpu-blacklist');
-app.commandLine.appendSwitch('force-high-performance-gpu', 'false');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-features', 'VizDisplayCompositor');
 
-// Remove any conflicting GL settings
-app.commandLine.removeSwitch('use-angle');
-app.commandLine.removeSwitch('use-metal');
+// Force low power mode and limit CPU usage
+app.commandLine.appendSwitch('force-low-power-gpu');
+app.commandLine.appendSwitch('max_old_space_size', '256'); // Reduce memory usage further
+app.commandLine.appendSwitch('disable-extensions');
+app.commandLine.appendSwitch('disable-plugins');
+app.commandLine.appendSwitch('disable-dev-shm-usage');
+app.commandLine.appendSwitch('disable-accelerated-2d-canvas');
+app.commandLine.appendSwitch('disable-accelerated-jpeg-decoding');
+app.commandLine.appendSwitch('disable-accelerated-mjpeg-decode');
+app.commandLine.appendSwitch('disable-accelerated-video-decode');
+app.commandLine.appendSwitch('no-sandbox');
 
-// Enable hardware acceleration if possible, but provide fallbacks - update these settings
-if (process.platform === 'win32') {
-  app.commandLine.appendSwitch('use-angle', 'gl');
-} else if (process.platform === 'linux') {
-  app.commandLine.appendSwitch('use-gl', 'egl');
-} else if (process.platform === 'darwin') {
-  app.commandLine.appendSwitch('use-metal');
-}
+// Throttle timers to reduce CPU usage
+app.commandLine.appendSwitch('disable-ipc-flooding-protection');
+app.commandLine.appendSwitch('enable-aggressive-domstorage-flushing');
 
 // We'll create a separate module loader for lowdb using dynamic imports
 // since lowdb v5 is an ES Module
@@ -550,6 +556,11 @@ async function createWindow() {
       sandbox: false,
       webSecurity: true,
       preload: path.join(__dirname, 'preload.js'),
+      // Disable hardware acceleration for reduced heat
+      offscreen: false,
+      hardwareAcceleration: false,
+      // Limit background processing
+      backgroundThrottling: true,
     },
     icon: path.join(__dirname, 'build', 'icon.png'),
     show: false,
@@ -1266,7 +1277,7 @@ ipcMain.handle('getAllFiles', async () => {
       if (fs.existsSync(scanPath)) {
         try {
           // Use a more limited scan to avoid reading the entire file system
-          const files = await scanDirectory(scanPath, 3); // Limit depth to 3 levels
+          const files = await scanDirectory(scanPath, 2); // Reduced depth to 2 levels
           allFiles = allFiles.concat(files);
         } catch (err) {
           console.error(`Error scanning ${scanPath}:`, err);
@@ -1281,16 +1292,30 @@ ipcMain.handle('getAllFiles', async () => {
   }
 });
 
-// Helper function to scan directory with depth limit
-async function scanDirectory(dirPath, maxDepth = 3, currentDepth = 0) {
+// Helper function to scan directory with depth limit and performance optimization
+async function scanDirectory(dirPath, maxDepth = 2, currentDepth = 0) {
   if (currentDepth > maxDepth) return [];
   
   try {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
     let results = [];
     
+    // Limit the number of files processed to avoid system overload
+    const maxFilesPerDir = 100;
+    let processedFiles = 0;
+    
     for (const entry of entries) {
+      if (processedFiles >= maxFilesPerDir) break;
+      
       const entryPath = path.join(dirPath, entry.name);
+      
+      // Skip system directories and hidden files to reduce load
+      if (entry.name.startsWith('.') || 
+          entry.name.includes('node_modules') || 
+          entry.name.includes('$RECYCLE.BIN') ||
+          entry.name.includes('System Volume Information')) {
+        continue;
+      }
       
       try {
         const stats = fs.statSync(entryPath);
@@ -1319,6 +1344,13 @@ async function scanDirectory(dirPath, maxDepth = 3, currentDepth = 0) {
             isDirectory: false,
             mtime: stats.mtime
           });
+        }
+        
+        processedFiles++;
+        
+        // Add small delay every 10 files to prevent CPU overload
+        if (processedFiles % 10 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 1));
         }
       } catch (err) {
         console.error(`Error accessing ${entryPath}:`, err);
