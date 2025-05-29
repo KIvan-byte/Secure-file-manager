@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes, FaCalendarAlt, FaList, FaThLarge } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes, FaCalendarAlt, FaList, FaThLarge, FaCut, FaPaste } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
@@ -2674,12 +2674,12 @@ function FileExplorer() {
               setSelectedFiles([contextMenu.file]);
               handleCut();
             }}>
-              Cut
+              <FaCut /> Cut
             </ContextMenuItem>
             
             {clipboard && (
               <ContextMenuItem onClick={handlePaste}>
-                Paste
+                <FaPaste /> Paste
               </ContextMenuItem>
             )}
             
