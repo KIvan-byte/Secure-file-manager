@@ -12,6 +12,7 @@ import Settings from './components/Settings';
 import LockScreen from './components/LockScreen';
 import AccessSharedFile from './components/AccessSharedFile';
 import ManageLinks from './components/ManageLinks';
+import ZeroKnowledgeSync from './components/ZeroKnowledgeSync';
 
 const AppContainer = styled.div`
   display: flex;
@@ -139,6 +140,7 @@ function App() {
               <Route path="/logs" element={<AccessLogs />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/manage-links" element={<ManageLinks />} />
+              <Route path="/sync" element={<ZeroKnowledgeSync />} />
               <Route path="/access/:token" element={<AccessSharedFile />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

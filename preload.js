@@ -90,7 +90,19 @@ contextBridge.exposeInMainWorld(
       calculateFileHash: (filePath, algorithm) => ipcRenderer.invoke('calculate-file-hash', filePath, algorithm),
       // Manage Active Shares
       listActiveShares: () => ipcRenderer.invoke('list-active-shares'),
-      revokeShareLink: (tokenId) => ipcRenderer.invoke('revoke-share-link', tokenId)
+      revokeShareLink: (tokenId) => ipcRenderer.invoke('revoke-share-link', tokenId),
+      
+      // Zero-Knowledge Sync API
+      syncInitialize: (masterPassword) => ipcRenderer.invoke('sync-initialize', masterPassword),
+      syncAddFile: (filePath, options) => ipcRenderer.invoke('sync-add-file', filePath, options),
+      syncGetPeers: () => ipcRenderer.invoke('sync-get-peers'),
+      syncGetStatus: () => ipcRenderer.invoke('sync-get-status'),
+      syncShutdown: () => ipcRenderer.invoke('sync-shutdown'),
+      syncGetFiles: () => ipcRenderer.invoke('sync-get-files'),
+      syncDownloadFile: (fileHash) => ipcRenderer.invoke('sync-download-file', fileHash),
+      syncRemoveFile: (fileHash) => ipcRenderer.invoke('sync-remove-file', fileHash),
+      syncGetDirectory: () => ipcRenderer.invoke('sync-get-directory'),
+      syncOpenDirectory: () => ipcRenderer.invoke('sync-open-directory'),
     },
     auth: {
       validateMasterPassword: async (password) => {
@@ -150,3 +162,93 @@ contextBridge.exposeInMainWorld(
     }
   }
 );
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Event listeners for sync events
+  on: (channel, callback) => {
+    const validChannels = [
+      'sync-file-received',
+      'sync-file-added',
+      'sync-peer-discovered',
+      'sync-status-changed'
+    ];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.on(channel, (event, ...args) => callback(...args));
+    }
+  },
+  
+  removeListener: (channel, callback) => {
+    const validChannels = [
+      'sync-file-received',
+      'sync-file-added',
+      'sync-peer-discovered',
+      'sync-status-changed'
+    ];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.removeListener(channel, callback);
+    }
+  },
+  
+  // File operations
+  selectFile: () => ipcRenderer.invoke('select-file'),
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
+  selectSaveLocation: () => ipcRenderer.invoke('select-save-location'),
+  readDirectory: (path) => ipcRenderer.invoke('read-directory', path),
+  getFileStats: (path) => ipcRenderer.invoke('get-file-stats', path),
+  readFile: (path, encoding) => ipcRenderer.invoke('read-file', path, encoding),
+  writeFile: (path, content) => ipcRenderer.invoke('write-file', path, content),
+  deleteFile: (path) => ipcRenderer.invoke('delete-file', path),
+  moveFile: (oldPath, newPath) => ipcRenderer.invoke('move-file', oldPath, newPath),
+  copyFile: (src, dest) => ipcRenderer.invoke('copy-file', src, dest),
+  createDirectory: (path) => ipcRenderer.invoke('create-directory', path),
+  openExternal: (path) => ipcRenderer.invoke('open-external', path),
+  
+  // Search operations
+  searchFiles: (searchParams) => ipcRenderer.invoke('search-files', searchParams),
+  
+  // Encryption operations
+  encryptFile: (inputPath, password, outputPath) => ipcRenderer.invoke('encrypt-file', inputPath, password, outputPath),
+  decryptFile: (inputPath, password, outputPath) => ipcRenderer.invoke('decrypt-file', inputPath, password, outputPath),
+  isEncryptedFile: (filePath) => ipcRenderer.invoke('is-encrypted-file', filePath),
+  
+  // Compression operations
+  compressFiles: (sourcePaths, outputPath, options) => ipcRenderer.invoke('compress-files', sourcePaths, outputPath, options),
+  extractArchive: (archivePath, outputPath) => ipcRenderer.invoke('extract-archive', archivePath, outputPath),
+  
+  // File sharing
+  createShareLink: (filePath, options) => ipcRenderer.invoke('create-share-link', filePath, options),
+  revokeShareLink: (token) => ipcRenderer.invoke('revoke-share-link', token),
+  getShareLinks: () => ipcRenderer.invoke('get-share-links'),
+  accessSharedFile: (token, key) => ipcRenderer.invoke('access-shared-file', token, key),
+  
+  // Access logs
+  getAccessLogs: (filters) => ipcRenderer.invoke('get-access-logs', filters),
+  logActivity: (activity) => ipcRenderer.invoke('log-activity', activity),
+  
+  // Two-factor authentication
+  generate2FASecret: () => ipcRenderer.invoke('generate-2fa-secret'),
+  generateQRCode: (secret, accountName, issuer) => ipcRenderer.invoke('generate-qr-code', secret, accountName, issuer),
+  verify2FAToken: (token, secret) => ipcRenderer.invoke('verify-2fa-token', token, secret),
+  save2FAConfig: (secret) => ipcRenderer.invoke('save-2fa-config', secret),
+  
+  // Zero-Knowledge Sync operations
+  syncInitialize: (masterPassword) => ipcRenderer.invoke('sync-initialize', masterPassword),
+  syncAddFile: (filePath, options) => ipcRenderer.invoke('sync-add-file', filePath, options),
+  syncGetPeers: () => ipcRenderer.invoke('sync-get-peers'),
+  syncGetStatus: () => ipcRenderer.invoke('sync-get-status'),
+  syncShutdown: () => ipcRenderer.invoke('sync-shutdown'),
+  
+  // Secure notes
+  getStoredMasterPassword,
+  setStoredMasterPassword,
+  getStoredEntries,
+  setStoredEntries,
+  
+  // Helper function to require modules (for sync manager)
+  require: (moduleName) => {
+    if (moduleName === 'zero-knowledge-sync') {
+      return require('./utils/zero-knowledge-sync');
+    }
+    throw new Error(`Module ${moduleName} not allowed`);
+  }
+});

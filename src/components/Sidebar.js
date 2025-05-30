@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { styled } from 'styled-components';
-import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar, FaSignOutAlt, FaCog, FaStickyNote, FaLink } from 'react-icons/fa';
+import { FaFolder, FaShareAlt, FaListAlt, FaBars, FaTimes, FaLock, FaChartBar, FaSignOutAlt, FaCog, FaStickyNote, FaLink, FaSync } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
   background-color: #2c3e50;
@@ -227,7 +227,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           <NavLink
             to="/manage-links"
             $active={location.pathname === '/manage-links' ? "true" : undefined}
-            onClick={() => handleNavigation('/manage-links', 2)} // Adjust index if necessary
+            onClick={() => handleNavigation('/manage-links', 2)}
           >
             <NavIcon $collapsed={collapsed}><FaLink /></NavIcon>
             <NavText $collapsed={collapsed}>Manage Links</NavText>
@@ -241,11 +241,20 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
             <NavIcon $collapsed={collapsed}><FaLock /></NavIcon>
             <NavText $collapsed={collapsed}>Encrypted Files</NavText>
           </NavLink>
+
+          <NavLink 
+            to="/sync" 
+            $active={location.pathname === '/sync' ? "true" : undefined}
+            onClick={() => handleNavigation('/sync', 4)} 
+          >
+            <NavIcon $collapsed={collapsed}><FaSync /></NavIcon>
+            <NavText $collapsed={collapsed}>Zero-Knowledge Sync</NavText>
+          </NavLink>
           
           <NavLink 
             to="/secure-notes" 
             $active={location.pathname === '/secure-notes' ? "true" : undefined}
-            onClick={() => handleNavigation('/secure-notes', 4)} 
+            onClick={() => handleNavigation('/secure-notes', 5)} 
           >
             <NavIcon $collapsed={collapsed}><FaStickyNote /></NavIcon>
             <NavText $collapsed={collapsed}>Secure Notes</NavText>
@@ -254,7 +263,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           <NavLink 
             to="/analytics" 
             $active={location.pathname === '/analytics' ? "true" : undefined}
-            onClick={() => handleNavigation('/analytics', 5)} 
+            onClick={() => handleNavigation('/analytics', 6)} 
           >
             <NavIcon $collapsed={collapsed}><FaChartBar /></NavIcon>
             <NavText $collapsed={collapsed}>Analytics</NavText>
@@ -263,7 +272,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           <NavLink 
             to="/logs" 
             $active={location.pathname === '/logs' ? "true" : undefined}
-            onClick={() => handleNavigation('/logs', 6)} 
+            onClick={() => handleNavigation('/logs', 7)} 
           >
             <NavIcon $collapsed={collapsed}><FaListAlt /></NavIcon>
             <NavText $collapsed={collapsed}>Access Logs</NavText>
@@ -272,7 +281,7 @@ function Sidebar({ selectedIndex, onSelect, onLock }) {
           <NavLink 
             to="/settings" 
             $active={location.pathname === '/settings' ? "true" : undefined}
-            onClick={() => handleNavigation('/settings', 7)} 
+            onClick={() => handleNavigation('/settings', 8)} 
           >
             <NavIcon $collapsed={collapsed}><FaCog /></NavIcon>
             <NavText $collapsed={collapsed}>Settings</NavText>

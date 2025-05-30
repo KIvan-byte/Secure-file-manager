@@ -13,7 +13,210 @@ const FileUtils = require('./utils/file-utils');
 const EncryptionUtils = require('./utils/encryption-utils');
 const CompressionUtils = require('./utils/compression-utils');
 const TwoFactorAuth = require('./utils/two-factor-auth');
-const util = require('util');
+// Initialize Zero-Knowledge Sync
+let syncManager = null;
+ipcMain.handle('sync-initialize', async (event, masterPassword) => {
+  try {
+    if (!syncManager) {
+      const ZeroKnowledgeSync = require('./utils/zero-knowledge-sync');
+      syncManager = new ZeroKnowledgeSync();
+    }
+    
+    await syncManager.initialize(masterPassword);
+    
+    // Set up event listeners for file sync events
+    syncManager.on('fileReceived', (data) => {
+      console.log(`File received event: ${data.fileName}`);
+      // Notify renderer about new file
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('sync-file-received', data);
+      }
+    });
+    
+    syncManager.on('fileAdded', (data) => {
+      console.log(`File added event: ${data.fileName}`);
+      // Notify renderer about new file
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('sync-file-added', data);
+      }
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Sync initialization failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('sync-add-file', async (event, filePath, options = {}) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: false, error: 'Sync system not initialized' };
+    }
+    
+    const fileMetadata = await syncManager.addFileToSync(filePath, options);
+    
+    return { 
+      success: true, 
+      metadata: fileMetadata
+    };
+  } catch (error) {
+    console.error('Failed to add file to sync:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('sync-get-peers', async (event) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: true, peers: [] };
+    }
+    
+    const peers = syncManager.getPeers();
+    console.log('Main: Getting peers, count:', peers.length); // Debug log
+    
+    return { success: true, peers };
+  } catch (error) {
+    console.error('Failed to get peers:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('sync-get-status', async (event) => {
+  try {
+    if (!syncManager) {
+      return { 
+        success: true, 
+        status: { 
+          isInitialized: false, 
+          isRunning: false,
+          stats: { filesInSync: 0, activeSessions: 0 }
+        } 
+      };
+    }
+    
+    const status = {
+      isInitialized: syncManager.isInitialized,
+      isRunning: syncManager.isRunning,
+      stats: {
+        filesInSync: syncManager.files ? syncManager.files.size : 0,
+        activeSessions: syncManager.peers ? syncManager.peers.size : 0
+      }
+    };
+    
+    return { success: true, status };
+  } catch (error) {
+    console.error('Failed to get sync status:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('sync-shutdown', async (event) => {
+  try {
+    if (syncManager) {
+      await syncManager.shutdown();
+      syncManager = null;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to shutdown sync:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Get synced files list
+ipcMain.handle('sync-get-files', async (event) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: true, files: [] };
+    }
+    
+    const files = syncManager.getFiles();
+    return { success: true, files };
+  } catch (error) {
+    console.error('Failed to get sync files:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Download a synced file
+ipcMain.handle('sync-download-file', async (event, fileHash) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: false, error: 'Sync system not initialized' };
+    }
+    
+    const content = await syncManager.getFileContent(fileHash);
+    return { success: true, content: content.toString('base64') };
+  } catch (error) {
+    console.error('Failed to download sync file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Remove a file from sync
+ipcMain.handle('sync-remove-file', async (event, fileHash) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: false, error: 'Sync system not initialized' };
+    }
+    
+    await syncManager.removeFileFromSync(fileHash);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to remove sync file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Get sync directory path
+ipcMain.handle('sync-get-directory', async (event) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: false, error: 'Sync system not initialized' };
+    }
+    
+    const directory = syncManager.getSyncDirectory();
+    return { success: true, directory };
+  } catch (error) {
+    console.error('Failed to get sync directory:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Open sync directory in file explorer
+ipcMain.handle('sync-open-directory', async (event) => {
+  try {
+    if (!syncManager || !syncManager.isInitialized) {
+      return { success: false, error: 'Sync system not initialized' };
+    }
+    
+    const directory = syncManager.getSyncDirectory();
+    if (directory && fs.existsSync(directory)) {
+      const { shell } = require('electron');
+      await shell.openPath(directory);
+      return { success: true };
+    } else {
+      return { success: false, error: 'Sync directory not found' };
+    }
+  } catch (error) {
+    console.error('Failed to open sync directory:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Cleanup sync on app exit
+app.on('before-quit', async () => {
+  if (syncManager) {
+    try {
+      await syncManager.shutdown();
+    } catch (error) {
+      console.error('Error shutting down sync on app exit:', error);
+    }
+  }
+});
+
 const { exec } = require('child_process');
 const net = require('net');
 
