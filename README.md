@@ -136,4 +136,7 @@ Application settings can be configured through the Settings interface:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details
+This project is licensed under the [LICENSE](LICENSE) - see the LICENSE file for details
+
+⚠️ **WARNING**: This code is protected by copyright. 
+Use without permission is prohibited.
