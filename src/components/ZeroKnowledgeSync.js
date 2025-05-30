@@ -398,6 +398,7 @@ function ZeroKnowledgeSync() {
   const [loading, setLoading] = useState(false);
   const [syncedFiles, setSyncedFiles] = useState([]);
   const [syncDirectory, setSyncDirectory] = useState('');
+  const [lastEventTimestamp, setLastEventTimestamp] = useState(0); // Add timestamp tracking
   
   const syncManagerRef = useRef(null);
 
@@ -628,6 +629,16 @@ function ZeroKnowledgeSync() {
   };
 
   const addAlert = (type, message) => {
+    const now = Date.now();
+    
+    // Prevent duplicate alerts within 2 seconds
+    if (now - lastEventTimestamp < 2000) {
+      console.log('Skipping duplicate alert:', message);
+      return;
+    }
+    
+    setLastEventTimestamp(now);
+    
     const alert = {
       id: Date.now() + Math.random(), // Make ID more unique
       type,

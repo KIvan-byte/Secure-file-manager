@@ -22,10 +22,11 @@ class ZeroKnowledgeSync extends EventEmitter {
     this.syncQueue = [];
     this.activeSessions = new Set();
     this.syncDirectory = null;
+    this.eventCache = new Set(); // Add event cache to prevent duplicates
     
     // Network discovery settings
     this.discoveryPort = 8889;
-    this.discoveryInterval = 30000; // 30 seconds
+    this.discoveryInterval = 5000; // 5 seconds (very fast discovery)
     this.discoveryTimer = null;
   }
 
@@ -132,7 +133,7 @@ class ZeroKnowledgeSync extends EventEmitter {
         console.log('Periodic sync check...');
         this.syncWithPeers();
       }
-    }, 60000); // Sync every minute
+    }, 15000); // Sync every 15 seconds (even faster)
   }
 
   broadcastDiscovery() {
@@ -178,7 +179,7 @@ class ZeroKnowledgeSync extends EventEmitter {
         this.syncWithPeer(this.peers.get(peerId)).catch(err => {
           console.error(`Failed to sync with new peer ${peerId}:`, err);
         });
-      }, 1000); // Small delay to ensure peer is ready
+      }, 500); // Уменьшили с 1000ms до 500ms
     } else {
       // Update last seen time and trigger periodic sync
       const peer = this.peers.get(peerId);
@@ -186,13 +187,13 @@ class ZeroKnowledgeSync extends EventEmitter {
       peer.status = 'connected';
       
       // Trigger sync occasionally to catch new files
-      if (Math.random() < 0.1) { // 10% chance to sync on discovery
+      if (Math.random() < 0.5) { // 50% chance to sync on discovery (увеличено с 30%)
         console.log(`Periodic sync trigger with peer ${peerId}`);
         setTimeout(() => {
           this.syncWithPeer(peer).catch(err => {
             console.error(`Failed periodic sync with peer ${peerId}:`, err);
           });
-        }, 2000);
+        }, 500); // Уменьшили время задержки
       }
     }
   }
@@ -343,7 +344,18 @@ class ZeroKnowledgeSync extends EventEmitter {
       });
       
       console.log(`Added file to sync: ${fileMetadata.fileName}`);
-      this.emit('fileAdded', fileMetadata);
+      
+      // Prevent duplicate events
+      const eventKey = `fileAdded:${contentHash}`;
+      if (!this.eventCache.has(eventKey)) {
+        this.eventCache.add(eventKey);
+        this.emit('fileAdded', fileMetadata);
+        
+        // Clean up old event keys after 5 minutes
+        setTimeout(() => {
+          this.eventCache.delete(eventKey);
+        }, 300000);
+      }
       
       // Trigger sync with peers
       this.syncWithPeers();
@@ -584,7 +596,18 @@ class ZeroKnowledgeSync extends EventEmitter {
         await this.saveFileToSyncDirectory(fileName, decryptedContent, fileHash);
         
         console.log(`Successfully received and saved file: ${fileName}`);
-        this.emit('fileReceived', { fileName, fileHash });
+        
+        // Prevent duplicate events
+        const eventKey = `fileReceived:${fileHash}`;
+        if (!this.eventCache.has(eventKey)) {
+          this.eventCache.add(eventKey);
+          this.emit('fileReceived', { fileName, fileHash });
+          
+          // Clean up old event keys after 5 minutes
+          setTimeout(() => {
+            this.eventCache.delete(eventKey);
+          }, 300000);
+        }
         
         // Trigger sync with other peers to share the received file
         setTimeout(() => {
