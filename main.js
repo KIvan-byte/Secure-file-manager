@@ -446,111 +446,274 @@ function startFileServer() {
             <!DOCTYPE html>
             <html>
               <head>
-                <title>Decrypt File</title>
+                <title>Decrypt Shared File</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
+                  * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                  }
+                  
                   body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                     line-height: 1.6;
                     color: #333;
-                    max-width: 800px;
-                    margin: 0 auto;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                     padding: 20px;
-                    background-color: #f8f9fa;
                   }
+                  
                   .container {
                     background-color: white;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    padding: 30px;
-                    margin-top: 40px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                    padding: 40px;
+                    max-width: 500px;
+                    width: 100%;
+                    position: relative;
+                    overflow: hidden;
                   }
+                  
+                  .container::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 4px;
+                    background: linear-gradient(90deg, #3498db, #2ecc71, #e74c3c, #f39c12);
+                  }
+                  
+                  .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                  }
+                  
+                  .lock-icon {
+                    font-size: 48px;
+                    color: #3498db;
+                    margin-bottom: 15px;
+                  }
+                  
                   h1 {
                     color: #2c3e50;
-                    margin-top: 0;
+                    margin-bottom: 10px;
+                    font-size: 24px;
+                    font-weight: 600;
                   }
+                  
+                  .subtitle {
+                    color: #7f8c8d;
+                    font-size: 14px;
+                  }
+                  
+                  .file-info {
+                    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 25px;
+                    border-left: 4px solid #3498db;
+                  }
+                  
+                  .file-name {
+                    font-weight: 600;
+                    color: #2c3e50;
+                    font-size: 16px;
+                    word-break: break-all;
+                  }
+                  
                   .form-group {
-                    margin-bottom: 20px.
+                    margin-bottom: 25px;
                   }
+                  
                   label {
                     display: block;
                     margin-bottom: 8px;
-                    font-weight: bold;
+                    font-weight: 600;
+                    color: #34495e;
+                    font-size: 14px;
                   }
+                  
                   input[type="password"] {
                     width: 100%;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
+                    padding: 12px 16px;
+                    border: 2px solid #e9ecef;
+                    border-radius: 8px;
                     font-size: 16px;
+                    transition: all 0.3s ease;
+                    background-color: #f8f9fa;
                   }
+                  
+                  input[type="password"]:focus {
+                    border-color: #3498db;
+                    outline: none;
+                    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+                    background-color: white;
+                  }
+                  
                   button {
-                    background-color: #3498db;
+                    width: 100%;
+                    background: linear-gradient(135deg, #3498db, #2980b9);
                     color: white;
                     border: none;
-                    padding: 12px 20px;
-                    border-radius: 4px;
+                    padding: 14px 20px;
+                    border-radius: 8px;
                     font-size: 16px;
+                    font-weight: 600;
                     cursor: pointer;
+                    transition: all 0.3s ease;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                   }
+                  
                   button:hover {
-                    background-color: #2980b9;
+                    background: linear-gradient(135deg, #2980b9, #21618c);
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
                   }
-                  .file-info {
-                    background-color: #f8f9fa;
-                    padding: 15px;
-                    border-radius: 4px;
-                    margin-bottom: 20px;
+                  
+                  button:active {
+                    transform: translateY(0);
                   }
+                  
                   .error {
                     color: #e74c3c;
-                    background-color: #fdf1f0;
-                    padding: 10px;
-                    border-radius: 4px;
+                    background: linear-gradient(135deg, #fdf1f0, #fbeaea);
+                    padding: 15px;
+                    border-radius: 8px;
                     margin-bottom: 20px;
                     border-left: 4px solid #e74c3c;
-                  }
-                  .note {
                     font-size: 14px;
-                    color: #7f8c8d;
+                    animation: shake 0.5s ease-in-out;
+                  }
+                  
+                  @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                  }
+                  
+                  .note {
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-top: 25px;
+                    font-size: 13px;
+                    color: #6c757d;
+                    line-height: 1.5;
+                  }
+                  
+                  .note-title {
+                    font-weight: 600;
+                    color: #495057;
+                    margin-bottom: 8px;
+                  }
+                  
+                  .loading {
+                    display: none;
+                    text-align: center;
                     margin-top: 20px;
+                  }
+                  
+                  .spinner {
+                    border: 3px solid #f3f3f3;
+                    border-top: 3px solid #3498db;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 10px;
+                  }
+                  
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                  
+                  @media (max-width: 480px) {
+                    .container {
+                      padding: 30px 20px;
+                      margin: 10px;
+                    }
+                    
+                    h1 {
+                      font-size: 20px;
+                    }
+                    
+                    .lock-icon {
+                      font-size: 36px;
+                    }
                   }
                 </style>
               </head>
               <body>
                 <div class="container">
-                  <h1>Decrypt Shared File</h1>
-                  
-                  <div class="file-info">
-                    <strong>File:</strong> ${filename}
+                  <div class="header">
+                    <div class="lock-icon">🔐</div>
+                    <h1>Decrypt Shared File</h1>
+                    <div class="subtitle">Enter the password to access the original file</div>
                   </div>
                   
-                  ${req.query.error ? `<div class="error">${req.query.error}</div>` : ''}
+                  <div class="file-info">
+                    <div class="file-name">📄 ${filename}</div>
+                  </div>
                   
-                  <form action="/share/${token}" method="GET">
+                  ${req.query.error ? `<div class="error">❌ ${req.query.error}</div>` : ''}
+                  
+                  <form action="/share/${token}" method="GET" onsubmit="showLoading()">
                     <input type="hidden" name="key" value="${key}">
                     
                     <div class="form-group">
-                      <label for="password">Enter Decryption Password:</label>
-                      <input type="password" id="password" name="password" required>
+                      <label for="password">🔑 Enter Original Encryption Password:</label>
+                      <input type="password" id="password" name="password" required autocomplete="off" placeholder="Enter the password used to encrypt this file">
                     </div>
                     
-                    <button type="submit">Decrypt and Download</button>
+                    <button type="submit">🔓 Decrypt and Download</button>
                   </form>
                   
+                  <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div>Decrypting file, please wait...</div>
+                  </div>
+                  
                   <div class="note">
-                    <p>This encrypted file requires a password to decrypt. Enter the password to download the decrypted file.</p>
-                    <p>If you don't have the password, please contact the person who shared this file.</p>
+                    <div class="note-title">ℹ️ Information:</div>
+                    <p>This file was encrypted when it was originally created. Enter the same password that was used to encrypt the file to download the original unencrypted version.</p>
+                    <p style="margin-top: 10px;"><strong>Security:</strong> The decryption happens on the server and the decrypted file will be automatically downloaded to your device. The password is not stored anywhere.</p>
                   </div>
                 </div>
+                
+                <script>
+                  function showLoading() {
+                    document.querySelector('form').style.display = 'none';
+                    document.getElementById('loading').style.display = 'block';
+                  }
+                  
+                  // Auto-focus password field
+                  document.getElementById('password').focus();
+                  
+                  // Handle form submission
+                  document.querySelector('form').addEventListener('submit', function(e) {
+                    const password = document.getElementById('password').value;
+                    if (!password.trim()) {
+                      e.preventDefault();
+                      alert('Please enter a password');
+                      return false;
+                    }
+                  });
+                </script>
               </body>
             </html>
           `);
         }
         
-        // If we have a password parameter and decryption is allowed, try to decrypt
+        // Get the password from the request and use it for decryption
         const password = req.query.password;
-        const decryptionPassword = shareInfo.decryptionPassword || password;
+        const decryptionPassword = password;
         
         if (!decryptionPassword) {
           return res.redirect(`/share/${token}?key=${key}&error=No password provided`);
@@ -1064,6 +1227,11 @@ ipcMain.handle('share-file', async (event, params) => {
       encryptionKey,
       isUsed: false
     };
+
+    // Add allowDecryption for encrypted files (password will be entered by recipient)
+    if (params.allowDecryption && params.filePath.endsWith('.enc')) {
+      linkData.allowDecryption = true;
+    }
 
     if (params.daysValid && parseInt(params.daysValid, 10) > 0) {
       const validityMs = parseInt(params.daysValid, 10) * 24 * 60 * 60 * 1000;

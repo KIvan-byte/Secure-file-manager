@@ -74,6 +74,18 @@ const Input = styled.input`
   }
 `;
 
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+`;
+
 const ButtonsContainer = styled.div`
   display: flex;
   gap: 10px;
@@ -372,6 +384,8 @@ function FileSharing() {
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [daysValid, setDaysValid] = useState('');
+  // State for encrypted file decryption option
+  const [allowDecryption, setAllowDecryption] = useState(false);
 
   useEffect(() => {
     if (location.state?.filePath) {
@@ -438,10 +452,18 @@ function FileSharing() {
     }
 
     try {
-      const result = await window.electron.fileManager.shareFile({
+      const shareParams = {
         filePath,
         daysValid: daysValid ? parseInt(daysValid, 10) : null
-      });
+      };
+
+      // Add decryption option for encrypted files (no password needed here)
+      const isEncrypted = filePath.endsWith('.enc');
+      if (isEncrypted && allowDecryption) {
+        shareParams.allowDecryption = true;
+      }
+
+      const result = await window.electron.fileManager.shareFile(shareParams);
       if (result.success) {
         setShareLink(result.shareLink);
         showAlert('success', 'Share link generated successfully!');
@@ -620,6 +642,24 @@ function FileSharing() {
             />
           </FormGroup>
 
+          {/* Show decryption options only for encrypted files */}
+          {filePath.endsWith('.enc') && (
+            <FormGroup>
+              <CheckboxContainer>
+                <Checkbox
+                  id="allowDecryption"
+                  type="checkbox"
+                  checked={allowDecryption}
+                  onChange={e => setAllowDecryption(e.target.checked)}
+                />
+                <Label htmlFor="allowDecryption">Allow recipients to decrypt and download the original file</Label>
+              </CheckboxContainer>
+              <small style={{ color: '#6c757d', marginTop: '8px', display: 'block' }}>
+                Recipients will enter the original encryption password on the download page to get the decrypted file.
+              </small>
+            </FormGroup>
+          )}
+
           <FormGroup>
             <Button $primary onClick={shareFile}>
               <FaShare /> Generate Secure Share Link
@@ -670,6 +710,12 @@ function FileSharing() {
                   )}
                   <li>Anyone with this link can download the file - share it only with trusted recipients.</li>
                   <li>The link includes an encryption key that helps protect the file during transfer.</li>
+                  {filePath.endsWith('.enc') && allowDecryption && (
+                    <li><strong>Decryption enabled:</strong> Recipients will be prompted to enter the original encryption password to download the decrypted file.</li>
+                  )}
+                  {filePath.endsWith('.enc') && !allowDecryption && (
+                    <li><strong>Encrypted file:</strong> Recipients will download the encrypted file (.enc) and will need to decrypt it manually using the application.</li>
+                  )}
                   <li>This application must remain running for the link to work, as the file is served directly from your computer.</li>
                 </ul>
               </InfoText>
