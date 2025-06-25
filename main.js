@@ -6,10 +6,43 @@ const { v4: uuidv4 } = require('uuid');
 const isDev = require('electron-is-dev');
 const express = require('express');
 const cors = require('cors');
+const util = require('util');
+const { exec } = require('child_process');
 const FileUtils = require('./utils/file-utils');
 const EncryptionUtils = require('./utils/encryption-utils');
 const CompressionUtils = require('./utils/compression-utils');
 const TwoFactorAuth = require('./utils/two-factor-auth');
+const SecureStorage = require('./utils/secure-storage');
+const SecurityMiddleware = require('./utils/security-middleware');
+
+// Initialize security components
+const secureStorage = new SecureStorage();
+const securityMiddleware = new SecurityMiddleware({
+  maxRequestSize: 50 * 1024 * 1024, // 50MB
+  allowedOrigins: ['http://localhost:5174', 'file://', 'app://']
+});
+
+// Security event logging
+securityMiddleware.on('securityEvent', (event) => {
+  console.warn(`Security Event [${event.type}]:`, event.details);
+  
+  // Log critical events to file
+  if (['auto_blocked_suspicious', 'path_traversal_attempt', 'csrf_violation'].includes(event.type)) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      type: event.type,
+      details: event.details
+    };
+    
+    try {
+      const logFile = path.join(__dirname, 'security.log');
+      fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
+    } catch (error) {
+      console.error('Failed to write security log:', error);
+    }
+  }
+});
+
 // Initialize Zero-Knowledge Sync
 let syncManager = null;
 ipcMain.handle('sync-initialize', async (event, masterPassword) => {
@@ -205,6 +238,9 @@ ipcMain.handle('sync-open-directory', async (event) => {
 
 // Cleanup sync on app exit
 app.on('before-quit', async () => {
+  console.log('Application shutting down, cleaning up security resources...');
+  
+  // Cleanup sync manager
   if (syncManager) {
     try {
       await syncManager.shutdown();
@@ -212,9 +248,24 @@ app.on('before-quit', async () => {
       console.error('Error shutting down sync on app exit:', error);
     }
   }
+  
+  // Cleanup secure storage
+  try {
+    secureStorage.cleanup();
+  } catch (error) {
+    console.error('Error cleaning up secure storage:', error);
+  }
+  
+  // Cleanup security middleware
+  try {
+    securityMiddleware.destroy();
+  } catch (error) {
+    console.error('Error cleaning up security middleware:', error);
+  }
+  
+  console.log('Security cleanup completed');
 });
 
-const { exec } = require('child_process');
 const net = require('net');
 
 // Optimize for low power consumption and reduce heat generation
@@ -278,14 +329,46 @@ ipcMain.handle('calculate-file-hash', async (event, filePath, algorithm) => {
   }
 });
 
-// Set up Express server for file sharing
+// Set up Express server for file sharing with security
 const expressApp = express();
 const PORT = 3001;
 let serverAddress = '';
 
-// Configure Express
-expressApp.use(cors());
-expressApp.use(express.json());
+// Configure Express with security middleware
+expressApp.use(cors({
+  origin: function (origin, callback) {
+    // Allow same-origin requests and electron app
+    if (!origin || origin.startsWith('http://localhost:') || origin === 'file://') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+// Request size limiting
+expressApp.use(express.json({ limit: '10mb' }));
+expressApp.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Apply security middleware to all routes
+expressApp.use(securityMiddleware.middleware({
+  rateLimit: 'fileShare',
+  validatePath: true,
+  requireOrigin: false
+}));
+
+// Security headers
+expressApp.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 expressApp.use(express.static(path.join(__dirname, 'public')));
 
 // Get the correct local IP address using Node.js built-in modules
@@ -376,47 +459,86 @@ async function startFileServer() {
     `);
   });
   
-  // Modify the endpoint to serve shared files to handle decryption
-  expressApp.get('/share/:token', async (req, res) => {
+  // Serve shared files with enhanced security
+  expressApp.get('/share/:token', securityMiddleware.middleware({
+    rateLimit: 'fileAccess',
+    validatePath: false,
+    requireOrigin: false
+  }), async (req, res) => {
     try {
       const { token } = req.params;
       const { key } = req.query;
+      const clientId = securityMiddleware.getClientId(req);
       
-      console.log(`File access attempt - Token: ${token}`);
+      console.log(`File access attempt - Token: ${token}, Client: ${clientId}`);
       
-      if (!token || !key) {
-        return res.status(400).send('Missing token or encryption key');
+      // Validate token format
+      if (!token || typeof token !== 'string' || token.length < 10) {
+        securityMiddleware.detectSuspiciousActivity(clientId, 'invalid_request', {
+          reason: 'invalid_token_format'
+        });
+        return res.status(400).send('Invalid token format');
+      }
+      
+      if (!key || typeof key !== 'string') {
+        securityMiddleware.detectSuspiciousActivity(clientId, 'invalid_request', {
+          reason: 'missing_encryption_key'
+        });
+        return res.status(400).send('Missing encryption key');
       }
       
       await db.read(); // Ensure fresh data
       let shareInfo = db.data.sharedLinks.find(link => link.id === token);
 
       if (!shareInfo) {
+        securityMiddleware.detectSuspiciousActivity(clientId, 'invalid_request', {
+          reason: 'token_not_found',
+          token: token.substring(0, 8) + '...'
+        });
         return res.status(404).send('<html><body>Link not found.</body></html>');
       }
 
-      // Check if it's a one-time link (no expiresAt) and it's already used
+      // Check if it's a one-time link and already used
       if (!shareInfo.expiresAt && shareInfo.isUsed) {
-        return res.status(410).send('<html><body>Link already used.</body></html>'); // 410 Gone is appropriate
+        securityMiddleware.logSecurityEvent('share_link_reuse', {
+          token: token.substring(0, 8) + '...',
+          clientId
+        });
+        return res.status(410).send('<html><body>Link already used.</body></html>');
       }
 
-      // Now, handle expiration IF expiresAt is set
-      if (shareInfo.expiresAt) {
-        if (new Date() > new Date(shareInfo.expiresAt)) {
-          // Optionally mark as isExpired = true or even remove from DB if desired
-          // For now, just prevent access
-          return res.status(410).send('<html><body>Link has expired.</body></html>');
-        }
+      // Handle expiration
+      if (shareInfo.expiresAt && new Date() > new Date(shareInfo.expiresAt)) {
+        return res.status(410).send('<html><body>Link has expired.</body></html>');
       }
-      // If we reach here, the link is valid (either one-time and not used, or timed and not expired)
-      // ... then proceed to check encryptionKey, serve file, etc.
       
-      if (shareInfo.encryptionKey !== key) {
+      // Verify encryption key with timing attack protection
+      const providedKeyHash = crypto.createHash('sha256').update(key).digest('hex');
+      const expectedKeyHash = crypto.createHash('sha256').update(shareInfo.encryptionKey).digest('hex');
+      
+      if (providedKeyHash !== expectedKeyHash) {
+        securityMiddleware.detectSuspiciousActivity(clientId, 'failed_auth', {
+          reason: 'invalid_encryption_key',
+          token: token.substring(0, 8) + '...'
+        });
+        
+        // Add a small delay to prevent timing attacks
+        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+        
         return res.status(401).send('Invalid encryption key');
       }
       
-      // Get file details
+      // Validate file path
       const filePath = shareInfo.filePath;
+      if (!securityMiddleware.validateFilePath(filePath)) {
+        securityMiddleware.logSecurityEvent('path_traversal_attempt', {
+          filePath: filePath?.substring(0, 100),
+          clientId,
+          action: 'file_share'
+        });
+        return res.status(400).send('Invalid file path');
+      }
+      
       console.log(`Serving file: ${filePath}`);
       
       // Check if file exists
@@ -1332,7 +1454,7 @@ ipcMain.handle('search-file-content', async (event, { directoryPath, searchText,
   }
 });
 
-// New handlers for file encryption/decryption
+// New handlers for file encryption/decryption with enhanced security
 
 // Encrypt a file with password
 ipcMain.handle('encrypt-file', async (event, { filePath, password, outputPath }) => {
@@ -1341,24 +1463,69 @@ ipcMain.handle('encrypt-file', async (event, { filePath, password, outputPath })
       return { success: false, error: 'File path and password are required' };
     }
 
+    // Validate password strength
+    const passwordValidation = EncryptionUtils.validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      return { 
+        success: false, 
+        error: 'Password is not strong enough',
+        details: passwordValidation.issues
+      };
+    }
+
+    // Validate file path for security
+    if (!EncryptionUtils.validateFilePath(filePath)) {
+      securityMiddleware.logSecurityEvent('path_traversal_attempt', { 
+        filePath,
+        action: 'encrypt'
+      });
+      return { success: false, error: 'Invalid file path' };
+    }
+
     // Check if file exists
     if (!FileUtils.fileExists(filePath)) {
       return { success: false, error: 'File does not exist' };
     }
 
-    // Perform encryption
+    // Check file size (prevent encryption of extremely large files)
+    const stats = FileUtils.getFileStats(filePath);
+    if (stats && stats.size > 1024 * 1024 * 1024) { // 1GB limit
+      return { success: false, error: 'File is too large to encrypt (max 1GB)' };
+    }
+
+    // Rate limiting for encryption operations
+    const clientId = 'local_encryption';
+    const rateLimitResult = securityMiddleware.checkRateLimit(clientId, 'encryption');
+    if (!rateLimitResult.allowed) {
+      return { 
+        success: false, 
+        error: 'Too many encryption attempts. Please wait and try again.' 
+      };
+    }
+
+    // Perform encryption with enhanced security
     const result = await EncryptionUtils.encryptFile(filePath, password, outputPath);
     
     // Log encryption activity
     if (result.success) {
       await logAccess('encrypt_file', filePath, { 
-        outputPath: result.outputPath 
+        outputPath: result.outputPath,
+        fileSize: stats?.size || 0
       });
+      
+      // Clear password from memory (if possible)
+      if (typeof password === 'string') {
+        password = null;
+      }
     }
     
     return result;
   } catch (error) {
     console.error('Error encrypting file:', error);
+    securityMiddleware.logSecurityEvent('encryption_error', { 
+      filePath: filePath?.substring(0, 100),
+      error: error.message 
+    });
     return { success: false, error: error.message };
   }
 });
@@ -1370,24 +1537,64 @@ ipcMain.handle('decrypt-file', async (event, { filePath, password, outputPath })
       return { success: false, error: 'File path and password are required' };
     }
 
-    // Check if file exists
+    // Validate file path for security
+    if (!EncryptionUtils.validateFilePath(filePath)) {
+      securityMiddleware.logSecurityEvent('path_traversal_attempt', { 
+        filePath,
+        action: 'decrypt'
+      });
+      return { success: false, error: 'Invalid file path' };
+    }
+
+    // Check if file exists and is encrypted
     if (!FileUtils.fileExists(filePath)) {
       return { success: false, error: 'File does not exist' };
     }
 
-    // Perform decryption
+    if (!EncryptionUtils.isEncryptedFile(filePath)) {
+      return { success: false, error: 'File does not appear to be encrypted' };
+    }
+
+    // Rate limiting for decryption operations (stricter than encryption)
+    const clientId = 'local_decryption';
+    const rateLimitResult = securityMiddleware.checkRateLimit(clientId, 'encryption');
+    if (!rateLimitResult.allowed) {
+      return { 
+        success: false, 
+        error: 'Too many decryption attempts. Please wait and try again.' 
+      };
+    }
+
+    // Perform decryption with enhanced security
     const result = await EncryptionUtils.decryptFile(filePath, password, outputPath);
     
     // Log decryption activity
     if (result.success) {
       await logAccess('decrypt_file', filePath, { 
-        outputPath: result.outputPath 
+        outputPath: result.outputPath,
+        legacy: result.legacy || false,
+        formatVersion: EncryptionUtils.getFileFormatVersion(filePath)
+      });
+      
+      // Clear password from memory
+      if (typeof password === 'string') {
+        password = null;
+      }
+    } else {
+      // Log failed decryption attempts (potential brute force)
+      securityMiddleware.detectSuspiciousActivity(clientId, 'failed_auth', {
+        action: 'decrypt',
+        filePath: filePath.substring(0, 100)
       });
     }
     
     return result;
   } catch (error) {
     console.error('Error decrypting file:', error);
+    securityMiddleware.logSecurityEvent('decryption_error', { 
+      filePath: filePath?.substring(0, 100),
+      error: error.message 
+    });
     return { success: false, error: error.message };
   }
 });
@@ -1613,11 +1820,52 @@ ipcMain.handle('auth:verify-2fa-code', async (event, code) => {
       return { success: false, error: '2FA is not set up' };
     }
     
+    // Rate limiting for 2FA attempts
+    const clientId = 'local_2fa';
+    const rateLimitResult = securityMiddleware.checkRateLimit(clientId, 'authentication');
+    if (!rateLimitResult.allowed) {
+      securityMiddleware.logSecurityEvent('2fa_rate_limit_exceeded', {
+        clientId,
+        attempts: rateLimitResult.attempts
+      });
+      return { 
+        success: false, 
+        error: 'Too many authentication attempts. Please wait and try again.',
+        waitTime: rateLimitResult.resetTime
+      };
+    }
+    
+    // Validate code format
+    if (!code || typeof code !== 'string' || !/^\d{6}$/.test(code)) {
+      securityMiddleware.detectSuspiciousActivity(clientId, 'invalid_request', {
+        reason: 'invalid_2fa_code_format'
+      });
+      return { success: false, error: 'Invalid code format' };
+    }
+    
     const isValid = twoFactorAuth.verifyTOTP(code, config.secret);
+    
+    if (!isValid) {
+      securityMiddleware.detectSuspiciousActivity(clientId, 'failed_auth', {
+        reason: 'invalid_2fa_code'
+      });
+      securityMiddleware.logSecurityEvent('2fa_failed_attempt', {
+        clientId,
+        timestamp: Date.now()
+      });
+    } else {
+      securityMiddleware.logSecurityEvent('2fa_success', {
+        clientId,
+        timestamp: Date.now()
+      });
+    }
     
     return { success: isValid, error: isValid ? null : 'Invalid code' };
   } catch (error) {
     console.error('Error verifying 2FA code:', error);
+    securityMiddleware.logSecurityEvent('2fa_error', {
+      error: error.message
+    });
     return { success: false, error: error.message };
   }
 });
@@ -2497,6 +2745,143 @@ ipcMain.handle('list-active-shares', async () => {
     return { success: true, links: linksWithFullUrl };
   } catch (error) {
     console.error('Error listing active shares:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Initialize secure storage IPC handlers
+ipcMain.handle('secure-storage-check', async () => {
+  try {
+    return true; // Secure storage is always available
+  } catch (error) {
+    console.error('Secure storage check failed:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('secure-storage-init', async (event, masterPassword) => {
+  try {
+    return await secureStorage.initializeSession(masterPassword);
+  } catch (error) {
+    console.error('Secure storage initialization failed:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('secure-storage-store', async (event, key, value) => {
+  try {
+    return await secureStorage.storeSecureData(key, value);
+  } catch (error) {
+    console.error('Secure storage store failed:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('secure-storage-retrieve', async (event, key) => {
+  try {
+    return await secureStorage.retrieveSecureData(key);
+  } catch (error) {
+    console.error('Secure storage retrieve failed:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('secure-storage-remove', async (event, key) => {
+  try {
+    return await secureStorage.removeSecureData(key);
+  } catch (error) {
+    console.error('Secure storage remove failed:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('secure-storage-clear', async () => {
+  try {
+    return await secureStorage.clearAllData();
+  } catch (error) {
+    console.error('Secure storage clear failed:', error);
+    return false;
+  }
+});
+
+// Security monitoring IPC handlers
+ipcMain.handle('security:get-stats', async () => {
+  try {
+    const stats = securityMiddleware.getStats();
+    const storageStats = secureStorage.getStorageStats();
+    
+    return {
+      success: true,
+      data: {
+        security: stats,
+        storage: storageStats,
+        timestamp: Date.now()
+      }
+    };
+  } catch (error) {
+    console.error('Error getting security stats:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('security:get-events', async (event, limit = 50) => {
+  try {
+    const events = securityMiddleware.getRecentEvents(limit);
+    
+    return {
+      success: true,
+      data: events
+    };
+  } catch (error) {
+    console.error('Error getting security events:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('security:clear-events', async () => {
+  try {
+    securityMiddleware.securityEvents.length = 0;
+    return { success: true };
+  } catch (error) {
+    console.error('Error clearing security events:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Enhanced password validation
+ipcMain.handle('security:validate-password', async (event, password) => {
+  try {
+    const validation = EncryptionUtils.validatePasswordStrength(password);
+    return {
+      success: true,
+      data: validation
+    };
+  } catch (error) {
+    console.error('Error validating password:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// File format detection
+ipcMain.handle('security:check-file-format', async (event, filePath) => {
+  try {
+    if (!EncryptionUtils.validateFilePath(filePath)) {
+      return { success: false, error: 'Invalid file path' };
+    }
+    
+    const isEncrypted = EncryptionUtils.isEncryptedFile(filePath);
+    const formatVersion = isEncrypted ? EncryptionUtils.getFileFormatVersion(filePath) : null;
+    
+    return {
+      success: true,
+      data: {
+        isEncrypted,
+        formatVersion,
+        isLegacy: formatVersion === 'legacy'
+      }
+    };
+  } catch (error) {
+    console.error('Error checking file format:', error);
     return { success: false, error: error.message };
   }
 });

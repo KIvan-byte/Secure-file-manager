@@ -1,36 +1,98 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Use localStorage for secure notes data storage
-function getStoredMasterPassword() {
+// SECURITY WARNING: This is a temporary migration solution
+// TODO: Remove localStorage usage and migrate to secure storage
+let isSecureStorageEnabled = false;
+
+// Secure storage for sensitive data (replacing localStorage)
+function checkSecureStorage() {
+  // Try to initialize secure storage
+  return ipcRenderer.invoke('secure-storage-check');
+}
+
+// Initialize secure storage session
+async function initializeSecureSession(masterPassword) {
   try {
-    return localStorage.getItem('secureNotesMasterPassword');
-  } catch {
-    return null;
+    isSecureStorageEnabled = await ipcRenderer.invoke('secure-storage-init', masterPassword);
+    return isSecureStorageEnabled;
+  } catch (error) {
+    console.error('Failed to initialize secure storage:', error);
+    return false;
   }
 }
 
-function setStoredMasterPassword(pw) {
-  try {
-    localStorage.setItem('secureNotesMasterPassword', pw);
-  } catch {}
-}
-
-function getStoredEntries() {
-  try {
-    const raw = localStorage.getItem('secureNotesEntries');
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
+// Store sensitive data securely
+async function storeSecureData(key, value) {
+  if (isSecureStorageEnabled) {
+    return await ipcRenderer.invoke('secure-storage-store', key, value);
+  } else {
+    // Fallback to localStorage with warning
+    console.warn('SECURITY WARNING: Using localStorage for sensitive data. This is not secure!');
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
-function setStoredEntries(entries) {
-  try {
-    localStorage.setItem('secureNotesEntries', JSON.stringify(entries));
-  } catch {}
+// Retrieve sensitive data securely
+async function retrieveSecureData(key) {
+  if (isSecureStorageEnabled) {
+    return await ipcRenderer.invoke('secure-storage-retrieve', key);
+  } else {
+    // Fallback to localStorage with warning
+    console.warn('SECURITY WARNING: Using localStorage for sensitive data. This is not secure!');
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
 }
 
-let secureNotesEntries = getStoredEntries();
+// Remove sensitive data
+async function removeSecureData(key) {
+  if (isSecureStorageEnabled) {
+    return await ipcRenderer.invoke('secure-storage-remove', key);
+  } else {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+// Clear all secure data
+async function clearSecureData() {
+  if (isSecureStorageEnabled) {
+    return await ipcRenderer.invoke('secure-storage-clear');
+  } else {
+    try {
+      localStorage.clear();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+// Initialize secure storage check only in Electron context
+if (typeof window !== 'undefined' && window !== global) {
+  // We're in the renderer process
+  checkSecureStorage().then(isAvailable => {
+    if (isAvailable) {
+      console.log('Secure storage is available');
+    } else {
+      console.warn('Secure storage is not available, falling back to localStorage');
+    }
+  }).catch(err => {
+    console.warn('Failed to check secure storage:', err);
+  });
+}
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -106,14 +168,13 @@ contextBridge.exposeInMainWorld(
     },
     auth: {
       validateMasterPassword: async (password) => {
-        const stored = getStoredMasterPassword();
-        if (!stored) {
-          return { success: false, error: 'No password set' };
+        try {
+          // Use the secure notes IPC handler to validate password
+          const result = await ipcRenderer.invoke('secure-notes:validate-master-password', password);
+          return result;
+        } catch (error) {
+          return { success: false, error: error.message };
         }
-        if (password === stored) {
-          return { success: true };
-        }
-        return { success: false, error: 'Invalid password' };
       },
       checkTwoFactorSetup: () => ipcRenderer.invoke('auth:check-2fa-setup'),
       generateTwoFactorSecret: () => ipcRenderer.invoke('auth:generate-2fa-secret'),
@@ -121,44 +182,76 @@ contextBridge.exposeInMainWorld(
       verifyTwoFactorCode: (code) => ipcRenderer.invoke('auth:verify-2fa-code', code),
       disableTwoFactor: () => ipcRenderer.invoke('auth:disable-2fa')
     },
+    // Secure storage API
+    secureStorage: {
+      initialize: initializeSecureSession,
+      store: storeSecureData,
+      retrieve: retrieveSecureData,
+      remove: removeSecureData,
+      clear: clearSecureData,
+      isEnabled: () => isSecureStorageEnabled
+    },
     secureNotes: {
       setupVault: async (password) => {
-        setStoredMasterPassword(password);
-        return { success: true };
+        return await ipcRenderer.invoke('secure-notes:setup-vault', password);
       },
       getEntries: async (password) => {
-        const stored = getStoredMasterPassword();
-        if (!stored || password !== stored) {
-          return { success: false, error: 'Invalid master password' };
-        }
-        secureNotesEntries = getStoredEntries();
-        return { success: true, entries: secureNotesEntries };
+        return await ipcRenderer.invoke('secure-notes:get-entries', password);
       },
       saveEntry: async (entry, password) => {
-        const stored = getStoredMasterPassword();
-        if (!stored || password !== stored) {
-          return { success: false, error: 'Invalid master password' };
-        }
-        secureNotesEntries = getStoredEntries();
-        const idx = secureNotesEntries.findIndex(e => e.id === entry.id);
-        if (idx !== -1) {
-          secureNotesEntries[idx] = entry;
-        } else {
-          secureNotesEntries.push(entry);
-        }
-        setStoredEntries(secureNotesEntries);
-        return { success: true };
+        return await ipcRenderer.invoke('secure-notes:save-entry', { entry, password });
       },
       deleteEntry: async (id, password) => {
-        const stored = getStoredMasterPassword();
-        if (!stored || password !== stored) {
-          return { success: false, error: 'Invalid master password' };
+        return await ipcRenderer.invoke('secure-notes:delete-entry', { entryId: id, password });
+      },
+      // Enhanced security methods
+      changePassword: async (oldPassword, newPassword) => {
+        // Validate old password first
+        const validateResult = await ipcRenderer.invoke('secure-notes:validate-master-password', oldPassword);
+        if (!validateResult.success) {
+          return { success: false, error: 'Invalid current password' };
         }
-        secureNotesEntries = getStoredEntries();
-        secureNotesEntries = secureNotesEntries.filter(e => e.id !== id);
-        setStoredEntries(secureNotesEntries);
+        
+        // Get existing entries with old password
+        const entriesResult = await ipcRenderer.invoke('secure-notes:get-entries', oldPassword);
+        if (!entriesResult.success) {
+          return { success: false, error: 'Failed to get existing entries' };
+        }
+        
+        // Setup new vault with new password
+        const setupResult = await ipcRenderer.invoke('secure-notes:setup-vault', newPassword);
+        if (!setupResult.success) {
+          return { success: false, error: 'Failed to setup new vault' };
+        }
+        
+        // Restore entries with new password
+        for (const entry of entriesResult.entries) {
+          const saveResult = await ipcRenderer.invoke('secure-notes:save-entry', { entry, password: newPassword });
+          if (!saveResult.success) {
+            return { success: false, error: 'Failed to migrate entries' };
+          }
+        }
+        
         return { success: true };
+      },
+      validatePassword: async (password) => {
+        return await ipcRenderer.invoke('secure-notes:validate-master-password', password);
+      },
+      checkVault: async () => {
+        const result = await ipcRenderer.invoke('secure-notes:validate-master-password', '');
+        return {
+          hasVault: !result.newUser,
+          isInitialized: !result.newUser
+        };
       }
+    },
+    // Security monitoring functions
+    security: {
+      getStats: () => ipcRenderer.invoke('security:get-stats'),
+      getEvents: (limit) => ipcRenderer.invoke('security:get-events', limit),
+      clearEvents: () => ipcRenderer.invoke('security:clear-events'),
+      validatePassword: (password) => ipcRenderer.invoke('security:validate-password', password),
+      checkFileFormat: (filePath) => ipcRenderer.invoke('security:check-file-format', filePath)
     }
   }
 );
@@ -237,12 +330,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   syncGetPeers: () => ipcRenderer.invoke('sync-get-peers'),
   syncGetStatus: () => ipcRenderer.invoke('sync-get-status'),
   syncShutdown: () => ipcRenderer.invoke('sync-shutdown'),
-  
-  // Secure notes
-  getStoredMasterPassword,
-  setStoredMasterPassword,
-  getStoredEntries,
-  setStoredEntries,
   
   // Helper function to require modules (for sync manager)
   require: (moduleName) => {

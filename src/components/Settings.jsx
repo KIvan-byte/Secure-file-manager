@@ -1,7 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
-import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt } from 'react-icons/fa';
+import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt, FaShieldAlt } from 'react-icons/fa';
 import TwoFactorSettings from './TwoFactorSettings';
+import SecurityDashboard from './SecurityDashboard';
+
+// Enhanced password validation component
+const PasswordValidator = ({ password, onValidationChange }) => {
+  const [validation, setValidation] = useState(null);
+  
+  useEffect(() => {
+    if (!password) {
+      setValidation(null);
+      onValidationChange?.(null);
+      return;
+    }
+    
+    // Use the new security API for password validation
+    window.electron.security.validatePassword(password)
+      .then(result => {
+        if (result.success) {
+          setValidation(result.data);
+          onValidationChange?.(result.data);
+        }
+      })
+      .catch(err => {
+        console.error('Password validation error:', err);
+      });
+  }, [password, onValidationChange]);
+  
+  if (!validation) return null;
+  
+  return (
+    <ValidationContainer>
+      <ValidationHeader $isValid={validation.isValid}>
+        {validation.isValid ? <FaCheck /> : <FaExclamationTriangle />}
+        Password Strength: {validation.isValid ? 'Strong' : 'Weak'}
+      </ValidationHeader>
+      <ValidationScore>
+        <ScoreBar>
+          <ScoreFill $score={validation.score} />
+        </ScoreBar>
+        <ScoreText>Score: {validation.score}/6</ScoreText>
+      </ValidationScore>
+      {validation.issues.length > 0 && (
+        <ValidationIssues>
+          <IssuesTitle>Issues to fix:</IssuesTitle>
+          {validation.issues.map((issue, index) => (
+            <ValidationIssue key={index}>
+              <FaExclamationTriangle />
+              {issue}
+            </ValidationIssue>
+          ))}
+        </ValidationIssues>
+      )}
+    </ValidationContainer>
+  );
+};
 
 const Container = styled.div`
   display: flex;
@@ -301,6 +355,114 @@ const NumberInput = styled.input`
   }
 `;
 
+// Validation components styles
+const ValidationContainer = styled.div`
+  margin-top: 10px;
+  padding: 15px;
+  border-radius: 6px;
+  background: ${props => props.isValid ? '#e8f5e8' : '#fff3e0'};
+  border: 1px solid ${props => props.isValid ? '#4caf50' : '#ff9800'};
+`;
+
+const ValidationHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  color: ${props => props.$isValid ? '#2e7d32' : '#e65100'};
+  margin-bottom: 10px;
+`;
+
+const ValidationScore = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const ScoreBar = styled.div`
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+const ScoreFill = styled.div`
+  height: 100%;
+  width: ${props => (props.$score / 6) * 100}%;
+  background: ${props => {
+    if (props.$score >= 5) return '#4caf50';
+    if (props.$score >= 3) return '#ff9800';
+    return '#f44336';
+  }};
+  transition: width 0.3s ease, background 0.3s ease;
+`;
+
+const ScoreText = styled.span`
+  font-size: 12px;
+  color: #666;
+  font-weight: bold;
+`;
+
+const ValidationIssues = styled.div`
+  margin-top: 10px;
+`;
+
+const IssuesTitle = styled.div`
+  font-size: 14px;
+  font-weight: bold;
+  color: #e65100;
+  margin-bottom: 8px;
+`;
+
+const ValidationIssue = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #d84315;
+  margin-bottom: 4px;
+  
+  svg {
+    font-size: 12px;
+  }
+`;
+
+// Tab styles
+const TabContainer = styled.div`
+  display: flex;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+`;
+
+const TabButton = styled.button`
+  flex: 1;
+  padding: 16px 24px;
+  border: none;
+  background: ${props => props.$active ? '#2196f3' : '#f5f5f5'};
+  color: ${props => props.$active ? 'white' : '#666'};
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  &:hover {
+    background: ${props => props.$active ? '#1976d2' : '#e0e0e0'};
+  }
+  
+  &:not(:last-child) {
+    border-right: 1px solid #e0e0e0;
+  }
+`;
+
 function Settings() {
   const [autoLockEnabled, setAutoLockEnabled] = useState(true);
   const [lockTimeout, setLockTimeout] = useState(5); // minutes
@@ -309,11 +471,40 @@ function Settings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState(null);
+  const [activeTab, setActiveTab] = useState('security'); // security, privacy, advanced
+  const [securityDashboardVisible, setSecurityDashboardVisible] = useState(false);
   
   useEffect(() => {
     // Load settings from local storage or settings service
     loadSettings();
   }, []);
+  
+  const handlePasswordValidation = (validation) => {
+    setPasswordValidation(validation);
+  };
+  
+  const validatePasswordsMatch = () => {
+    if (lockPassword && confirmPassword && lockPassword !== confirmPassword) {
+      setMessage({
+        type: 'error',
+        text: 'Passwords do not match'
+      });
+      return false;
+    }
+    return true;
+  };
+  
+  const validatePasswordStrength = () => {
+    if (lockPassword && passwordValidation && !passwordValidation.isValid) {
+      setMessage({
+        type: 'error',
+        text: 'Password is not strong enough. Please address the issues shown above.'
+      });
+      return false;
+    }
+    return true;
+  };
   
   const loadSettings = async () => {
     try {
@@ -374,11 +565,11 @@ function Settings() {
         return;
       }
       
-      if (lockPassword !== confirmPassword) {
-        setMessage({
-          type: 'error',
-          text: 'Passwords do not match'
-        });
+      if (!validatePasswordsMatch()) {
+        return;
+      }
+      
+      if (!validatePasswordStrength()) {
         return;
       }
       
@@ -460,13 +651,36 @@ function Settings() {
         </Message>
       )}
       
-      <SettingsCard>
-        <CardHeader>
-          <CardTitle>
-            <FaLock /> Security Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <TabContainer>
+        <TabButton 
+          $active={activeTab === 'security'} 
+          onClick={() => setActiveTab('security')}
+        >
+          <FaLock /> Security
+        </TabButton>
+        <TabButton 
+          $active={activeTab === 'privacy'} 
+          onClick={() => setActiveTab('privacy')}
+        >
+          <FaShieldAlt /> Privacy
+        </TabButton>
+        <TabButton 
+          $active={activeTab === 'dashboard'} 
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <FaShieldAlt /> Security Dashboard
+        </TabButton>
+      </TabContainer>
+      
+      {activeTab === 'security' && (
+        <>
+          <SettingsCard>
+            <CardHeader>
+              <CardTitle>
+                <FaLock /> Auto-Lock Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
           <FormGroup>
             <Label>Auto-Lock Application</Label>
             <Description>
@@ -625,6 +839,88 @@ function Settings() {
           <TwoFactorSettings />
         </CardContent>
       </SettingsCard>
+      
+      <SettingsCard>
+        <CardHeader>
+          <CardTitle>
+            <FaShieldAlt /> Password Security
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FormGroup>
+            <Label>New Password</Label>
+            <Description>
+              Set a new password for your account. This will be used for logging in and can also be used to unlock the application.
+            </Description>
+            <InputContainer>
+              <Input 
+                type="password" 
+                value={lockPassword}
+                onChange={(e) => setLockPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+            </InputContainer>
+          </FormGroup>
+          <FormGroup>
+            <Label>Confirm Password</Label>
+            <Description>
+              Please confirm your new password
+            </Description>
+            <InputContainer>
+              <Input 
+                type="password" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </InputContainer>
+          </FormGroup>
+          
+          <PasswordValidator 
+            password={lockPassword} 
+            onValidationChange={(validation) => setPasswordValidation(validation)}
+          />
+          
+          <Button 
+            $primary 
+            onClick={saveSettings}
+            disabled={isLoading}
+          >
+            <FaSave /> Save Password Settings
+          </Button>
+        </CardContent>
+      </SettingsCard>
+        </>
+      )}
+      
+      {activeTab === 'privacy' && (
+        <SettingsCard>
+          <CardHeader>
+            <CardTitle>
+              <FaShieldAlt /> Privacy Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FormGroup>
+              <Label>Data Storage</Label>
+              <Description>
+                All sensitive data is encrypted and stored locally. No data is sent to external servers.
+              </Description>
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>Session Management</Label>
+              <Description>
+                Sessions automatically expire after inactivity to protect your data.
+              </Description>
+            </FormGroup>
+          </CardContent>
+        </SettingsCard>
+      )}
+      
+      {activeTab === 'dashboard' && (
+        <SecurityDashboard />
+      )}
     </Container>
   );
 }
