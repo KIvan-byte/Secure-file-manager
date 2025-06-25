@@ -42,11 +42,11 @@
 
 ## 🚀 Getting Started
 
-### 📋 Prerequisites
-- Node.js (v14.x or higher)
-- npm (v7.x or higher)
+### Prerequisites
+- Node.js (version 16 or higher)
+- npm or yarn package manager
 
-### ⚙️ Installation
+### Installation
 
 1. Clone the repository
 ```bash
@@ -59,19 +59,30 @@ cd securefilemanager
 npm install
 ```
 
-3. Run the development server
+### Development Mode
+Run in development mode with hot reload:
 ```bash
 npm run dev
 ```
+This will:
+- Start React development server on port 3000
+- Launch Electron app connected to dev server
+- Enable DevTools for debugging
 
-4. Build for production
+### Production Mode
+Run the production build:
 ```bash
-npm run build
+npm start
 ```
+This will:
+- Build the React app to static files
+- Launch Electron app with built files
+- No DevTools or hot reload
 
-5. Create executable for your platform
+### Other Commands
 ```bash
-npm run package
+npm run build    # Build React app for production
+npm test         # Run tests
 ```
 
 ## 📖 Usage

@@ -888,55 +888,6 @@ function startFileServer() {
   return serverAddress;
 }
 
-// Function to check if a port is in use
-function isPortInUse(port) {
-  return new Promise((resolve) => {
-    const server = net.createServer()
-      .once('error', () => {
-        resolve(true);
-      })
-      .once('listening', () => {
-        server.close();
-        resolve(false);
-      })
-      .listen(port);
-  });
-}
-
-// Function to wait for the development server to be ready
-const waitForDevServer = (port, retries = 30, interval = 1000) => {
-  return new Promise((resolve, reject) => {
-    let attempts = 0;
-
-    const checkServer = () => {
-      const req = http.get(`http://localhost:${port}`, (res) => {
-        if (res.statusCode === 200) {
-          console.log(`Dev server is ready on port ${port}`);
-          resolve(true);
-        } else {
-          attemptConnection();
-        }
-      });
-
-      req.on('error', () => {
-        attemptConnection();
-      });
-    };
-
-    const attemptConnection = () => {
-      attempts++;
-      if (attempts >= retries) {
-        console.error(`Dev server not ready after ${retries} attempts`);
-        reject(new Error("Dev server not ready"));
-        return;
-      }
-      console.log(`Waiting for dev server on port 3000... (${attempts}/${retries})`);
-      setTimeout(checkServer, interval);
-    };
-
-    checkServer();
-  });
-};
 
 let mainWindow;
 
@@ -967,40 +918,24 @@ async function createWindow() {
 
   console.log('Preload path:', path.join(__dirname, 'preload.js'));
   console.log('Is packaged:', app.isPackaged);
-  console.log('Is dev:', isDev);
+  console.log('Is dev (electron-is-dev):', isDev);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('Command line args:', process.argv);
+  
+  // Better development mode detection
+  // If NODE_ENV is explicitly set to production, use production mode
+  // Otherwise, use electron-is-dev logic
+  const isDevMode = process.env.NODE_ENV !== 'production' && isDev;
+  console.log('Actual dev mode:', isDevMode);
 
   try {
-    // In dev mode, we need to wait for the React dev server
-    if (isDev) {
-      // Check if port 3000 is already in use
-      const isPortBusy = await isPortInUse(3000);
-      if (!isPortBusy) {
-        console.log('Starting React development server...');
-        // If port is not in use, start the React dev server
-        const reactProcess = exec('npm run start-react', { 
-          cwd: __dirname 
-        });
-        
-        reactProcess.stdout.on('data', (data) => {
-          console.log(`React dev server: ${data}`);
-        });
-        
-        reactProcess.stderr.on('data', (data) => {
-          console.error(`React dev server error: ${data}`);
-        });
-        
-        // Wait for the dev server to be ready
-        await waitForDevServer(3000);
-      } else {
-        console.log('React development server is already running');
-      }
-    }
-
-    const startUrl = isDev
+    // Determine the correct URL to load
+    const startUrl = isDevMode
       ? 'http://localhost:3000'
       : `file://${path.join(__dirname, 'build', 'index.html')}`;
     
     console.log('Loading URL:', startUrl);
+    console.log('Environment: ' + (isDevMode ? 'Development' : 'Production'));
     
     // Load the URL
     mainWindow.loadURL(startUrl).catch(err => {
@@ -1024,7 +959,7 @@ async function createWindow() {
       mainWindow.focus();
 
       // Open DevTools in dev mode
-      if (isDev) {
+      if (isDevMode) {
         mainWindow.webContents.openDevTools({ mode: 'detach' });
       }
     });
