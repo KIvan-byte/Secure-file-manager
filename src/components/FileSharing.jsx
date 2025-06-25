@@ -8,6 +8,15 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -15,12 +24,30 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const Title = styled.h2`
   margin: 0;
   font-weight: 600;
   color: #2c3e50;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const Card = styled.div`
@@ -33,11 +60,26 @@ const Card = styled.div`
   
   @media (max-width: 768px) {
     padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 12px;
   }
 `;
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const Label = styled.label`
@@ -71,6 +113,16 @@ const Input = styled.input`
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 12px;
   }
 `;
 

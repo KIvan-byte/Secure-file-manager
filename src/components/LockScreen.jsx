@@ -37,6 +37,14 @@ const LockContainer = styled.div`
   z-index: 2000;
   padding: 20px;
   animation: ${fadeIn} 0.4s ease;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const LockForm = styled.div`
@@ -54,6 +62,22 @@ const LockForm = styled.div`
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    max-width: 380px;
+    padding: 32px;
+    border-radius: 20px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    max-width: 320px;
+    padding: 24px;
+    border-radius: 16px;
   }
 `;
 
@@ -75,6 +99,24 @@ const LockIcon = styled.div`
   
   &:hover {
     transform: scale(1.05) rotate(5deg);
+  }
+  
+  @media (max-width: 768px) {
+    height: 80px;
+    width: 80px;
+    font-size: 28px;
+    margin-bottom: 20px;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    height: 70px;
+    width: 70px;
+    font-size: 24px;
+    margin-bottom: 16px;
   }
 `;
 

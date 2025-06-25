@@ -30,6 +30,17 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   gap: 24px;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    gap: 16px;
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 12px;
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -37,6 +48,14 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 `;
 
 const Title = styled.h2`
@@ -46,6 +65,17 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 12px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    gap: 8px;
+  }
 `;
 
 const StatusIndicator = styled.div`
@@ -72,6 +102,15 @@ const SyncGrid = styled.div`
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 12px;
   }
 `;
 
@@ -86,6 +125,18 @@ const Card = styled.div`
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
+  
+  @media (max-width: 768px) {
+    border-radius: 8px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 6px;
+  }
 `;
 
 const CardHeader = styled.div`
@@ -95,6 +146,14 @@ const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    padding: 16px 20px 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px 16px 8px;
+  }
 `;
 
 const CardTitle = styled.h3`
@@ -103,16 +162,42 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+    gap: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+    gap: 6px;
+  }
 `;
 
 const CardContent = styled.div`
   padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const ControlPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 12px;
+  }
 `;
 
 const InitializationSection = styled.div`
@@ -121,6 +206,15 @@ const InitializationSection = styled.div`
   padding: 20px;
   border: 2px dashed ${props => props.$initialized ? '#2ecc71' : '#dee2e6'};
   transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const PasswordInput = styled.input`
@@ -140,6 +234,16 @@ const PasswordInput = styled.input`
   &:disabled {
     background-color: #f8f9fa;
     cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 `;
 
@@ -173,10 +277,24 @@ const Button = styled.button`
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
   
-  &:active {
-    transform: translateY(0);
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    min-width: 100px;
+    gap: 6px;
+    
+    &:hover:not(:disabled) {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 14px;
+    font-size: 14px;
+    min-width: 80px;
+    width: 100%;
   }
 `;
 
@@ -186,6 +304,16 @@ const PeersList = styled.div`
   gap: 12px;
   max-height: 300px;
   overflow-y: auto;
+  
+  @media (max-width: 768px) {
+    gap: 10px;
+    max-height: 250px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+    max-height: 200px;
+  }
 `;
 
 const PeerItem = styled.div`
@@ -204,15 +332,38 @@ const PeerItem = styled.div`
     }
   }};
   transition: all 0.3s ease;
-  ${css`
-    animation: ${slideIn} 0.3s ease;
-  `}
+  
+  &:hover {
+    background: #ecf0f1;
+    transform: translateX(4px);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
 `;
 
 const PeerInfo = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  
+  @media (max-width: 768px) {
+    align-items: center;
+    text-align: center;
+  }
 `;
 
 const PeerName = styled.div`
@@ -226,6 +377,17 @@ const PeerDetails = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+    gap: 4px;
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -257,6 +419,18 @@ const SyncStats = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 16px;
   margin-top: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
 `;
 
 const StatCard = styled.div`

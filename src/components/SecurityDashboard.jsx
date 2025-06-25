@@ -249,6 +249,14 @@ const Container = styled.div`
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    padding: 16px 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px 8px;
+  }
 `;
 
 // Using exact same components as Settings.jsx for consistency
@@ -258,6 +266,16 @@ const SettingsCard = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    border-radius: 4px;
+  }
 `;
 
 const CardHeader = styled.div`
@@ -267,6 +285,19 @@ const CardHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eaeaea;
+  flex-wrap: wrap;
+  gap: 12px;
+  
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const CardTitle = styled.h3`
@@ -276,10 +307,28 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 15px;
+    justify-content: center;
+  }
 `;
 
 const CardContent = styled.div`
   padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const LoadingIndicator = styled.div`
