@@ -9,7 +9,12 @@ const util = require('util');
 const isDev = require('electron-is-dev');
 const express = require('express');
 const cors = require('cors');
-const ip = require('ip');
+// Dynamic import for ESM module
+let internalIpV4;
+(async () => {
+  const { internalIpV4: getInternalIp } = await import('internal-ip');
+  internalIpV4 = getInternalIp;
+})();
 const FileUtils = require('./utils/file-utils');
 const EncryptionUtils = require('./utils/encryption-utils');
 const CompressionUtils = require('./utils/compression-utils');
@@ -293,9 +298,14 @@ expressApp.use(express.json());
 expressApp.use(express.static(path.join(__dirname, 'public')));
 
 // Start the file sharing server
-function startFileServer() {
+async function startFileServer() {
+  // Wait for internalIpV4 to be initialized
+  while (!internalIpV4) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
   // Get local IP address
-  const localIP = ip.address();
+  const localIP = await internalIpV4();
   serverAddress = `http://${localIP}:${PORT}`;
   
   // Add a welcome page
@@ -411,8 +421,8 @@ function startFileServer() {
               <title>File Not Found</title>
               <style>
                 body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                .error-container { background: #fff3f3; border-left: 4px solid #e74c3c; padding: 20px; border-radius: 4px; }
-                h1 { color: #e74c3c; }
+                .error-container { background: #fff3f0; border-left: 4px solid #f44336; padding: 20px; border-radius: 4px; }
+                h1 { color: #f44336; }
               </style>
             </head>
             <body>
@@ -932,7 +942,7 @@ async function createWindow() {
   try {
     // Determine the correct URL to load
     const startUrl = isDevMode
-      ? 'http://localhost:3000'
+      ? 'http://localhost:5174'
       : `file://${path.join(__dirname, 'build', 'index.html')}`;
     
     console.log('Loading URL:', startUrl);
@@ -996,8 +1006,8 @@ async function createWindow() {
       console.log('Database initialized successfully');
       
       // Set up file server for sharing
-      const fileServerURL = startFileServer();
-      console.log(`File sharing server started at: ${fileServerURL}`);
+      await startFileServer();
+      console.log(`File sharing server started at: ${serverAddress}`);
       
     } catch (error) {
       console.error('Error initializing services:', error);
@@ -1017,20 +1027,52 @@ async function initDb() {
     // Configure lowdb
     const dbFile = join(app.getPath('userData'), 'db.json');
     const adapter = new JSONFile(dbFile);
-    db = new Low(adapter);
     
-    // If file doesn't exist, db.data will be null
+    // Create default data structure
+    const defaultData = {
+      sharedLinks: [],
+      accessLogs: [],
+      encryptedFiles: [],
+      analytics: [],
+      settings: {}
+    };
+    
+    db = new Low(adapter, defaultData);
+    
+    // Read data from file
     await db.read();
     
-    // Set default data
-    db.data ||= { sharedLinks: [], accessLogs: [] };
-    await db.write();
+    // If data is null (new file), set defaults
+    if (db.data === null) {
+      db.data = defaultData;
+      await db.write();
+    }
     
+    // Ensure all required properties exist
+    db.data.sharedLinks = db.data.sharedLinks || [];
+    db.data.accessLogs = db.data.accessLogs || [];
+    db.data.encryptedFiles = db.data.encryptedFiles || [];
+    db.data.analytics = db.data.analytics || [];
+    db.data.settings = db.data.settings || {};
+    
+    await db.write();
+    console.log('Database initialized successfully');
     return true;
   } catch (error) {
     console.error('Failed to initialize database:', error);
     return false;
   }
+}
+
+// Database helper function
+async function ensureDbReady() {
+  if (!db) {
+    await initDb();
+  }
+  if (!db || !db.data) {
+    throw new Error('Database not initialized');
+  }
+  await db.read();
 }
 
 async function startApp() {
@@ -1090,7 +1132,7 @@ ipcMain.handle('read-directory', async (event, dirPath) => {
 // IPC handler to revoke a shared link
 ipcMain.handle('revoke-share-link', async (event, tokenId) => {
   try {
-    await db.read();
+    await ensureDbReady();
     const allLinks = db.data.sharedLinks || [];
     
     const linkIndex = allLinks.findIndex(link => link.id === tokenId);
@@ -1152,6 +1194,8 @@ ipcMain.handle('read-file-binary', async (event, filePath) => {
 // Share file with one-time link
 ipcMain.handle('share-file', async (event, params) => {
   try {
+    await ensureDbReady();
+    
     // Create a unique token for this share
     const token = uuidv4();
     const encryptionKey = crypto.randomBytes(32).toString('hex');
@@ -1189,6 +1233,7 @@ ipcMain.handle('share-file', async (event, params) => {
       encryptionKey
     };
   } catch (error) {
+    console.error('Error sharing file:', error);
     return { success: false, error: error.message };
   }
 });
@@ -1196,7 +1241,7 @@ ipcMain.handle('share-file', async (event, params) => {
 // Access a shared file
 ipcMain.handle('access-shared-file', async (event, { token, encryptionKey }) => {
   try {
-    await db.read();
+    await ensureDbReady();
     let shareInfo = db.data.sharedLinks.find(link => link.id === token); // token comes from input params
 
     if (!shareInfo) {
@@ -1250,9 +1295,10 @@ ipcMain.handle('access-shared-file', async (event, { token, encryptionKey }) => 
 // Get access logs
 ipcMain.handle('get-access-logs', async () => {
   try {
-    await db.read();
+    await ensureDbReady();
     return { success: true, logs: db.data.accessLogs };
   } catch (error) {
+    console.error('Error getting access logs:', error);
     return { success: false, error: error.message };
   }
 });
@@ -1342,6 +1388,8 @@ ipcMain.handle('decrypt-file', async (event, { filePath, password, outputPath })
 // New handler to get all encrypted files
 ipcMain.handle('list-encrypted-files', async () => {
   try {
+    await ensureDbReady();
+    
     // Define common directories to search
     const userDirectories = [
       app.getPath('documents'),
@@ -1350,7 +1398,6 @@ ipcMain.handle('list-encrypted-files', async () => {
     ];
     
     // Add any previously accessed directories from logs
-    await db.read();
     const accessedDirs = new Set();
     db.data.accessLogs.forEach(log => {
       if (log.action === 'encrypt_file' || log.action === 'decrypt_file') {
@@ -2012,14 +2059,19 @@ ipcMain.handle('getActivityTrends', async () => {
 
 // Helper to log access
 async function logAccess(action, path, metadata = {}) {
-  db.data.accessLogs.push({
-    action,
-    path,
-    timestamp: new Date().toISOString(),
-    ...metadata
-  });
-  
-  await db.write();
+  try {
+    await ensureDbReady();
+    db.data.accessLogs.push({
+      action,
+      path,
+      timestamp: new Date().toISOString(),
+      ...metadata
+    });
+    
+    await db.write();
+  } catch (error) {
+    console.error('Error logging access:', error);
+  }
 }
 
 // File operations IPC handlers
@@ -2415,7 +2467,7 @@ app.on('will-quit', () => {
 // IPC handler to list active shared links
 ipcMain.handle('list-active-shares', async () => {
   try {
-    await db.read();
+    await ensureDbReady();
     const now = new Date();
     const allLinks = db.data.sharedLinks || []; // Ensure it's an array
 
