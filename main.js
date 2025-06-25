@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { join } = require('path');
 const http = require('http');
+const util = require('util');
 const isDev = require('electron-is-dev');
 const express = require('express');
 const cors = require('cors');
