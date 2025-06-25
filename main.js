@@ -9,12 +9,6 @@ const util = require('util');
 const isDev = require('electron-is-dev');
 const express = require('express');
 const cors = require('cors');
-// Dynamic import for ESM module
-let internalIpV4;
-(async () => {
-  const { internalIpV4: getInternalIp } = await import('internal-ip');
-  internalIpV4 = getInternalIp;
-})();
 const FileUtils = require('./utils/file-utils');
 const EncryptionUtils = require('./utils/encryption-utils');
 const CompressionUtils = require('./utils/compression-utils');
@@ -297,16 +291,32 @@ expressApp.use(cors());
 expressApp.use(express.json());
 expressApp.use(express.static(path.join(__dirname, 'public')));
 
-// Start the file sharing server
-async function startFileServer() {
-  // Wait for internalIpV4 to be initialized
-  while (!internalIpV4) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+// Get the correct local IP address using Node.js built-in modules
+function getLocalIP() {
+  const { networkInterfaces } = require('os');
+  const nets = networkInterfaces();
+  
+  // Look for IPv4 addresses that are not loopback and not internal
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Skip over non-IPv4 and internal (loopback) addresses
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
   }
   
-  // Get local IP address
-  const localIP = await internalIpV4();
+  // Fallback to localhost if no external IP found
+  return '127.0.0.1';
+}
+
+// Start the file sharing server
+async function startFileServer() {
+  // Get local IP address using Node.js built-in modules
+  const localIP = getLocalIP();
   serverAddress = `http://${localIP}:${PORT}`;
+  
+  console.log(`File sharing server will be available at: ${serverAddress}`);
   
   // Add a welcome page
   expressApp.get('/', (req, res) => {
