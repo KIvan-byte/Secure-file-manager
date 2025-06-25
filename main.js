@@ -3,9 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const { join } = require('path');
-const http = require('http');
-const util = require('util');
 const isDev = require('electron-is-dev');
 const express = require('express');
 const cors = require('cors');
@@ -1035,7 +1032,7 @@ async function initDb() {
     const { JSONFile } = await import('lowdb/node');
     
     // Configure lowdb
-    const dbFile = join(app.getPath('userData'), 'db.json');
+    const dbFile = path.join(app.getPath('userData'), 'db.json');
     const adapter = new JSONFile(dbFile);
     
     // Create default data structure
@@ -1252,7 +1249,7 @@ ipcMain.handle('share-file', async (event, params) => {
 ipcMain.handle('access-shared-file', async (event, { token, encryptionKey }) => {
   try {
     await ensureDbReady();
-    let shareInfo = db.data.sharedLinks.find(link => link.id === token); // token comes from input params
+    let shareInfo = db.data.sharedLinks.find(link => link.id === token);
 
     if (!shareInfo) {
       return { success: false, error: 'Link not found' };
