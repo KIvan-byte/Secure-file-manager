@@ -783,9 +783,9 @@ function Settings() {
               </FormGroup>
               
               <FormGroup>
-                <Label>Lock Password</Label>
+                <Label>Master Password</Label>
                 <Description>
-                  Set the password to unlock the application
+                  Set the master password for your secure file manager. This password will be used for authentication and data encryption.
                 </Description>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   <InputContainer>
@@ -793,7 +793,7 @@ function Settings() {
                       type="password" 
                       value={lockPassword}
                       onChange={(e) => setLockPassword(e.target.value)}
-                      placeholder="Enter lock password"
+                      placeholder="Enter master password"
                     />
                   </InputContainer>
                   <InputContainer>
@@ -801,9 +801,13 @@ function Settings() {
                       type="password" 
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm lock password"
+                      placeholder="Confirm master password"
                     />
                   </InputContainer>
+                  <PasswordValidator 
+                    password={lockPassword} 
+                    onValidationChange={(validation) => setPasswordValidation(validation)}
+                  />
                 </div>
               </FormGroup>
             </>
@@ -814,7 +818,7 @@ function Settings() {
             onClick={saveSettings}
             disabled={isLoading}
           >
-            <FaSave /> Save Security Settings
+            <FaSave /> Save Settings
           </Button>
           
           <InfoBox>
@@ -837,57 +841,6 @@ function Settings() {
         </CardHeader>
         <CardContent>
           <TwoFactorSettings />
-        </CardContent>
-      </SettingsCard>
-      
-      <SettingsCard>
-        <CardHeader>
-          <CardTitle>
-            <FaShieldAlt /> Password Security
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FormGroup>
-            <Label>New Password</Label>
-            <Description>
-              Set a new password for your account. This will be used for logging in and can also be used to unlock the application.
-            </Description>
-            <InputContainer>
-              <Input 
-                type="password" 
-                value={lockPassword}
-                onChange={(e) => setLockPassword(e.target.value)}
-                placeholder="Enter new password"
-              />
-            </InputContainer>
-          </FormGroup>
-          <FormGroup>
-            <Label>Confirm Password</Label>
-            <Description>
-              Please confirm your new password
-            </Description>
-            <InputContainer>
-              <Input 
-                type="password" 
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-              />
-            </InputContainer>
-          </FormGroup>
-          
-          <PasswordValidator 
-            password={lockPassword} 
-            onValidationChange={(validation) => setPasswordValidation(validation)}
-          />
-          
-          <Button 
-            $primary 
-            onClick={saveSettings}
-            disabled={isLoading}
-          >
-            <FaSave /> Save Password Settings
-          </Button>
         </CardContent>
       </SettingsCard>
         </>
