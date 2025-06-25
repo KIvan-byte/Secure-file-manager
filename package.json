@@ -10,14 +10,19 @@
     "start": "npm run build && cross-env NODE_ENV=production electron .",
     "start:prod": "cross-env NODE_ENV=production electron .",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:all": "npm run build && electron-builder --linux --win",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "archiver": "^7.0.1",
     "cors": "^2.8.5",
-    "electron": "^28.2.0",
     "electron-is-dev": "^2.0.0",
     "express": "^4.18.2",
     "extract-zip": "^2.0.1",
@@ -43,6 +48,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "electron": "^28.2.0",
     "electron-builder": "^24.9.1",
     "vite": "^7.0.0"
   },
@@ -57,5 +63,123 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "build": {
+    "appId": "com.secure-file-manager.app",
+    "productName": "Secure File Manager",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "build/**/*",
+      "main.js",
+      "preload.js",
+      "utils/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/icons",
+        "to": "icons",
+        "filter": ["**/*"]
+      }
+    ],
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "Utility",
+      "icon": "assets/icons/",
+      "synopsis": "Secure file manager with encryption and P2P sync",
+      "description": "A modern, secure file management application with advanced encryption, secure file sharing, P2P synchronization, and comprehensive security auditing."
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "icon": "assets/icons/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico",
+      "installerHeaderIcon": "assets/icons/icon.ico",
+      "license": "LICENSE"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icons/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "dmg": {
+      "title": "Secure File Manager ${version}",
+      "icon": "assets/icons/icon.icns",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 380,
+          "y": 280,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 110,
+          "y": 280,
+          "type": "file"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "KIvan-byte",
+      "repo": "Secure-file-manager"
+    }
   }
 }
