@@ -28,8 +28,8 @@ const MainContent = styled.div`
 `;
 
 function App() {
-  const [selectedPage, setSelectedPage] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const [selectedPage, setSelectedPage] = useState(0);
   const [securitySettings, setSecuritySettings] = useState({
     autoLock: true,
     timeout: 5,
@@ -37,17 +37,43 @@ function App() {
   });
   const inactivityTimerRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
+  const navigate = useNavigate();
+
+  // Initialize secure storage when security settings are loaded/changed
+  useEffect(() => {
+    const initializeStorageWithPassword = async () => {
+      if (securitySettings.password && securitySettings.password.length >= 8) {
+        try {
+          await window.electronAPI.secureStorage.initialize(securitySettings.password);
+          console.log('Secure storage initialized with security password');
+        } catch (error) {
+          console.error('Failed to initialize secure storage:', error);
+        }
+      } else if (securitySettings.password && securitySettings.password.length > 0) {
+        console.warn('Password is too short for secure storage (minimum 8 characters required)');
+      }
+    };
+
+    initializeStorageWithPassword();
+  }, [securitySettings.password]);
 
   useEffect(() => {
-    const storedSettings = localStorage.getItem('securitySettings');
-    if (storedSettings) {
+    const loadSecuritySettings = async () => {
       try {
-        const parsedSettings = JSON.parse(storedSettings);
-        setSecuritySettings(parsedSettings);
+        // Try to load from secure storage, but gracefully handle when not initialized
+        const storedSettings = await window.electronAPI.secureStorage.retrieve('securitySettings');
+        if (storedSettings) {
+          const parsedSettings = JSON.parse(storedSettings);
+          setSecuritySettings(parsedSettings);
+        }
       } catch (error) {
-        console.error('Error parsing security settings:', error);
+        console.error('Error loading security settings:', error);
+        // If secure storage is not initialized, use default settings
+        // This is normal on first run
       }
-    }
+    };
+
+    loadSecuritySettings();
 
     const handleSettingsChange = (event) => {
       setSecuritySettings(event.detail);

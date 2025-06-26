@@ -1063,17 +1063,26 @@ function FileExplorer() {
   useEffect(() => {
     mounted.current = true;
     
-    // Check if we're returning to the component with a saved path
-    const savedPath = localStorage.getItem('lastBrowsedPath');
+    const loadSavedPath = async () => {
+      try {
+        // Check if we're returning to the component with a saved path
+        const savedPath = await window.electronAPI.secureStorage.retrieve('lastBrowsedPath');
+        
+        // Check if there's a specific directory to open from location state
+        if (location.state?.openDirectory) {
+          setCurrentPath(location.state.openDirectory);
+        } else if (savedPath && !currentPath) {
+          setCurrentPath(savedPath);
+        }
+      } catch (error) {
+        console.error('Error loading saved path:', error);
+        // If no saved path or error, continue without setting path
+      }
+      
+      setInitialLoadDone(true);
+    };
     
-    // Check if there's a specific directory to open from location state
-    if (location.state?.openDirectory) {
-      setCurrentPath(location.state.openDirectory);
-    } else if (savedPath && !currentPath) {
-      setCurrentPath(savedPath);
-    }
-    
-    setInitialLoadDone(true);
+    loadSavedPath();
     
     // Add keyboard event listeners
     const handleKeyDown = (e) => {
@@ -1160,8 +1169,9 @@ function FileExplorer() {
   useEffect(() => {
     if (currentPath && initialLoadDone) {
       loadDirectory(currentPath);
-      // Save the current path to localStorage for persistence
-      localStorage.setItem('lastBrowsedPath', currentPath);
+      // Save the current path to secure storage for persistence
+      window.electronAPI.secureStorage.store('lastBrowsedPath', currentPath)
+        .catch(error => console.error('Error saving path:', error));
     }
   }, [currentPath, initialLoadDone]);
 
@@ -2119,7 +2129,15 @@ function FileExplorer() {
               <FaRedo />
             </NavButton>
             <NavButton 
-              onClick={() => setCurrentPath(localStorage.getItem('homeDirectory') || '/')}
+              onClick={async () => {
+                try {
+                  const homeDir = await window.electronAPI.secureStorage.retrieve('homeDirectory');
+                  setCurrentPath(homeDir || '/home');
+                } catch (error) {
+                  // Fallback to reasonable default
+                  setCurrentPath('/home');
+                }
+              }}
               title="Home"
             >
               <FaHome />

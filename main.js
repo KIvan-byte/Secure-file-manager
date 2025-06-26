@@ -2759,9 +2759,16 @@ ipcMain.handle('secure-storage-check', async () => {
   }
 });
 
+// Save home directory to secure storage after initialization
 ipcMain.handle('secure-storage-init', async (event, masterPassword) => {
   try {
-    return await secureStorage.initializeSession(masterPassword);
+    const success = await secureStorage.initializeSession(masterPassword);
+    if (success) {
+      // Store home directory for easy access
+      const homeDir = require('os').homedir();
+      await secureStorage.storeSecureData('homeDirectory', homeDir);
+    }
+    return success;
   } catch (error) {
     console.error('Secure storage initialization failed:', error);
     return false;

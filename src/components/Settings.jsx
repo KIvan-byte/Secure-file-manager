@@ -678,23 +678,28 @@ function Settings() {
       }
       */
       
-      // For now, load from localStorage
-      const storedSettings = localStorage.getItem('securitySettings');
-      if (storedSettings) {
-        const parsedSettings = JSON.parse(storedSettings);
-        setAutoLockEnabled(parsedSettings.autoLock ?? true);
-        
-        // Check if timeout is a standard option or custom
-        const timeout = parsedSettings.timeout ?? 5;
-        if ([1, 5, 10, 15, 30].includes(timeout)) {
-          setLockTimeout(timeout);
-        } else {
-          setLockTimeout('custom');
-          setCustomTimeout(timeout.toString());
+      // Load from secure storage
+      try {
+        const storedSettings = await window.electronAPI.secureStorage.retrieve('securitySettings');
+        if (storedSettings) {
+          const parsedSettings = JSON.parse(storedSettings);
+          setAutoLockEnabled(parsedSettings.autoLock ?? true);
+          
+          // Check if timeout is a standard option or custom
+          const timeout = parsedSettings.timeout ?? 5;
+          if ([1, 5, 10, 15, 30].includes(timeout)) {
+            setLockTimeout(timeout);
+          } else {
+            setLockTimeout('custom');
+            setCustomTimeout(timeout.toString());
+          }
+          
+          setLockPassword(parsedSettings.password ?? '');
+          setConfirmPassword(parsedSettings.password ?? '');
         }
-        
-        setLockPassword(parsedSettings.password ?? '');
-        setConfirmPassword(parsedSettings.password ?? '');
+      } catch (error) {
+        console.error('Error loading security settings:', error);
+        // Use default settings if loading fails
       }
       
     } catch (error) {
@@ -759,8 +764,17 @@ function Settings() {
       }
       */
       
-      // For now, save to localStorage
-      localStorage.setItem('securitySettings', JSON.stringify(securitySettings));
+      // Initialize secure storage with the password if it's new or changed
+      if (securitySettings.password && securitySettings.password.length >= 8) {
+        try {
+          await window.electronAPI.secureStorage.initialize(securitySettings.password);
+        } catch (error) {
+          console.error('Failed to initialize secure storage with new password:', error);
+        }
+      }
+      
+      // Save to secure storage
+      await window.electronAPI.secureStorage.store('securitySettings', JSON.stringify(securitySettings));
       
       // Dispatch a custom event that App.js can listen to
       window.dispatchEvent(new CustomEvent('securitySettingsChanged', { 

@@ -1,7 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 // SECURITY WARNING: This is a temporary migration solution
-// TODO: Remove localStorage usage and migrate to secure storage
 let isSecureStorageEnabled = false;
 
 // Secure storage for sensitive data (replacing localStorage)
@@ -26,14 +25,8 @@ async function storeSecureData(key, value) {
   if (isSecureStorageEnabled) {
     return await ipcRenderer.invoke('secure-storage-store', key, value);
   } else {
-    // Fallback to localStorage with warning
-    console.warn('SECURITY WARNING: Using localStorage for sensitive data. This is not secure!');
-    try {
-      localStorage.setItem(key, value);
-      return true;
-    } catch {
-      return false;
-    }
+    console.error('SECURITY ERROR: Secure storage not initialized. Cannot store sensitive data.');
+    throw new Error('Secure storage not initialized');
   }
 }
 
@@ -42,13 +35,8 @@ async function retrieveSecureData(key) {
   if (isSecureStorageEnabled) {
     return await ipcRenderer.invoke('secure-storage-retrieve', key);
   } else {
-    // Fallback to localStorage with warning
-    console.warn('SECURITY WARNING: Using localStorage for sensitive data. This is not secure!');
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
+    console.error('SECURITY ERROR: Secure storage not initialized. Cannot retrieve sensitive data.');
+    throw new Error('Secure storage not initialized');
   }
 }
 
@@ -57,12 +45,8 @@ async function removeSecureData(key) {
   if (isSecureStorageEnabled) {
     return await ipcRenderer.invoke('secure-storage-remove', key);
   } else {
-    try {
-      localStorage.removeItem(key);
-      return true;
-    } catch {
-      return false;
-    }
+    console.error('SECURITY ERROR: Secure storage not initialized. Cannot remove sensitive data.');
+    throw new Error('Secure storage not initialized');
   }
 }
 
@@ -71,12 +55,8 @@ async function clearSecureData() {
   if (isSecureStorageEnabled) {
     return await ipcRenderer.invoke('secure-storage-clear');
   } else {
-    try {
-      localStorage.clear();
-      return true;
-    } catch {
-      return false;
-    }
+    console.error('SECURITY ERROR: Secure storage not initialized. Cannot clear sensitive data.');
+    throw new Error('Secure storage not initialized');
   }
 }
 
@@ -87,10 +67,10 @@ if (typeof window !== 'undefined' && window !== global) {
     if (isAvailable) {
       console.log('Secure storage is available');
     } else {
-      console.warn('Secure storage is not available, falling back to localStorage');
+      console.error('Secure storage is not available - application will not work without it');
     }
   }).catch(err => {
-    console.warn('Failed to check secure storage:', err);
+    console.error('Failed to check secure storage:', err);
   });
 }
 
@@ -257,6 +237,16 @@ contextBridge.exposeInMainWorld(
 );
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Secure storage API
+  secureStorage: {
+    initialize: initializeSecureSession,
+    store: storeSecureData,
+    retrieve: retrieveSecureData,
+    remove: removeSecureData,
+    clear: clearSecureData,
+    isEnabled: () => isSecureStorageEnabled
+  },
+  
   // Event listeners for sync events
   on: (channel, callback) => {
     const validChannels = [
