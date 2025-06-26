@@ -17,16 +17,40 @@ if [ ! -f "$SVG_SOURCE" ]; then
     exit 1
 fi
 
-# Generate PNG icons for different sizes
+# Check if ImageMagick is installed
+if ! command -v convert >/dev/null 2>&1; then
+    echo "Error: ImageMagick (convert command) is not installed."
+    echo "Install it with: sudo apt-get install imagemagick (Ubuntu/Debian)"
+    echo "or: sudo dnf install ImageMagick (Fedora/RHEL)"
+    exit 1
+fi
+
+# Generate PNG icons for different sizes with better quality
 echo "Generating PNG icons..."
-convert "$SVG_SOURCE" -resize 16x16 "$ICON_DIR/icon_16x16.png"
-convert "$SVG_SOURCE" -resize 32x32 "$ICON_DIR/icon_32x32.png"
-convert "$SVG_SOURCE" -resize 48x48 "$ICON_DIR/icon_48x48.png"
-convert "$SVG_SOURCE" -resize 64x64 "$ICON_DIR/icon_64x64.png"
-convert "$SVG_SOURCE" -resize 128x128 "$ICON_DIR/icon_128x128.png"
-convert "$SVG_SOURCE" -resize 256x256 "$ICON_DIR/icon_256x256.png"
-convert "$SVG_SOURCE" -resize 512x512 "$ICON_DIR/icon_512x512.png"
-convert "$SVG_SOURCE" -resize 1024x1024 "$ICON_DIR/icon_1024x1024.png"
+
+# Check if Inkscape is available (better SVG rendering)
+if command -v inkscape >/dev/null 2>&1; then
+    echo "Using Inkscape for better SVG rendering..."
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_16x16.png" --export-width=16 --export-height=16
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_32x32.png" --export-width=32 --export-height=32
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_48x48.png" --export-width=48 --export-height=48
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_64x64.png" --export-width=64 --export-height=64
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_128x128.png" --export-width=128 --export-height=128
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_256x256.png" --export-width=256 --export-height=256
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_512x512.png" --export-width=512 --export-height=512
+    inkscape "$SVG_SOURCE" --export-type=png --export-filename="$ICON_DIR/icon_1024x1024.png" --export-width=1024 --export-height=1024
+else
+    echo "Using ImageMagick for SVG conversion..."
+    # Use better settings for SVG to PNG conversion
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 16x16 -quality 100 "$ICON_DIR/icon_16x16.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 32x32 -quality 100 "$ICON_DIR/icon_32x32.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 48x48 -quality 100 "$ICON_DIR/icon_48x48.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 64x64 -quality 100 "$ICON_DIR/icon_64x64.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 128x128 -quality 100 "$ICON_DIR/icon_128x128.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 256x256 -quality 100 "$ICON_DIR/icon_256x256.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 512x512 -quality 100 "$ICON_DIR/icon_512x512.png"
+    convert "$SVG_SOURCE" -background transparent -density 300 -resize 1024x1024 -quality 100 "$ICON_DIR/icon_1024x1024.png"
+fi
 
 # Generate main icon.png (256x256)
 cp "$ICON_DIR/icon_256x256.png" "$ICON_DIR/icon.png"
