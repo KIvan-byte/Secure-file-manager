@@ -37,6 +37,14 @@ const LockContainer = styled.div`
   z-index: 2000;
   padding: 20px;
   animation: ${fadeIn} 0.4s ease;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const LockForm = styled.div`
@@ -54,6 +62,22 @@ const LockForm = styled.div`
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    max-width: 380px;
+    padding: 32px;
+    border-radius: 20px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    max-width: 320px;
+    padding: 24px;
+    border-radius: 16px;
   }
 `;
 
@@ -75,6 +99,24 @@ const LockIcon = styled.div`
   
   &:hover {
     transform: scale(1.05) rotate(5deg);
+  }
+  
+  @media (max-width: 768px) {
+    height: 80px;
+    width: 80px;
+    font-size: 28px;
+    margin-bottom: 20px;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    height: 70px;
+    width: 70px;
+    font-size: 24px;
+    margin-bottom: 16px;
   }
 `;
 
@@ -101,16 +143,16 @@ const PasswordInput = styled.input`
   width: 100%;
   padding: 16px 20px;
   padding-right: 50px;
-  border: 2px solid ${props => props.error ? '#e74c3c' : '#ddd'};
+  border: 2px solid ${props => props.$error ? '#e74c3c' : '#ddd'};
   border-radius: 16px;
   font-size: 16px;
   transition: all 0.3s;
-  background-color: ${props => props.error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
+  background-color: ${props => props.$error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
   
   &:focus {
-    border-color: ${props => props.error ? '#e74c3c' : '#3498db'};
+    border-color: ${props => props.$error ? '#e74c3c' : '#3498db'};
     outline: none;
-    box-shadow: 0 0 0 3px ${props => props.error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
+    box-shadow: 0 0 0 3px ${props => props.$error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
     background-color: white;
   }
 `;
@@ -293,18 +335,18 @@ const TwoFactorTitle = styled.h3`
 const TwoFactorInput = styled.input`
   width: 100%;
   padding: 16px 20px;
-  border: 2px solid ${props => props.error ? '#e74c3c' : '#ddd'};
+  border: 2px solid ${props => props.$error ? '#e74c3c' : '#ddd'};
   border-radius: 16px;
   font-size: 18px;
   text-align: center;
   letter-spacing: 0.5em;
   transition: all 0.3s;
-  background-color: ${props => props.error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
+  background-color: ${props => props.$error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
   
   &:focus {
-    border-color: ${props => props.error ? '#e74c3c' : '#3498db'};
+    border-color: ${props => props.$error ? '#e74c3c' : '#3498db'};
     outline: none;
-    box-shadow: 0 0 0 3px ${props => props.error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
+    box-shadow: 0 0 0 3px ${props => props.$error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
     background-color: white;
   }
   
@@ -359,8 +401,34 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
     setError('');
 
     try {
-      if (inputPassword === password) {
+      // Try to initialize secure storage with the provided password
+      const initResult = await window.electronAPI.secureStorage.initialize(inputPassword);
+      
+      if (initResult.success) {
+        // Password is correct if secure storage initialization succeeds
         setPasswordVerified(true);
+        
+        // Try to load security settings from secure storage
+        try {
+          const hasPasswordResult = await window.electronAPI.secureStorage.retrieve('hasPassword');
+          if (hasPasswordResult.success && hasPasswordResult.value) {
+            // There are saved settings, load them
+            const settingsResult = await window.electronAPI.secureStorage.retrieve('securitySettings');
+            if (settingsResult.success && settingsResult.value) {
+              const savedSettings = JSON.parse(settingsResult.value);
+              // Restore the password for this session
+              savedSettings.password = inputPassword;
+              
+              // Notify the app about the settings
+              window.dispatchEvent(new CustomEvent('securitySettingsChanged', {
+                detail: savedSettings
+              }));
+            }
+          }
+        } catch (settingsError) {
+          console.warn('Could not load saved settings, using defaults:', settingsError);
+        }
+        
         // Check if 2FA is enabled after password verification
         const has2FA = await checkTwoFactorSetup();
         if (has2FA) {
@@ -370,9 +438,11 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
           onUnlock();
         }
       } else {
+        // SecureStorage rejected the password
         setError('Invalid password');
       }
     } catch (error) {
+      console.error('Authentication error:', error);
       setError('Authentication error');
     } finally {
       setIsSubmitting(false);
@@ -447,7 +517,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
                 value={inputPassword}
                 onChange={(e) => setInputPassword(e.target.value)}
                 placeholder="Enter password"
-                error={error}
+                $error={error}
                 autoFocus
               />
               <PasswordToggle
@@ -490,7 +560,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
                   onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
                   maxLength="6"
-                  error={twoFactorError}
+                  $error={twoFactorError}
                   autoFocus
                 />
               </InputWrapper>

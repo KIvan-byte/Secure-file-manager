@@ -9,6 +9,11 @@ const ResultsContainer = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    border-radius: 0;
+    margin-bottom: 16px;
+  }
 `;
 
 const ResultsHeader = styled.div`
@@ -18,6 +23,10 @@ const ResultsHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eaeaea;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 `;
 
 const ResultsTitle = styled.h3`
@@ -27,6 +36,11 @@ const ResultsTitle = styled.h3`
   align-items: center;
   gap: 10px;
   color: #2c3e50;
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+    gap: 8px;
+  }
 `;
 
 const ResultsCount = styled.span`
@@ -73,6 +87,10 @@ const ResultItem = styled.div`
   &:last-child {
     border-bottom: none;
   }
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 `;
 
 const ResultHeader = styled.div`
@@ -80,6 +98,11 @@ const ResultHeader = styled.div`
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  
+  @media (max-width: 768px) {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 `;
 
 const FileIcon = styled.span`
@@ -92,6 +115,11 @@ const FileName = styled.div`
   font-weight: 600;
   flex: 1;
   word-break: break-all;
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+    min-width: 0;
+  }
 `;
 
 const FileInfo = styled.div`
@@ -101,6 +129,16 @@ const FileInfo = styled.div`
   font-size: 13px;
   color: #7f8c8d;
   margin-bottom: 12px;
+  
+  @media (max-width: 768px) {
+    gap: 12px;
+    font-size: 12px;
+    flex-direction: column;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const FileSize = styled.div`
@@ -121,6 +159,11 @@ const ViewButton = styled.button`
   
   &:hover {
     background-color: #2980b9;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 `;
 
@@ -149,6 +192,11 @@ const SnippetContent = styled.pre`
   background-color: white;
   white-space: pre-wrap;
   word-break: break-all;
+  
+  @media (max-width: 768px) {
+    padding: 8px;
+    font-size: 12px;
+  }
 `;
 
 const HighlightedLine = styled.div`
@@ -164,6 +212,10 @@ const LoadingState = styled.div`
   padding: 48px 24px;
   color: #7f8c8d;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    padding: 32px 16px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -174,6 +226,10 @@ const EmptyState = styled.div`
   padding: 48px 24px;
   color: #7f8c8d;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    padding: 32px 16px;
+  }
 `;
 
 const IconContainer = styled.div`

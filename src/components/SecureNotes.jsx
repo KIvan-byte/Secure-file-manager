@@ -10,6 +10,15 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -19,6 +28,13 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const Title = styled.h2`
@@ -28,6 +44,17 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    gap: 8px;
+    justify-content: center;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    gap: 6px;
+  }
 `;
 
 const TwoColumnLayout = styled.div`
@@ -36,8 +63,18 @@ const TwoColumnLayout = styled.div`
   gap: 24px;
   flex: 1;
   
+  @media (max-width: 1024px) {
+    grid-template-columns: 250px 1fr;
+    gap: 16px;
+  }
+  
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 12px;
   }
 `;
 
@@ -49,6 +86,18 @@ const CategoryPanel = styled.div`
   height: calc(100vh - 140px);
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    height: auto;
+    max-height: 400px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    max-height: 300px;
+  }
 `;
 
 const CategoryHeader = styled.div`

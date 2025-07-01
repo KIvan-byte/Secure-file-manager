@@ -44,6 +44,15 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -53,6 +62,17 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 `;
 
 const Title = styled.h2`
@@ -62,6 +82,17 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    gap: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    text-align: center;
+    justify-content: center;
+  }
 `;
 
 const DashboardGrid = styled.div`
@@ -70,8 +101,19 @@ const DashboardGrid = styled.div`
   grid-gap: 24px;
   margin-bottom: 24px;
   
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-gap: 16px;
+  }
+  
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    grid-gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-gap: 12px;
+    margin-bottom: 16px;
   }
 `;
 
@@ -81,8 +123,18 @@ const DashboardRow = styled.div`
   grid-gap: 24px;
   margin-bottom: 24px;
   
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     grid-template-columns: 1fr;
+    grid-gap: 16px;
+  }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-gap: 12px;
+    margin-bottom: 12px;
   }
 `;
 
@@ -100,6 +152,16 @@ const Card = styled.div`
   
   @media (max-width: 768px) {
     margin-bottom: 0;
+    border-radius: 8px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 `;
 
@@ -110,6 +172,14 @@ const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const CardTitle = styled.h3`
@@ -120,11 +190,28 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  
+  @media (max-width: 768px) {
+    font-size: 15px;
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const CardContent = styled.div`
   padding: 24px;
   height: ${props => props.$height || 'auto'};
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -132,8 +219,17 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   grid-gap: 16px;
   
+  @media (max-width: 768px) {
+    grid-gap: 12px;
+  }
+  
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
+    grid-gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-gap: 12px;
   }
 `;
 
@@ -153,6 +249,20 @@ const StatsItem = styled.div`
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
   }
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 8px;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    border-radius: 6px;
+  }
 `;
 
 const StatsIcon = styled.div`
@@ -167,6 +277,20 @@ const StatsIcon = styled.div`
   font-size: 22px;
   margin-bottom: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
 `;
 
 const StatsValue = styled.div`
@@ -174,12 +298,30 @@ const StatsValue = styled.div`
   font-weight: 700;
   color: ${COLORS.secondaryLight};
   margin-bottom: 8px;
+  
+  @media (max-width: 768px) {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
 `;
 
 const StatsLabel = styled.div`
   font-size: 14px;
   color: ${COLORS.grayDark};
   font-weight: 500;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 const StatsTrend = styled.div`
@@ -189,12 +331,32 @@ const StatsTrend = styled.div`
   margin-top: 6px;
   font-size: 13px;
   color: ${props => props.$isUp ? COLORS.success : COLORS.danger};
+  
+  @media (max-width: 768px) {
+    font-size: 12px;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const ChartContainer = styled.div`
   width: 100%;
   height: ${props => props.$height || '300px'};
   margin-top: ${props => props.$marginTop || '0'};
+  
+  @media (max-width: 768px) {
+    height: ${props => props.$height ? 
+      (parseInt(props.$height) * 0.8 + 'px') : '240px'};
+  }
+  
+  @media (max-width: 480px) {
+    height: ${props => props.$height ? 
+      (parseInt(props.$height) * 0.7 + 'px') : '200px'};
+  }
 `;
 
 const LegendContainer = styled.div`
@@ -203,12 +365,30 @@ const LegendContainer = styled.div`
   gap: 16px;
   margin-top: 16px;
   justify-content: center;
+  
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-top: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-top: 8px;
+  }
 `;
 
 const LegendItem = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 8px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 4px;
+  }
 `;
 
 const LegendColor = styled.div`
@@ -217,32 +397,82 @@ const LegendColor = styled.div`
   border-radius: 4px;
   background-color: ${props => props.$color};
   margin-right: 8px;
+  
+  @media (max-width: 480px) {
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+  }
 `;
 
 const LegendText = styled.div`
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 6px;
+    font-size: 14px;
+  }
 `;
 
 const LegendLabel = styled.span`
   color: ${COLORS.secondaryLight};
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const LegendValue = styled.span`
   color: ${COLORS.grayDark};
   font-weight: 500;
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+  }
 `;
 
 const TableContainer = styled.div`
   overflow-x: auto;
   border-radius: 8px;
   border: 1px solid #eaeaea;
+  
+  @media (max-width: 768px) {
+    border-radius: 6px;
+  }
+  
+  /* Custom scrollbar for mobile */
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${COLORS.grayMedium};
+    border-radius: 2px;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px;
+  
+  @media (max-width: 768px) {
+    min-width: 500px;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 400px;
+  }
 `;
 
 const TableRow = styled.tr`
@@ -263,12 +493,32 @@ const TableHeader = styled.th`
   color: ${COLORS.secondaryLight};
   font-weight: 600;
   background-color: ${COLORS.grayLight};
+  
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 `;
 
 const TableCell = styled.td`
   padding: 12px 16px;
   color: ${COLORS.secondaryLight};
   vertical-align: middle;
+  
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 `;
 
 const LoadingState = styled.div`
@@ -278,6 +528,14 @@ const LoadingState = styled.div`
   justify-content: center;
   padding: 60px 24px;
   color: ${COLORS.grayDark};
+  
+  @media (max-width: 768px) {
+    padding: 40px 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 30px 12px;
+  }
 `;
 
 const ErrorState = styled.div`
@@ -290,6 +548,20 @@ const ErrorState = styled.div`
   gap: 12px;
   margin-bottom: 24px;
   border-radius: 0 8px 8px 0;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-radius: 0 6px 6px 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
 `;
 
 const MessageIcon = styled.div`
@@ -340,6 +612,22 @@ const RefreshButton = styled.button`
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    gap: 6px;
+    font-size: 14px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    width: 100%;
   }
 `;
 
@@ -405,6 +693,14 @@ const TabsContainer = styled.div`
     background-color: ${COLORS.grayMedium};
     border-radius: 4px;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const Tab = styled.div`
@@ -420,6 +716,18 @@ const Tab = styled.div`
     color: ${COLORS.primary};
     background-color: ${COLORS.primaryLight};
   }
+  
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 120px;
+    text-align: center;
+  }
 `;
 
 const LastUpdatedBadge = styled.div`
@@ -432,6 +740,20 @@ const LastUpdatedBadge = styled.div`
   font-size: 14px;
   color: ${COLORS.grayDark};
   margin-bottom: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    gap: 6px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+  }
 `;
 
 const SummaryText = styled.div`
@@ -439,6 +761,18 @@ const SummaryText = styled.div`
   color: ${COLORS.secondaryLight};
   line-height: 1.6;
   font-size: 15px;
+  
+  @media (max-width: 768px) {
+    margin: 12px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 10px 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
 `;
 
 const Badge = styled.span`
@@ -451,6 +785,12 @@ const Badge = styled.span`
   background-color: ${props => props.$bg || COLORS.primaryLight};
   color: ${props => props.$color || COLORS.primary};
   margin-right: 8px;
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+    padding: 4px 6px;
+    margin-right: 6px;
+  }
 `;
 
 const FilterContainer = styled.div`
@@ -458,6 +798,16 @@ const FilterContainer = styled.div`
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 24px;
+  
+  @media (max-width: 768px) {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
 `;
 
 const FilterButton = styled.button`
@@ -476,6 +826,19 @@ const FilterButton = styled.button`
   
   &:hover {
     background-color: ${props => props.$active ? COLORS.primaryDark : COLORS.grayMedium};
+  }
+  
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    gap: 6px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 4px;
   }
 `;
 

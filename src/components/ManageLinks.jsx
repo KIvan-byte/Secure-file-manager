@@ -9,6 +9,16 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px; // Adds space between title and table/messages
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    gap: 12px;
+  }
 `;
 
 const Title = styled.h2`
@@ -16,6 +26,15 @@ const Title = styled.h2`
   font-weight: 600;
   color: #2c3e50; // Dark blue-grey
   margin-bottom: 0; // Gap handles spacing
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
+    text-align: center;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const Table = styled.table`
@@ -41,6 +60,30 @@ const Table = styled.table`
   tbody tr:last-child td {
     border-bottom: none; // No border for the last row
   }
+  
+  @media (max-width: 768px) {
+    th, td {
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    
+    th {
+      font-size: 13px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    th, td {
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    
+    th {
+      font-size: 11px;
+    }
+    
+    border-radius: 6px;
+  }
 `;
 
 const Button = styled.button`
@@ -56,6 +99,18 @@ const Button = styled.button`
   
   &:active {
     transform: translateY(1px);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    gap: 4px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 6px 8px;
+    font-size: 12px;
+    gap: 3px;
   }
 `;
 

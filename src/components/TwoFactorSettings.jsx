@@ -14,6 +14,15 @@ const slideUp = keyframes`
 
 const TwoFactorContainer = styled.div`
   /* animation: ${fadeIn} 0.3s ease; */
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const StatusCard = styled.div`
@@ -26,6 +35,20 @@ const StatusCard = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    gap: 10px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 12px;
+    gap: 8px;
+    font-size: 14px;
+  }
 `;
 
 const SetupCard = styled.div`
@@ -34,6 +57,17 @@ const SetupCard = styled.div`
   padding: 24px;
   margin-bottom: 20px;
   /* animation: ${slideUp} 0.4s ease; */
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
 `;
 
 const QRContainer = styled.div`
@@ -43,6 +77,17 @@ const QRContainer = styled.div`
   margin: 20px 0;
   text-align: center;
   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin: 12px 0;
+  }
 `;
 
 const SecretKey = styled.div`
@@ -78,20 +123,28 @@ const CodeInput = styled.input`
   padding: 12px;
   border: 2px solid ${props => props.$error ? '#dc3545' : '#ced4da'};
   border-radius: 6px;
-  font-size: 18px;
+  font-size: 16px;
+  transition: border-color 0.2s;
   text-align: center;
-  letter-spacing: 0.5em;
-  transition: all 0.3s;
-  background-color: ${props => props.$error ? '#fff5f5' : 'white'};
+  letter-spacing: 4px;
+  font-weight: 600;
   
   &:focus {
-    border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
     outline: none;
-    box-shadow: 0 0 0 3px ${props => props.$error ? 'rgba(220, 53, 69, 0.25)' : 'rgba(0, 123, 255, 0.25)'};
+    border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
+    box-shadow: 0 0 0 0.2rem ${props => props.$error ? 'rgba(220, 53, 69, 0.25)' : 'rgba(0, 123, 255, 0.25)'};
   }
   
-  &::placeholder {
-    letter-spacing: normal;
+  @media (max-width: 768px) {
+    padding: 10px;
+    font-size: 15px;
+    letter-spacing: 3px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 14px;
+    letter-spacing: 2px;
   }
 `;
 

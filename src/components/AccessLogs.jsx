@@ -6,6 +6,15 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -13,6 +22,15 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 `;
 
 const Title = styled.h2`
@@ -22,6 +40,17 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    gap: 8px;
+    justify-content: center;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    gap: 6px;
+  }
 `;
 
 const Card = styled.div`
@@ -35,6 +64,13 @@ const Card = styled.div`
   
   @media (max-width: 768px) {
     padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    margin-bottom: 12px;
   }
 `;
 
@@ -44,9 +80,19 @@ const FilterBar = styled.div`
   gap: 10px;
   margin-bottom: 24px;
   
+  @media (max-width: 768px) {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
   @media (max-width: 576px) {
     flex-direction: column;
     align-items: stretch;
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
   }
 `;
 
@@ -68,8 +114,19 @@ const FilterButton = styled.button`
     background-color: ${props => props.$active ? props.$hoverColor : '#7f8c8d'};
   }
 
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    gap: 6px;
+    font-size: 14px;
+  }
+
   @media (max-width: 576px) {
     justify-content: flex-start;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 13px;
   }
 `;
 

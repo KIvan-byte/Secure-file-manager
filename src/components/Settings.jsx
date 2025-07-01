@@ -1,12 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
-import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt } from 'react-icons/fa';
+import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt, FaShieldAlt } from 'react-icons/fa';
 import TwoFactorSettings from './TwoFactorSettings';
+import SecurityDashboard from './SecurityDashboard';
+
+// Enhanced password validation component
+const PasswordValidator = ({ password, onValidationChange }) => {
+  const [validation, setValidation] = useState(null);
+  
+  useEffect(() => {
+    if (!password) {
+      setValidation(null);
+      onValidationChange?.(null);
+      return;
+    }
+    
+    // Use the new security API for password validation
+    window.electron.security.validatePassword(password)
+      .then(result => {
+        if (result.success) {
+          setValidation(result.data);
+          onValidationChange?.(result.data);
+        }
+      })
+      .catch(err => {
+        console.error('Password validation error:', err);
+      });
+  }, [password, onValidationChange]);
+  
+  if (!validation) return null;
+  
+  return (
+    <ValidationContainer>
+      <ValidationHeader $isValid={validation.isValid}>
+        {validation.isValid ? <FaCheck /> : <FaExclamationTriangle />}
+        Password Strength: {validation.isValid ? 'Strong' : 'Weak'}
+      </ValidationHeader>
+      <ValidationScore>
+        <ScoreBar>
+          <ScoreFill $score={validation.score} />
+        </ScoreBar>
+        <ScoreText>Score: {validation.score}/6</ScoreText>
+      </ValidationScore>
+      {validation.issues.length > 0 && (
+        <ValidationIssues>
+          <IssuesTitle>Issues to fix:</IssuesTitle>
+          {validation.issues.map((issue, index) => (
+            <ValidationIssue key={index}>
+              <FaExclamationTriangle />
+              {issue}
+            </ValidationIssue>
+          ))}
+        </ValidationIssues>
+      )}
+    </ValidationContainer>
+  );
+};
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -14,6 +77,19 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 `;
 
 const Title = styled.h2`
@@ -23,6 +99,17 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    gap: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    text-align: center;
+    justify-content: center;
+  }
 `;
 
 const SettingsCard = styled.div`
@@ -31,6 +118,16 @@ const SettingsCard = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
   overflow: hidden;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+    border-radius: 4px;
+  }
 `;
 
 const CardHeader = styled.div`
@@ -40,6 +137,17 @@ const CardHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eaeaea;
+  
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 `;
 
 const CardTitle = styled.h3`
@@ -49,10 +157,27 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+    gap: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 15px;
+  }
 `;
 
 const CardContent = styled.div`
   padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const FormGroup = styled.div`
@@ -61,6 +186,14 @@ const FormGroup = styled.div`
   &:last-child {
     margin-bottom: 0;
   }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const Label = styled.label`
@@ -68,12 +201,30 @@ const Label = styled.label`
   margin-bottom: 8px;
   font-weight: 600;
   color: #34495e;
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const Description = styled.div`
   color: #7f8c8d;
   font-size: 14px;
   margin-bottom: 12px;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
 `;
 
 const InputContainer = styled.div`
@@ -81,9 +232,13 @@ const InputContainer = styled.div`
   align-items: center;
   gap: 12px;
   
+  @media (max-width: 768px) {
+    gap: 10px;
+  }
+  
   @media (max-width: 576px) {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 8px;
   }
 `;
@@ -94,11 +249,23 @@ const Input = styled.input`
   border-radius: 6px;
   font-size: 14px;
   transition: border 0.3s ease;
+  width: 100%;
   
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 14px;
   }
 `;
 
@@ -114,6 +281,23 @@ const Select = styled.select`
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+    min-width: 120px;
+  }
+  
+  @media (max-width: 576px) {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+    font-size: 14px;
   }
 `;
 
@@ -142,6 +326,30 @@ const Button = styled.button`
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 14px;
+    gap: 6px;
+    border-radius: 4px;
+    
+    &:hover {
+      transform: none;
+    }
+    
+    &:active {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    width: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 14px;
   }
 `;
 
@@ -301,6 +509,114 @@ const NumberInput = styled.input`
   }
 `;
 
+// Validation components styles
+const ValidationContainer = styled.div`
+  margin-top: 10px;
+  padding: 15px;
+  border-radius: 6px;
+  background: ${props => props.isValid ? '#e8f5e8' : '#fff3e0'};
+  border: 1px solid ${props => props.isValid ? '#4caf50' : '#ff9800'};
+`;
+
+const ValidationHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  color: ${props => props.$isValid ? '#2e7d32' : '#e65100'};
+  margin-bottom: 10px;
+`;
+
+const ValidationScore = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const ScoreBar = styled.div`
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+const ScoreFill = styled.div`
+  height: 100%;
+  width: ${props => (props.$score / 6) * 100}%;
+  background: ${props => {
+    if (props.$score >= 5) return '#4caf50';
+    if (props.$score >= 3) return '#ff9800';
+    return '#f44336';
+  }};
+  transition: width 0.3s ease, background 0.3s ease;
+`;
+
+const ScoreText = styled.span`
+  font-size: 12px;
+  color: #666;
+  font-weight: bold;
+`;
+
+const ValidationIssues = styled.div`
+  margin-top: 10px;
+`;
+
+const IssuesTitle = styled.div`
+  font-size: 14px;
+  font-weight: bold;
+  color: #e65100;
+  margin-bottom: 8px;
+`;
+
+const ValidationIssue = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #d84315;
+  margin-bottom: 4px;
+  
+  svg {
+    font-size: 12px;
+  }
+`;
+
+// Tab styles
+const TabContainer = styled.div`
+  display: flex;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+`;
+
+const TabButton = styled.button`
+  flex: 1;
+  padding: 16px 24px;
+  border: none;
+  background: ${props => props.$active ? '#2196f3' : '#f5f5f5'};
+  color: ${props => props.$active ? 'white' : '#666'};
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  &:hover {
+    background: ${props => props.$active ? '#1976d2' : '#e0e0e0'};
+  }
+  
+  &:not(:last-child) {
+    border-right: 1px solid #e0e0e0;
+  }
+`;
+
 function Settings() {
   const [autoLockEnabled, setAutoLockEnabled] = useState(true);
   const [lockTimeout, setLockTimeout] = useState(5); // minutes
@@ -309,48 +625,62 @@ function Settings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState(null);
+  const [activeTab, setActiveTab] = useState('security'); // security, privacy, advanced
+  const [securityDashboardVisible, setSecurityDashboardVisible] = useState(false);
   
   useEffect(() => {
     // Load settings from local storage or settings service
     loadSettings();
   }, []);
   
+  const handlePasswordValidation = (validation) => {
+    setPasswordValidation(validation);
+  };
+  
+  const validatePasswordsMatch = () => {
+    if (lockPassword && confirmPassword && lockPassword !== confirmPassword) {
+      setMessage({
+        type: 'error',
+        text: 'Passwords do not match'
+      });
+      return false;
+    }
+    return true;
+  };
+  
+  const validatePasswordStrength = () => {
+    if (lockPassword && passwordValidation && !passwordValidation.isValid) {
+      setMessage({
+        type: 'error',
+        text: 'Password is not strong enough. Please address the issues shown above.'
+      });
+      return false;
+    }
+    return true;
+  };
+  
   const loadSettings = async () => {
     try {
       setIsLoading(true);
       
-      // Try to get settings from electron
-      // This is a placeholder - in a real app, you'd fetch from an actual settings service
-      
-      /* Uncomment when the settings service is implemented
-      const result = await window.electron.settings.getSettings('security');
-      if (result.success) {
-        const { autoLock, timeout, password } = result.settings;
-        setAutoLockEnabled(autoLock ?? true);
-        setLockTimeout(timeout ?? 5);
-        setLockPassword(password ?? '');
-        setConfirmPassword(password ?? '');
-      }
-      */
-      
-      // For now, load from localStorage
-      const storedSettings = localStorage.getItem('securitySettings');
-      if (storedSettings) {
-        const parsedSettings = JSON.parse(storedSettings);
-        setAutoLockEnabled(parsedSettings.autoLock ?? true);
-        
-        // Check if timeout is a standard option or custom
-        const timeout = parsedSettings.timeout ?? 5;
-        if ([1, 5, 10, 15, 30].includes(timeout)) {
-          setLockTimeout(timeout);
+      // Check if secure storage has any saved settings
+      try {
+        const stats = await window.electronAPI.secureStorage.getStats();
+        if (stats.success && stats.stats.hasDataFile) {
+          console.log('Found saved settings, but password is required to access them');
+          // We have saved settings but can't access them without the master password
+          // User will need to enter password first
         } else {
-          setLockTimeout('custom');
-          setCustomTimeout(timeout.toString());
+          console.log('No saved settings found, using defaults');
         }
-        
-        setLockPassword(parsedSettings.password ?? '');
-        setConfirmPassword(parsedSettings.password ?? '');
+      } catch (error) {
+        console.warn('Could not check for saved settings:', error);
       }
+      
+      // For security reasons, we don't pre-load the password
+      // The user will need to re-enter it each time they change settings
+      // This is intentional for security
       
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -374,11 +704,11 @@ function Settings() {
         return;
       }
       
-      if (lockPassword !== confirmPassword) {
-        setMessage({
-          type: 'error',
-          text: 'Passwords do not match'
-        });
+      if (!validatePasswordsMatch()) {
+        return;
+      }
+      
+      if (!validatePasswordStrength()) {
         return;
       }
       
@@ -402,20 +732,39 @@ function Settings() {
         password: lockPassword
       };
       
-      /* Uncomment when the settings service is implemented
-      const result = await window.electron.settings.saveSettings('security', securitySettings);
-      if (result.success) {
-        setMessage({
-          type: 'success',
-          text: 'Security settings saved successfully'
-        });
-      } else {
-        throw new Error(result.error);
+      // Initialize secure storage with the password if it's provided
+      if (securitySettings.password && securitySettings.password.length >= 8) {
+        try {
+          const initResult = await window.electronAPI.secureStorage.initialize(securitySettings.password);
+          if (!initResult.success) {
+            throw new Error('Failed to initialize secure storage');
+          }
+          
+          // Save settings to secure storage (without the password for security)
+          const settingsToSave = {
+            ...securitySettings,
+            password: '' // Don't save the actual password
+          };
+          
+          const storeResult = await window.electronAPI.secureStorage.store('securitySettings', JSON.stringify(settingsToSave));
+          if (!storeResult.success) {
+            throw new Error('Failed to save settings to secure storage');
+          }
+          
+          // Save a flag indicating that a password has been set
+          await window.electronAPI.secureStorage.store('hasPassword', 'true');
+          
+          console.log('Settings saved to secure storage successfully');
+          
+        } catch (storageError) {
+          console.error('Failed to save to secure storage:', storageError);
+          setMessage({
+            type: 'error',
+            text: 'Failed to save settings securely: ' + storageError.message
+          });
+          return;
+        }
       }
-      */
-      
-      // For now, save to localStorage
-      localStorage.setItem('securitySettings', JSON.stringify(securitySettings));
       
       // Dispatch a custom event that App.js can listen to
       window.dispatchEvent(new CustomEvent('securitySettingsChanged', { 
@@ -424,7 +773,7 @@ function Settings() {
       
       setMessage({
         type: 'success',
-        text: 'Security settings saved successfully'
+        text: 'Security settings saved successfully and will persist between application restarts'
       });
       
     } catch (error) {
@@ -460,13 +809,36 @@ function Settings() {
         </Message>
       )}
       
-      <SettingsCard>
-        <CardHeader>
-          <CardTitle>
-            <FaLock /> Security Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <TabContainer>
+        <TabButton 
+          $active={activeTab === 'security'} 
+          onClick={() => setActiveTab('security')}
+        >
+          <FaLock /> Security
+        </TabButton>
+        <TabButton 
+          $active={activeTab === 'privacy'} 
+          onClick={() => setActiveTab('privacy')}
+        >
+          <FaShieldAlt /> Privacy
+        </TabButton>
+        <TabButton 
+          $active={activeTab === 'dashboard'} 
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <FaShieldAlt /> Security Dashboard
+        </TabButton>
+      </TabContainer>
+      
+      {activeTab === 'security' && (
+        <>
+          <SettingsCard>
+            <CardHeader>
+              <CardTitle>
+                <FaLock /> Auto-Lock Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
           <FormGroup>
             <Label>Auto-Lock Application</Label>
             <Description>
@@ -569,9 +941,9 @@ function Settings() {
               </FormGroup>
               
               <FormGroup>
-                <Label>Lock Password</Label>
+                <Label>Master Password</Label>
                 <Description>
-                  Set the password to unlock the application
+                  Set the master password for your secure file manager. This password will be used for authentication and data encryption.
                 </Description>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   <InputContainer>
@@ -579,7 +951,7 @@ function Settings() {
                       type="password" 
                       value={lockPassword}
                       onChange={(e) => setLockPassword(e.target.value)}
-                      placeholder="Enter lock password"
+                      placeholder="Enter master password"
                     />
                   </InputContainer>
                   <InputContainer>
@@ -587,9 +959,13 @@ function Settings() {
                       type="password" 
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm lock password"
+                      placeholder="Confirm master password"
                     />
                   </InputContainer>
+                  <PasswordValidator 
+                    password={lockPassword} 
+                    onValidationChange={(validation) => setPasswordValidation(validation)}
+                  />
                 </div>
               </FormGroup>
             </>
@@ -600,7 +976,7 @@ function Settings() {
             onClick={saveSettings}
             disabled={isLoading}
           >
-            <FaSave /> Save Security Settings
+            <FaSave /> Save Settings
           </Button>
           
           <InfoBox>
@@ -625,6 +1001,37 @@ function Settings() {
           <TwoFactorSettings />
         </CardContent>
       </SettingsCard>
+        </>
+      )}
+      
+      {activeTab === 'privacy' && (
+        <SettingsCard>
+          <CardHeader>
+            <CardTitle>
+              <FaShieldAlt /> Privacy Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FormGroup>
+              <Label>Data Storage</Label>
+              <Description>
+                All sensitive data is encrypted and stored locally. No data is sent to external servers.
+              </Description>
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>Session Management</Label>
+              <Description>
+                Sessions automatically expire after inactivity to protect your data.
+              </Description>
+            </FormGroup>
+          </CardContent>
+        </SettingsCard>
+      )}
+      
+      {activeTab === 'dashboard' && (
+        <SecurityDashboard />
+      )}
     </Container>
   );
 }

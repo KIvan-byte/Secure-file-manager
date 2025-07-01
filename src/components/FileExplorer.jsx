@@ -13,6 +13,15 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding: 0 16px;
+  
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 8px;
+  }
 `;
 
 const Header = styled.div`
@@ -20,6 +29,19 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 `;
 
 const ContextMenu = styled.div`
@@ -33,6 +55,17 @@ const ContextMenu = styled.div`
   display: ${props => props.$show ? 'block' : 'none'};
   left: ${props => props.$x}px;
   top: ${props => props.$y}px;
+  
+  @media (max-width: 768px) {
+    min-width: 200px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 240px;
+    left: ${props => Math.min(props.$x, window.innerWidth - 260)}px;
+    top: ${props => Math.min(props.$y, window.innerHeight - 300)}px;
+  }
 `;
 
 const ContextMenuItem = styled.div`
@@ -56,6 +89,16 @@ const ContextMenuItem = styled.div`
     cursor: not-allowed;
     opacity: 0.5;
   `}
+  
+  @media (max-width: 768px) {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+    font-size: 15px;
+  }
 `;
 
 const ContextMenuSeparator = styled.div`
@@ -89,6 +132,20 @@ const NavigationBar = styled.div`
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #f0f0f0;
+  overflow-x: auto;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 6px;
+    border-radius: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
 `;
 
 const NavButton = styled.button`
@@ -105,6 +162,7 @@ const NavButton = styled.button`
   font-size: 18px;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
   
   &:hover {
     background-color: ${props => props.$disabled ? 'white' : '#3498db'};
@@ -120,6 +178,24 @@ const NavButton = styled.button`
   &:active {
     transform: ${props => props.$disabled ? 'none' : 'translateY(0)'};
   }
+  
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    border-radius: 6px;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
 `;
 
 const ViewToggle = styled.div`
@@ -129,6 +205,15 @@ const ViewToggle = styled.div`
   overflow: hidden;
   margin-left: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  @media (max-width: 768px) {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 4px;
+  }
 `;
 
 const ViewButton = styled.button`
@@ -151,6 +236,18 @@ const ViewButton = styled.button`
   
   &:first-child {
     border-right: 1px solid #ddd;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    font-size: 14px;
+    flex: 1;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 4px;
   }
 `;
 
@@ -966,17 +1063,27 @@ function FileExplorer() {
   useEffect(() => {
     mounted.current = true;
     
-    // Check if we're returning to the component with a saved path
-    const savedPath = localStorage.getItem('lastBrowsedPath');
+    const loadSavedPath = async () => {
+      try {
+        // Check if we're returning to the component with a saved path
+        const savedPathResult = await window.electronAPI.secureStorage.retrieve('lastBrowsedPath');
+        const savedPath = savedPathResult?.success ? savedPathResult.value : null;
+        
+        // Check if there's a specific directory to open from location state
+        if (location.state?.openDirectory) {
+          setCurrentPath(location.state.openDirectory);
+        } else if (savedPath && !currentPath) {
+          setCurrentPath(savedPath);
+        }
+      } catch (error) {
+        console.error('Error loading saved path:', error);
+        // If no saved path or error, continue without setting path
+      }
+      
+      setInitialLoadDone(true);
+    };
     
-    // Check if there's a specific directory to open from location state
-    if (location.state?.openDirectory) {
-      setCurrentPath(location.state.openDirectory);
-    } else if (savedPath && !currentPath) {
-      setCurrentPath(savedPath);
-    }
-    
-    setInitialLoadDone(true);
+    loadSavedPath();
     
     // Add keyboard event listeners
     const handleKeyDown = (e) => {
@@ -1063,8 +1170,9 @@ function FileExplorer() {
   useEffect(() => {
     if (currentPath && initialLoadDone) {
       loadDirectory(currentPath);
-      // Save the current path to localStorage for persistence
-      localStorage.setItem('lastBrowsedPath', currentPath);
+      // Save the current path to secure storage for persistence
+      window.electronAPI.secureStorage.store('lastBrowsedPath', currentPath)
+        .catch(error => console.error('Error saving path:', error));
     }
   }, [currentPath, initialLoadDone]);
 
@@ -2022,7 +2130,16 @@ function FileExplorer() {
               <FaRedo />
             </NavButton>
             <NavButton 
-              onClick={() => setCurrentPath(localStorage.getItem('homeDirectory') || '/')}
+              onClick={async () => {
+                try {
+                  const homeDirResult = await window.electronAPI.secureStorage.retrieve('homeDirectory');
+                  const homeDir = homeDirResult?.success ? homeDirResult.value : null;
+                  setCurrentPath(homeDir || '/home');
+                } catch (error) {
+                  // Fallback to reasonable default
+                  setCurrentPath('/home');
+                }
+              }}
               title="Home"
             >
               <FaHome />

@@ -18,12 +18,17 @@ const SidebarContainer = styled.div`
   
   @media (max-width: 768px) {
     position: fixed;
-    width: ${props => props.$isOpen ? '240px' : '0'};
+    width: ${props => props.$isOpen ? '280px' : '0'};
     height: 100vh;
     top: 0;
     left: 0;
     transform: translateX(${props => props.$isOpen ? '0' : '-100%'});
     opacity: 1;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (max-width: 480px) {
+    width: ${props => props.$isOpen ? '100vw' : '0'};
   }
 `;
 
@@ -39,10 +44,24 @@ const AppTitle = styled.h1`
   display: flex;
   align-items: center;
   justify-content: ${props => props.$collapsed ? 'center' : 'space-between'};
+  
+  @media (max-width: 768px) {
+    font-size: 18px;
+    padding: 16px 20px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 16px;
+    padding: 16px;
+  }
 `;
 
 const AppTitleText = styled.span`
   display: ${props => props.$collapsed ? 'none' : 'inline'};
+  
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const NavLink = styled(Link)`
@@ -58,6 +77,16 @@ const NavLink = styled(Link)`
     background-color: #34495e;
     color: white;
   }
+  
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+    font-size: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+    font-size: 15px;
+  }
 `;
 
 const NavIcon = styled.span`
@@ -67,6 +96,16 @@ const NavIcon = styled.span`
   justify-content: center;
   width: ${props => props.$collapsed ? '100%' : 'auto'};
   font-size: 18px;
+  
+  @media (max-width: 768px) {
+    margin-right: 16px;
+    font-size: 20px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-right: 12px;
+    font-size: 18px;
+  }
 `;
 
 const NavText = styled.span`
@@ -100,6 +139,21 @@ const ToggleButton = styled.button`
   transition: left 0.3s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   
+  @media (max-width: 768px) {
+    left: ${props => props.$isOpen ? '10px' : '10px'};
+    top: 10px;
+    background-color: ${props => props.$isOpen ? '#e74c3c' : '#34495e'};
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+  }
+  
   @media (min-width: 769px) {
     display: none;
   }
@@ -113,6 +167,16 @@ const AppInfo = styled.div`
   border-top: 1px solid #34495e;
   margin-top: auto;
   display: ${props => props.$collapsed ? 'none' : 'block'};
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    font-size: 11px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+    font-size: 10px;
+  }
 `;
 
 const Overlay = styled.div`
@@ -125,6 +189,10 @@ const Overlay = styled.div`
   z-index: 999;
   display: ${props => props.$isOpen ? 'block' : 'none'};
   transition: opacity 0.3s ease;
+  
+  @media (max-width: 480px) {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
   
   @media (min-width: 769px) {
     display: none;
@@ -145,6 +213,16 @@ const LockButton = styled.button`
 
   &:hover {
     background-color: #c0392b;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+    font-size: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+    font-size: 15px;
   }
 `;
 
