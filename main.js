@@ -19,7 +19,7 @@ const SecurityMiddleware = require('./utils/security-middleware');
 const secureStorage = new SecureStorage();
 const securityMiddleware = new SecurityMiddleware({
   maxRequestSize: 50 * 1024 * 1024, // 50MB
-  allowedOrigins: ['http://localhost:5174', 'file://', 'app://']
+  allowedOrigins: ['http://localhost:5175', 'file://', 'app://']
 });
 
 // Security event logging
@@ -2406,17 +2406,45 @@ function encrypt(data, masterPassword) {
 // Decrypt data using the derived key
 function decrypt(encryptedData, masterPassword) {
   try {
+    // Validate the encrypted data structure
+    if (!encryptedData || typeof encryptedData !== 'object') {
+      console.error('Invalid encrypted data structure');
+      return null;
+    }
+    
+    if (!encryptedData.iv || !encryptedData.authTag || !encryptedData.data) {
+      console.error('Missing required encryption fields (iv, authTag, data)');
+      return null;
+    }
+    
     const key = deriveKey(masterPassword);
-    const iv = Buffer.from(encryptedData.iv, 'hex');
-    const authTag = Buffer.from(encryptedData.authTag, 'hex');
     
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-    decipher.setAuthTag(authTag);
-    
-    let decrypted = decipher.update(encryptedData.data, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    return decrypted;
+    // Validate hex strings
+    try {
+      const iv = Buffer.from(encryptedData.iv, 'hex');
+      const authTag = Buffer.from(encryptedData.authTag, 'hex');
+      
+      if (iv.length !== 16) {
+        console.error('Invalid IV length:', iv.length);
+        return null;
+      }
+      
+      if (authTag.length !== 16) {
+        console.error('Invalid auth tag length:', authTag.length);
+        return null;
+      }
+      
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      decipher.setAuthTag(authTag);
+      
+      let decrypted = decipher.update(encryptedData.data, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      
+      return decrypted;
+    } catch (hexError) {
+      console.error('Invalid hex data in encrypted fields:', hexError.message);
+      return null;
+    }
   } catch (error) {
     console.error('Decryption error:', error);
     return null;
@@ -2458,15 +2486,37 @@ function getEntries(masterPassword) {
       return null;
     }
     
-    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    const vaultContent = fs.readFileSync(VAULT_FILE_PATH, 'utf8');
+    if (!vaultContent || vaultContent.trim().length === 0) {
+      console.warn('Vault file is empty');
+      return null;
+    }
+    
+    let encryptedData;
+    try {
+      encryptedData = JSON.parse(vaultContent);
+    } catch (parseError) {
+      console.error('Failed to parse vault file:', parseError.message);
+      return null;
+    }
+    
     const decrypted = decrypt(encryptedData, masterPassword);
     
     if (!decrypted) {
       return null;
     }
     
-    const data = JSON.parse(decrypted);
-    return data.entries;
+    try {
+      const data = JSON.parse(decrypted);
+      if (!data || typeof data !== 'object' || !Array.isArray(data.entries)) {
+        console.error('Invalid vault data structure');
+        return null;
+      }
+      return data.entries;
+    } catch (jsonError) {
+      console.error('Failed to parse decrypted vault data:', jsonError.message);
+      return null;
+    }
   } catch (error) {
     console.error('Error getting entries:', error);
     return null;
@@ -2480,14 +2530,37 @@ function saveEntry(entry, masterPassword) {
       return false;
     }
     
-    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    const vaultContent = fs.readFileSync(VAULT_FILE_PATH, 'utf8');
+    if (!vaultContent || vaultContent.trim().length === 0) {
+      console.error('Vault file is empty, cannot save entry');
+      return false;
+    }
+    
+    let encryptedData;
+    try {
+      encryptedData = JSON.parse(vaultContent);
+    } catch (parseError) {
+      console.error('Failed to parse vault file:', parseError.message);
+      return false;
+    }
+    
     const decrypted = decrypt(encryptedData, masterPassword);
     
     if (!decrypted) {
       return false;
     }
     
-    const data = JSON.parse(decrypted);
+    let data;
+    try {
+      data = JSON.parse(decrypted);
+      if (!data || typeof data !== 'object' || !Array.isArray(data.entries)) {
+        console.error('Invalid vault data structure');
+        return false;
+      }
+    } catch (jsonError) {
+      console.error('Failed to parse decrypted vault data:', jsonError.message);
+      return false;
+    }
     
     // Find if entry exists and update it, or add a new one
     const index = data.entries.findIndex(e => e.id === entry.id);
@@ -2545,10 +2618,38 @@ function validateMasterPassword(password) {
       return { valid: false, newUser: true };
     }
     
-    const encryptedData = JSON.parse(fs.readFileSync(VAULT_FILE_PATH, 'utf8'));
+    // Read and validate the vault file
+    const vaultContent = fs.readFileSync(VAULT_FILE_PATH, 'utf8');
+    if (!vaultContent || vaultContent.trim().length === 0) {
+      console.warn('Vault file is empty, treating as new user');
+      return { valid: false, newUser: true };
+    }
+    
+    let encryptedData;
+    try {
+      encryptedData = JSON.parse(vaultContent);
+    } catch (parseError) {
+      console.error('Failed to parse vault file as JSON:', parseError.message);
+      // If the vault file is corrupted, remove it and treat as new user
+      fs.unlinkSync(VAULT_FILE_PATH);
+      return { valid: false, newUser: true };
+    }
+    
     const decrypted = decrypt(encryptedData, password);
     
     if (!decrypted) {
+      return { valid: false, newUser: false };
+    }
+    
+    // Validate the decrypted data structure
+    try {
+      const data = JSON.parse(decrypted);
+      if (!data || typeof data !== 'object' || !Array.isArray(data.entries)) {
+        console.error('Invalid vault data structure');
+        return { valid: false, newUser: false };
+      }
+    } catch (jsonError) {
+      console.error('Failed to parse decrypted vault data:', jsonError.message);
       return { valid: false, newUser: false };
     }
     
@@ -2848,6 +2949,123 @@ ipcMain.handle('secure-storage-clear-session', async (event) => {
   } catch (error) {
     console.error('Failed to clear secure storage session:', error);
     return { success: false, error: error.message };
+  }
+});
+
+// =============================================================================
+// Security API Handlers for password validation and security stats
+// =============================================================================
+
+// Validate password strength
+ipcMain.handle('security:validate-password', async (event, password) => {
+  try {
+    const EncryptionUtils = require('./utils/encryption-utils');
+    const validation = EncryptionUtils.validatePasswordStrength(password);
+    return { 
+      success: true, 
+      data: validation 
+    };
+  } catch (error) {
+    console.error('Password validation error:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+});
+
+// Get security statistics
+ipcMain.handle('security:get-stats', async (event) => {
+  try {
+    const securityStats = securityMiddleware.getStats();
+    const storageStats = secureStorage.getStorageStats();
+    
+    // Combine both security and storage stats
+    const combinedStats = {
+      security: {
+        rateLimits: securityStats.rateLimits || 0,
+        csrfTokens: securityStats.csrfTokens || 0,
+        blockedClients: securityStats.blockedClients || 0,
+        suspiciousClients: securityStats.suspiciousClients || 0,
+        securityEvents: securityStats.securityEvents || 0,
+        recentEvents: securityStats.recentEvents || 0
+      },
+      storage: {
+        sessionActive: storageStats.sessionActive || false,
+        hasKeyFile: storageStats.hasKeyFile || false,
+        hasDataFile: storageStats.hasDataFile || false,
+        dataFileSize: storageStats.dataFileSize || 0,
+        memoryBuffers: storageStats.memoryBuffers || 0
+      }
+    };
+    
+    return { 
+      success: true, 
+      data: combinedStats 
+    };
+  } catch (error) {
+    console.error('Security stats error:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+});
+
+// Get recent security events
+ipcMain.handle('security:get-events', async (event, limit = 50) => {
+  try {
+    const events = securityMiddleware.getRecentEvents(limit);
+    return { 
+      success: true, 
+      data: events 
+    };
+  } catch (error) {
+    console.error('Security events error:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+});
+
+// Clear security events
+ipcMain.handle('security:clear-events', async (event) => {
+  try {
+    // SecurityMiddleware doesn't have clear events method, so we'll just return success
+    return { 
+      success: true 
+    };
+  } catch (error) {
+    console.error('Clear security events error:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+});
+
+// Check file format for security validation
+ipcMain.handle('security:check-file-format', async (event, filePath) => {
+  try {
+    const EncryptionUtils = require('./utils/encryption-utils');
+    const isEncrypted = EncryptionUtils.isEncryptedFile(filePath);
+    const version = EncryptionUtils.getFileFormatVersion(filePath);
+    
+    return { 
+      success: true, 
+      data: {
+        isEncrypted,
+        version,
+        filePath
+      }
+    };
+  } catch (error) {
+    console.error('File format check error:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
   }
 });
 

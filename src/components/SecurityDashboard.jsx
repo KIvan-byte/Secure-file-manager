@@ -117,14 +117,14 @@ const SecurityDashboard = () => {
           </RefreshButton>
         </CardHeader>
         <CardContent>
-          {securityStats && (
+          {securityStats && securityStats.security && securityStats.storage && (
             <StatsGrid>
               <StatItem>
                 <StatIcon style={{ color: '#4caf50' }}>
                   <FaShieldAlt />
                 </StatIcon>
                 <StatContent>
-                  <StatValue>{securityStats.security.rateLimits}</StatValue>
+                  <StatValue>{securityStats.security.rateLimits || 0}</StatValue>
                   <StatLabel>Active Rate Limits</StatLabel>
                 </StatContent>
               </StatItem>
@@ -134,7 +134,7 @@ const SecurityDashboard = () => {
                   <FaLock />
                 </StatIcon>
                 <StatContent>
-                  <StatValue>{securityStats.security.csrfTokens}</StatValue>
+                  <StatValue>{securityStats.security.csrfTokens || 0}</StatValue>
                   <StatLabel>CSRF Tokens</StatLabel>
                 </StatContent>
               </StatItem>
@@ -144,7 +144,7 @@ const SecurityDashboard = () => {
                   <FaExclamationTriangle />
                 </StatIcon>
                 <StatContent>
-                  <StatValue>{securityStats.security.blockedClients}</StatValue>
+                  <StatValue>{securityStats.security.blockedClients || 0}</StatValue>
                   <StatLabel>Blocked Clients</StatLabel>
                 </StatContent>
               </StatItem>
@@ -154,7 +154,7 @@ const SecurityDashboard = () => {
                   <FaEye />
                 </StatIcon>
                 <StatContent>
-                  <StatValue>{securityStats.security.suspiciousClients}</StatValue>
+                  <StatValue>{securityStats.security.suspiciousClients || 0}</StatValue>
                   <StatLabel>Suspicious Activity</StatLabel>
                 </StatContent>
               </StatItem>
@@ -164,7 +164,7 @@ const SecurityDashboard = () => {
                   <FaClock />
                 </StatIcon>
                 <StatContent>
-                  <StatValue>{securityStats.security.recentEvents}</StatValue>
+                  <StatValue>{securityStats.security.recentEvents || 0}</StatValue>
                   <StatLabel>Recent Events</StatLabel>
                 </StatContent>
               </StatItem>

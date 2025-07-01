@@ -143,16 +143,16 @@ const PasswordInput = styled.input`
   width: 100%;
   padding: 16px 20px;
   padding-right: 50px;
-  border: 2px solid ${props => props.error ? '#e74c3c' : '#ddd'};
+  border: 2px solid ${props => props.$error ? '#e74c3c' : '#ddd'};
   border-radius: 16px;
   font-size: 16px;
   transition: all 0.3s;
-  background-color: ${props => props.error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
+  background-color: ${props => props.$error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
   
   &:focus {
-    border-color: ${props => props.error ? '#e74c3c' : '#3498db'};
+    border-color: ${props => props.$error ? '#e74c3c' : '#3498db'};
     outline: none;
-    box-shadow: 0 0 0 3px ${props => props.error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
+    box-shadow: 0 0 0 3px ${props => props.$error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
     background-color: white;
   }
 `;
@@ -335,18 +335,18 @@ const TwoFactorTitle = styled.h3`
 const TwoFactorInput = styled.input`
   width: 100%;
   padding: 16px 20px;
-  border: 2px solid ${props => props.error ? '#e74c3c' : '#ddd'};
+  border: 2px solid ${props => props.$error ? '#e74c3c' : '#ddd'};
   border-radius: 16px;
   font-size: 18px;
   text-align: center;
   letter-spacing: 0.5em;
   transition: all 0.3s;
-  background-color: ${props => props.error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
+  background-color: ${props => props.$error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
   
   &:focus {
-    border-color: ${props => props.error ? '#e74c3c' : '#3498db'};
+    border-color: ${props => props.$error ? '#e74c3c' : '#3498db'};
     outline: none;
-    box-shadow: 0 0 0 3px ${props => props.error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
+    box-shadow: 0 0 0 3px ${props => props.$error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
     background-color: white;
   }
   
@@ -517,7 +517,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
                 value={inputPassword}
                 onChange={(e) => setInputPassword(e.target.value)}
                 placeholder="Enter password"
-                error={error}
+                $error={error}
                 autoFocus
               />
               <PasswordToggle
@@ -560,7 +560,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
                   onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
                   maxLength="6"
-                  error={twoFactorError}
+                  $error={twoFactorError}
                   autoFocus
                 />
               </InputWrapper>
