@@ -664,43 +664,23 @@ function Settings() {
     try {
       setIsLoading(true);
       
-      // Try to get settings from electron
-      // This is a placeholder - in a real app, you'd fetch from an actual settings service
-      
-      /* Uncomment when the settings service is implemented
-      const result = await window.electron.settings.getSettings('security');
-      if (result.success) {
-        const { autoLock, timeout, password } = result.settings;
-        setAutoLockEnabled(autoLock ?? true);
-        setLockTimeout(timeout ?? 5);
-        setLockPassword(password ?? '');
-        setConfirmPassword(password ?? '');
-      }
-      */
-      
-      // Load from secure storage
+      // Check if secure storage has any saved settings
       try {
-        const storedSettings = await window.electronAPI.secureStorage.retrieve('securitySettings');
-        if (storedSettings) {
-          const parsedSettings = JSON.parse(storedSettings);
-          setAutoLockEnabled(parsedSettings.autoLock ?? true);
-          
-          // Check if timeout is a standard option or custom
-          const timeout = parsedSettings.timeout ?? 5;
-          if ([1, 5, 10, 15, 30].includes(timeout)) {
-            setLockTimeout(timeout);
-          } else {
-            setLockTimeout('custom');
-            setCustomTimeout(timeout.toString());
-          }
-          
-          setLockPassword(parsedSettings.password ?? '');
-          setConfirmPassword(parsedSettings.password ?? '');
+        const stats = await window.electronAPI.secureStorage.getStats();
+        if (stats.success && stats.stats.hasDataFile) {
+          console.log('Found saved settings, but password is required to access them');
+          // We have saved settings but can't access them without the master password
+          // User will need to enter password first
+        } else {
+          console.log('No saved settings found, using defaults');
         }
       } catch (error) {
-        console.error('Error loading security settings:', error);
-        // Use default settings if loading fails
+        console.warn('Could not check for saved settings:', error);
       }
+      
+      // For security reasons, we don't pre-load the password
+      // The user will need to re-enter it each time they change settings
+      // This is intentional for security
       
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -752,29 +732,39 @@ function Settings() {
         password: lockPassword
       };
       
-      /* Uncomment when the settings service is implemented
-      const result = await window.electron.settings.saveSettings('security', securitySettings);
-      if (result.success) {
-        setMessage({
-          type: 'success',
-          text: 'Security settings saved successfully'
-        });
-      } else {
-        throw new Error(result.error);
-      }
-      */
-      
-      // Initialize secure storage with the password if it's new or changed
+      // Initialize secure storage with the password if it's provided
       if (securitySettings.password && securitySettings.password.length >= 8) {
         try {
-          await window.electronAPI.secureStorage.initialize(securitySettings.password);
-        } catch (error) {
-          console.error('Failed to initialize secure storage with new password:', error);
+          const initResult = await window.electronAPI.secureStorage.initialize(securitySettings.password);
+          if (!initResult.success) {
+            throw new Error('Failed to initialize secure storage');
+          }
+          
+          // Save settings to secure storage (without the password for security)
+          const settingsToSave = {
+            ...securitySettings,
+            password: '' // Don't save the actual password
+          };
+          
+          const storeResult = await window.electronAPI.secureStorage.store('securitySettings', JSON.stringify(settingsToSave));
+          if (!storeResult.success) {
+            throw new Error('Failed to save settings to secure storage');
+          }
+          
+          // Save a flag indicating that a password has been set
+          await window.electronAPI.secureStorage.store('hasPassword', 'true');
+          
+          console.log('Settings saved to secure storage successfully');
+          
+        } catch (storageError) {
+          console.error('Failed to save to secure storage:', storageError);
+          setMessage({
+            type: 'error',
+            text: 'Failed to save settings securely: ' + storageError.message
+          });
+          return;
         }
       }
-      
-      // Save to secure storage
-      await window.electronAPI.secureStorage.store('securitySettings', JSON.stringify(securitySettings));
       
       // Dispatch a custom event that App.js can listen to
       window.dispatchEvent(new CustomEvent('securitySettingsChanged', { 
@@ -783,7 +773,7 @@ function Settings() {
       
       setMessage({
         type: 'success',
-        text: 'Security settings saved successfully'
+        text: 'Security settings saved successfully and will persist between application restarts'
       });
       
     } catch (error) {

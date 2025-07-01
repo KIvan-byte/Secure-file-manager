@@ -10,7 +10,7 @@ const os = require('os');
 class SecureStorage {
   constructor() {
     this.configDir = path.join(os.homedir(), '.secure-file-manager');
-    this.keyFile = path.join(this.configDir, 'secure.key');
+    this.keyFile = path.join(this.configDir, 'storage.key');
     this.dataFile = path.join(this.configDir, 'secure.dat');
     this.sessionKey = null;
     this.sessionTimeout = 30 * 60 * 1000; // 30 minutes
@@ -112,8 +112,12 @@ class SecureStorage {
         throw new Error('Master password must be at least 8 characters');
       }
       
-      // Derive session key from master password
-      const salt = crypto.randomBytes(32);
+      // Get or create storage key for file encryption
+      const storageKey = this.getOrCreateStorageKey();
+      
+      // Derive session key from master password using a fixed salt
+      // This ensures the same password always generates the same session key
+      const salt = Buffer.from('secure-file-manager-salt-v1', 'utf8');
       const sessionKey = await new Promise((resolve, reject) => {
         crypto.pbkdf2(masterPassword, salt, 100000, 32, 'sha256', (err, key) => {
           if (err) reject(err);
@@ -121,6 +125,30 @@ class SecureStorage {
         });
       });
       
+      // If there's existing data, verify the password is correct
+      if (fs.existsSync(this.dataFile)) {
+        const encryptedData = fs.readFileSync(this.dataFile);
+        if (encryptedData.length > 0) {
+          // Temporarily set session key to test decryption
+          this.sessionKey = sessionKey;
+          try {
+            // Try to decrypt existing data to validate password
+            const decryptedData = this.decryptData(encryptedData);
+            JSON.parse(decryptedData); // Ensure it's valid JSON
+            
+            // Password is correct, start session timer
+            this.startSessionTimer();
+            return true;
+          } catch (decryptError) {
+            // Password is wrong, clear session
+            this.sessionKey = null;
+            console.warn('Password verification failed:', decryptError.message);
+            return false;
+          }
+        }
+      }
+      
+      // No existing data or empty file, accept any valid password
       this.sessionKey = sessionKey;
       this.startSessionTimer();
       
@@ -272,7 +300,8 @@ class SecureStorage {
   async retrieveSecureData(key) {
     try {
       if (!this.isSessionActive()) {
-        throw new Error('Session not active');
+        console.warn('SecureStorage session not active');
+        return null;
       }
       
       if (!fs.existsSync(this.dataFile)) {
@@ -284,16 +313,23 @@ class SecureStorage {
         return null;
       }
       
-      const decryptedData = this.decryptData(encryptedData);
-      const data = JSON.parse(decryptedData);
-      
-      this.refreshSession();
-      
-      if (data[key]) {
-        return data[key].value;
+      try {
+        const decryptedData = this.decryptData(encryptedData);
+        const data = JSON.parse(decryptedData);
+        
+        this.refreshSession();
+        
+        if (data[key]) {
+          return data[key].value;
+        }
+        
+        return null;
+      } catch (decryptError) {
+        // If decryption fails, the data was encrypted with a different key
+        // This is normal when password changes or on first run
+        console.warn('Failed to decrypt existing data - may be from different password:', decryptError.message);
+        return null;
       }
-      
-      return null;
     } catch (error) {
       console.error('Failed to retrieve secure data:', error);
       return null;

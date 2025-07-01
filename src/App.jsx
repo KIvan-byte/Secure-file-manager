@@ -60,16 +60,20 @@ function App() {
   useEffect(() => {
     const loadSecuritySettings = async () => {
       try {
-        // Try to load from secure storage, but gracefully handle when not initialized
-        const storedSettings = await window.electronAPI.secureStorage.retrieve('securitySettings');
-        if (storedSettings) {
-          const parsedSettings = JSON.parse(storedSettings);
-          setSecuritySettings(parsedSettings);
+        // Check if secure storage has data
+        const stats = await window.electronAPI.secureStorage.getStats();
+        if (stats.success && stats.stats.hasDataFile) {
+          // There are saved settings, but we need password to access them
+          // For now, just check if we have a saved password indicator
+          console.log('Found existing secure storage data file');
+          setIsLocked(true);
+        } else {
+          // No saved settings, use defaults and show initial setup
+          console.log('No saved security settings found, using defaults');
         }
       } catch (error) {
-        console.error('Error loading security settings:', error);
-        // If secure storage is not initialized, use default settings
-        // This is normal on first run
+        console.error('Error checking security settings:', error);
+        // If there's an error, assume no saved settings and continue with defaults
       }
     };
 
@@ -77,6 +81,8 @@ function App() {
 
     const handleSettingsChange = (event) => {
       setSecuritySettings(event.detail);
+      // Save settings to secure storage when they change
+      saveSecuritySettings(event.detail);
     };
 
     window.addEventListener('securitySettingsChanged', handleSettingsChange);
@@ -85,6 +91,31 @@ function App() {
       window.removeEventListener('securitySettingsChanged', handleSettingsChange);
     };
   }, []);
+
+  // Function to save security settings to secure storage
+  const saveSecuritySettings = async (settings) => {
+    try {
+      if (settings.password && settings.password.length >= 8) {
+        // Initialize secure storage with the password first
+        const initResult = await window.electronAPI.secureStorage.initialize(settings.password);
+        if (initResult.success) {
+          // Save the settings (but not the password itself for security)
+          const settingsToSave = {
+            ...settings,
+            password: '' // Don't save the actual password
+          };
+          const storeResult = await window.electronAPI.secureStorage.store('securitySettings', JSON.stringify(settingsToSave));
+          if (storeResult.success) {
+            // Save a flag indicating that a password has been set
+            await window.electronAPI.secureStorage.store('hasPassword', 'true');
+            console.log('Security settings saved successfully');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save security settings:', error);
+    }
+  };
 
   useEffect(() => {
     if (!securitySettings.autoLock || !securitySettings.password) {

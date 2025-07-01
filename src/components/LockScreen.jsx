@@ -401,8 +401,34 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
     setError('');
 
     try {
-      if (inputPassword === password) {
+      // Try to initialize secure storage with the provided password
+      const initResult = await window.electronAPI.secureStorage.initialize(inputPassword);
+      
+      if (initResult.success) {
+        // Password is correct if secure storage initialization succeeds
         setPasswordVerified(true);
+        
+        // Try to load security settings from secure storage
+        try {
+          const hasPasswordResult = await window.electronAPI.secureStorage.retrieve('hasPassword');
+          if (hasPasswordResult.success && hasPasswordResult.value) {
+            // There are saved settings, load them
+            const settingsResult = await window.electronAPI.secureStorage.retrieve('securitySettings');
+            if (settingsResult.success && settingsResult.value) {
+              const savedSettings = JSON.parse(settingsResult.value);
+              // Restore the password for this session
+              savedSettings.password = inputPassword;
+              
+              // Notify the app about the settings
+              window.dispatchEvent(new CustomEvent('securitySettingsChanged', {
+                detail: savedSettings
+              }));
+            }
+          }
+        } catch (settingsError) {
+          console.warn('Could not load saved settings, using defaults:', settingsError);
+        }
+        
         // Check if 2FA is enabled after password verification
         const has2FA = await checkTwoFactorSetup();
         if (has2FA) {
@@ -412,9 +438,11 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
           onUnlock();
         }
       } else {
+        // SecureStorage rejected the password
         setError('Invalid password');
       }
     } catch (error) {
+      console.error('Authentication error:', error);
       setError('Authentication error');
     } finally {
       setIsSubmitting(false);

@@ -237,13 +237,101 @@ contextBridge.exposeInMainWorld(
 );
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Secure storage API
+  // Secure storage API - replaces localStorage for persistent settings
   secureStorage: {
-    initialize: initializeSecureSession,
-    store: storeSecureData,
-    retrieve: retrieveSecureData,
-    remove: removeSecureData,
-    clear: clearSecureData,
+    // Initialize secure session with master password
+    initialize: async (masterPassword) => {
+      try {
+        const result = await ipcRenderer.invoke('secure-storage-init', masterPassword);
+        isSecureStorageEnabled = result.success;
+        return result;
+      } catch (error) {
+        console.error('Failed to initialize secure storage:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Check if secure session is active
+    isActive: async () => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-is-active');
+      } catch (error) {
+        console.error('Failed to check secure storage session:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Store secure data (replaces localStorage.setItem)
+    store: async (key, value) => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-store', key, value);
+      } catch (error) {
+        console.error('Failed to store secure data:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Retrieve secure data (replaces localStorage.getItem)
+    retrieve: async (key) => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-retrieve', key);
+      } catch (error) {
+        console.error('Failed to retrieve secure data:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Remove secure data (replaces localStorage.removeItem)
+    remove: async (key) => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-remove', key);
+      } catch (error) {
+        console.error('Failed to remove secure data:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Clear all secure data (replaces localStorage.clear)
+    clear: async () => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-clear');
+      } catch (error) {
+        console.error('Failed to clear secure data:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Get storage statistics
+    getStats: async () => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-stats');
+      } catch (error) {
+        console.error('Failed to get storage stats:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Refresh session timeout
+    refresh: async () => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-refresh');
+      } catch (error) {
+        console.error('Failed to refresh secure storage session:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Clear session
+    clearSession: async () => {
+      try {
+        return await ipcRenderer.invoke('secure-storage-clear-session');
+      } catch (error) {
+        console.error('Failed to clear secure storage session:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Legacy compatibility - for backward compatibility during migration
     isEnabled: () => isSecureStorageEnabled
   },
   

@@ -2749,146 +2749,106 @@ ipcMain.handle('list-active-shares', async () => {
   }
 });
 
-// Initialize secure storage IPC handlers
-ipcMain.handle('secure-storage-check', async () => {
-  try {
-    return true; // Secure storage is always available
-  } catch (error) {
-    console.error('Secure storage check failed:', error);
-    return false;
-  }
-});
+// =============================================================================
+// SecureStorage IPC Handlers for persistent settings and configuration
+// =============================================================================
 
-// Save home directory to secure storage after initialization
+// Initialize secure session with master password
 ipcMain.handle('secure-storage-init', async (event, masterPassword) => {
   try {
     const success = await secureStorage.initializeSession(masterPassword);
-    if (success) {
-      // Store home directory for easy access
-      const homeDir = require('os').homedir();
-      await secureStorage.storeSecureData('homeDirectory', homeDir);
-    }
-    return success;
+    return { success };
   } catch (error) {
-    console.error('Secure storage initialization failed:', error);
-    return false;
+    console.error('Failed to initialize secure storage:', error);
+    return { success: false, error: error.message };
   }
 });
 
+// Check if secure session is active
+ipcMain.handle('secure-storage-is-active', async (event) => {
+  try {
+    return { success: true, isActive: secureStorage.isSessionActive() };
+  } catch (error) {
+    console.error('Failed to check secure storage session:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Store secure data
 ipcMain.handle('secure-storage-store', async (event, key, value) => {
   try {
-    return await secureStorage.storeSecureData(key, value);
+    const success = await secureStorage.storeSecureData(key, value);
+    return { success };
   } catch (error) {
-    console.error('Secure storage store failed:', error);
-    return false;
+    console.error('Failed to store secure data:', error);
+    return { success: false, error: error.message };
   }
 });
 
+// Retrieve secure data
 ipcMain.handle('secure-storage-retrieve', async (event, key) => {
   try {
-    return await secureStorage.retrieveSecureData(key);
+    const value = await secureStorage.retrieveSecureData(key);
+    return { success: true, value };
   } catch (error) {
-    console.error('Secure storage retrieve failed:', error);
-    return null;
+    console.error('Failed to retrieve secure data:', error);
+    return { success: false, error: error.message };
   }
 });
 
+// Remove secure data
 ipcMain.handle('secure-storage-remove', async (event, key) => {
   try {
-    return await secureStorage.removeSecureData(key);
+    const success = await secureStorage.removeSecureData(key);
+    return { success };
   } catch (error) {
-    console.error('Secure storage remove failed:', error);
-    return false;
-  }
-});
-
-ipcMain.handle('secure-storage-clear', async () => {
-  try {
-    return await secureStorage.clearAllData();
-  } catch (error) {
-    console.error('Secure storage clear failed:', error);
-    return false;
-  }
-});
-
-// Security monitoring IPC handlers
-ipcMain.handle('security:get-stats', async () => {
-  try {
-    const stats = securityMiddleware.getStats();
-    const storageStats = secureStorage.getStorageStats();
-    
-    return {
-      success: true,
-      data: {
-        security: stats,
-        storage: storageStats,
-        timestamp: Date.now()
-      }
-    };
-  } catch (error) {
-    console.error('Error getting security stats:', error);
+    console.error('Failed to remove secure data:', error);
     return { success: false, error: error.message };
   }
 });
 
-ipcMain.handle('security:get-events', async (event, limit = 50) => {
+// Clear all secure data
+ipcMain.handle('secure-storage-clear', async (event) => {
   try {
-    const events = securityMiddleware.getRecentEvents(limit);
-    
-    return {
-      success: true,
-      data: events
-    };
+    const success = await secureStorage.clearAllData();
+    return { success };
   } catch (error) {
-    console.error('Error getting security events:', error);
+    console.error('Failed to clear secure data:', error);
     return { success: false, error: error.message };
   }
 });
 
-ipcMain.handle('security:clear-events', async () => {
+// Get storage statistics
+ipcMain.handle('secure-storage-stats', async (event) => {
   try {
-    securityMiddleware.securityEvents.length = 0;
+    const stats = secureStorage.getStorageStats();
+    return { success: true, stats };
+  } catch (error) {
+    console.error('Failed to get storage stats:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Refresh session timeout
+ipcMain.handle('secure-storage-refresh', async (event) => {
+  try {
+    secureStorage.refreshSession();
     return { success: true };
   } catch (error) {
-    console.error('Error clearing security events:', error);
+    console.error('Failed to refresh secure storage session:', error);
     return { success: false, error: error.message };
   }
 });
 
-// Enhanced password validation
-ipcMain.handle('security:validate-password', async (event, password) => {
+// Clear session
+ipcMain.handle('secure-storage-clear-session', async (event) => {
   try {
-    const validation = EncryptionUtils.validatePasswordStrength(password);
-    return {
-      success: true,
-      data: validation
-    };
+    secureStorage.clearSession();
+    return { success: true };
   } catch (error) {
-    console.error('Error validating password:', error);
+    console.error('Failed to clear secure storage session:', error);
     return { success: false, error: error.message };
   }
 });
 
-// File format detection
-ipcMain.handle('security:check-file-format', async (event, filePath) => {
-  try {
-    if (!EncryptionUtils.validateFilePath(filePath)) {
-      return { success: false, error: 'Invalid file path' };
-    }
-    
-    const isEncrypted = EncryptionUtils.isEncryptedFile(filePath);
-    const formatVersion = isEncrypted ? EncryptionUtils.getFileFormatVersion(filePath) : null;
-    
-    return {
-      success: true,
-      data: {
-        isEncrypted,
-        formatVersion,
-        isLegacy: formatVersion === 'legacy'
-      }
-    };
-  } catch (error) {
-    console.error('Error checking file format:', error);
-    return { success: false, error: error.message };
-  }
-});
+// =============================================================================

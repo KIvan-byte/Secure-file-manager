@@ -1066,7 +1066,8 @@ function FileExplorer() {
     const loadSavedPath = async () => {
       try {
         // Check if we're returning to the component with a saved path
-        const savedPath = await window.electronAPI.secureStorage.retrieve('lastBrowsedPath');
+        const savedPathResult = await window.electronAPI.secureStorage.retrieve('lastBrowsedPath');
+        const savedPath = savedPathResult?.success ? savedPathResult.value : null;
         
         // Check if there's a specific directory to open from location state
         if (location.state?.openDirectory) {
@@ -2131,7 +2132,8 @@ function FileExplorer() {
             <NavButton 
               onClick={async () => {
                 try {
-                  const homeDir = await window.electronAPI.secureStorage.retrieve('homeDirectory');
+                  const homeDirResult = await window.electronAPI.secureStorage.retrieve('homeDirectory');
+                  const homeDir = homeDirResult?.success ? homeDirResult.value : null;
                   setCurrentPath(homeDir || '/home');
                 } catch (error) {
                   // Fallback to reasonable default
