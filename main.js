@@ -1053,7 +1053,9 @@ async function createWindow() {
     icon: path.join(__dirname, 'build', 'icon.png'),
     show: false,
     // Set backgroundColor to prevent white flash
-    backgroundColor: '#f5f6fa'
+    backgroundColor: '#f5f6fa',
+    // Hide the menu bar (File, Edit, View, Window, Help)
+    autoHideMenuBar: true
   });
 
   console.log('Preload path:', path.join(__dirname, 'preload.js'));
