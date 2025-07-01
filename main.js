@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, Tray } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -289,7 +289,6 @@ app.commandLine.appendSwitch('disable-accelerated-2d-canvas');
 app.commandLine.appendSwitch('disable-accelerated-jpeg-decoding');
 app.commandLine.appendSwitch('disable-accelerated-mjpeg-decode');
 app.commandLine.appendSwitch('disable-accelerated-video-decode');
-app.commandLine.appendSwitch('no-sandbox');
 
 // Throttle timers to reduce CPU usage
 app.commandLine.appendSwitch('disable-ipc-flooding-protection');
@@ -1030,6 +1029,57 @@ async function startFileServer() {
 
 
 let mainWindow;
+let tray = null;
+let isQuitting = false; // Flag to indicate if the app is quitting
+
+// Create system tray
+function createTray() {
+  // Use appropriate icon based on platform
+  const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  const iconPath = path.join(__dirname, 'assets', 'icons', iconName);
+  
+  tray = new Tray(iconPath);
+
+  const contextMenu = Menu.buildFromTemplate([
+    { 
+      label: 'Show / Hide', 
+      click: () => {
+        if (mainWindow) {
+          mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+        }
+      } 
+    },
+    { 
+      label: 'Quit', 
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      } 
+    }
+  ]);
+
+  tray.setToolTip('Secure File Manager');
+  tray.setContextMenu(contextMenu);
+
+  // Show window when tray icon is clicked
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    }
+  });
+}
+
+// Setup global shortcuts
+function setupGlobalShortcuts() {
+  // Register a global shortcut for opening the app
+  const { globalShortcut } = require('electron');
+  
+  globalShortcut.register('CommandOrControl+Shift+H', () => {
+    if (mainWindow) {
+      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    }
+  });
+}
 
 async function createWindow() {
   // Create the browser window.
@@ -1056,6 +1106,15 @@ async function createWindow() {
     backgroundColor: '#f5f6fa',
     // Hide the menu bar (File, Edit, View, Window, Help)
     autoHideMenuBar: true
+  });
+
+  // Handle the close event
+  mainWindow.on('close', (event) => {
+    // If we are not quitting, prevent the window from closing and hide it instead
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
   });
 
   console.log('Preload path:', path.join(__dirname, 'preload.js'));
