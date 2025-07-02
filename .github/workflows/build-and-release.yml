@@ -1,5 +1,11 @@
 name: Build and Release
 
+# Add permissions for creating releases
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
 on:
   # Manual trigger only - no automatic builds
   workflow_dispatch:
@@ -203,9 +209,9 @@ jobs:
 
   # Create GitHub release when requested
   create-release:
-    needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: github.event.inputs.skip_release != 'true' && always() && (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
+    needs: [build-linux, build-windows, build-macos]
+    if: github.event.inputs.skip_release != 'true' && always()
     
     steps:
     - name: Checkout repository
@@ -213,8 +219,26 @@ jobs:
       with:
         fetch-depth: 0
         
+    - name: Check if any builds succeeded
+      id: check_builds
+      run: |
+        # Check if at least one build succeeded
+        linux_success="${{ needs.build-linux.result == 'success' }}"
+        windows_success="${{ needs.build-windows.result == 'success' }}"
+        macos_success="${{ needs.build-macos.result == 'success' }}"
+        
+        if [[ "$linux_success" == "true" || "$windows_success" == "true" || "$macos_success" == "true" ]]; then
+          echo "has_successful_builds=true" >> $GITHUB_OUTPUT
+          echo "✅ At least one build succeeded, proceeding with release"
+        else
+          echo "has_successful_builds=false" >> $GITHUB_OUTPUT
+          echo "❌ No builds succeeded, skipping release"
+          exit 1
+        fi
+        
     - name: Download Linux build artifacts
       uses: actions/download-artifact@v4
+      if: needs.build-linux.result == 'success'
       with:
         name: linux-builds
         path: ./artifacts/linux/
@@ -222,6 +246,7 @@ jobs:
         
     - name: Download Windows build artifacts
       uses: actions/download-artifact@v4
+      if: needs.build-windows.result == 'success'
       with:
         name: windows-builds
         path: ./artifacts/windows/
@@ -229,15 +254,29 @@ jobs:
         
     - name: Download macOS build artifacts
       uses: actions/download-artifact@v4
+      if: needs.build-macos.result == 'success'
       with:
         name: macos-builds
         path: ./artifacts/macos/
       continue-on-error: true
       
+    - name: Create or update tag
+      run: |
+        # Check if tag exists
+        if git rev-parse --verify "${{ github.event.inputs.version_tag }}" >/dev/null 2>&1; then
+          echo "Tag ${{ github.event.inputs.version_tag }} already exists"
+        else
+          echo "Creating new tag ${{ github.event.inputs.version_tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ github.event.inputs.version_tag }}" -m "Release ${{ github.event.inputs.version_tag }}"
+          git push origin "${{ github.event.inputs.version_tag }}"
+        fi
+        
     - name: List all build artifacts
       run: |
         echo "Available build artifacts:"
-        find ./artifacts -type f -name "*" | sort
+        find ./artifacts -type f -name "*" 2>/dev/null | sort || echo "No artifacts found"
       
     - name: Generate release notes
       id: release_notes
@@ -289,10 +328,7 @@ jobs:
         body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
         draft: ${{ github.event.inputs.release_type == 'draft' }}
         prerelease: ${{ github.event.inputs.release_type == 'prerelease' }}
-        files: |
-          ./artifacts/linux/*
-          ./artifacts/windows/*
-          ./artifacts/macos/*
+        files: ./artifacts/**/*
         fail_on_unmatched_files: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

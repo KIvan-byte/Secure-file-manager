@@ -295,10 +295,11 @@ Our automated build and release pipeline includes:
 - **Dependency monitoring**: Vulnerability scanning, updates
 
 ### 🚀 Continuous Deployment
-- **Automated releases**: Tag-triggered releases
+- **Manual releases**: Workflow dispatch triggered releases
 - **Multi-format packages**: AppImage, DEB, NSIS, DMG, etc.
 - **Release notes**: Auto-generated changelogs
 - **Asset distribution**: GitHub Releases integration
+- **Flexible platform selection**: Build only what you need
 
 ### Build Status
 
