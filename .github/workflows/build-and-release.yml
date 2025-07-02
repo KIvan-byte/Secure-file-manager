@@ -35,13 +35,16 @@ jobs:
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
           -e CI=true \
+          -e NODE_ENV=development \
           -e ELECTRON_CACHE=/tmp/.electron-cache \
           -e ELECTRON_BUILDER_CACHE=/tmp/.electron-builder-cache \
           secure-file-manager-builder:latest \
           bash -c "
             set -e
             echo 'Installing dependencies...'
-            if [ -f 'package-lock.json' ]; then npm ci --unsafe-perm --prefer-offline; else npm install --unsafe-perm --prefer-offline; fi
+            if [ -f 'package-lock.json' ]; then npm ci --include=dev --unsafe-perm --prefer-offline; else npm install --include=dev --unsafe-perm --prefer-offline; fi
+            echo 'Verifying vite installation...'
+            npx vite --version || echo 'Vite not found, installing globally...'
             echo 'Building web application...'
             npm run build
             echo 'Building Linux packages...'
@@ -87,7 +90,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        if [ -f "package-lock.json" ]; then npm ci --unsafe-perm; else npm install --unsafe-perm; fi
+        if [ -f "package-lock.json" ]; then npm ci --include=dev --unsafe-perm; else npm install --include=dev --unsafe-perm; fi
       env:
         npm_config_cache: .npm-cache
         
@@ -138,7 +141,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        if [ -f "package-lock.json" ]; then npm ci --unsafe-perm; else npm install --unsafe-perm; fi
+        if [ -f "package-lock.json" ]; then npm ci --include=dev --unsafe-perm; else npm install --include=dev --unsafe-perm; fi
       env:
         npm_config_cache: .npm-cache
         
