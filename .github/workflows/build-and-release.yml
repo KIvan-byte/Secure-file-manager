@@ -41,7 +41,7 @@ jobs:
           bash -c "
             set -e
             echo 'Installing dependencies...'
-            if [ -f "package-lock.json" ]; then npm ci --unsafe-perm; else npm install --unsafe-perm; fi --prefer-offline
+            if [ -f 'package-lock.json' ]; then npm ci --unsafe-perm --prefer-offline; else npm install --unsafe-perm --prefer-offline; fi
             echo 'Building web application...'
             npm run build
             echo 'Building Linux packages...'
