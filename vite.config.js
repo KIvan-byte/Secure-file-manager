@@ -16,9 +16,18 @@ export default defineConfig({
   build: {
     outDir: 'build',
     assetsDir: 'static',
+    chunkSizeWarningLimit: 600, // Increase chunk size warning limit
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          // Split vendor chunks to reduce bundle size
+          'react-vendor': ['react', 'react-dom'],
+          'ui-vendor': ['react-icons', 'styled-components'],
+          'chart-vendor': ['recharts'],
+          'router-vendor': ['react-router-dom'],
+          'crypto-vendor': ['speakeasy'],
+          'utils-vendor': ['uuid', 'qrcode', 'qrcode.react'],
+        },
       },
     },
   },

@@ -21,7 +21,10 @@
     "clean": "rm -rf dist build",
     "clean:cache": "rm -rf node_modules/.cache .electron-builder-cache"
   },
-  "author": "",
+  "author": {
+    "name": "Secure File Manager Team",
+    "email": "ivankorobkin0@gmail.com"
+  },
   "license": "MIT",
   "dependencies": {
     "archiver": "^7.0.1",
@@ -125,7 +128,8 @@
       "category": "Utility",
       "icon": "assets/icons/",
       "synopsis": "Secure file manager with encryption and P2P sync",
-      "description": "A modern, secure file management application with advanced encryption, secure file sharing, P2P synchronization, and comprehensive security auditing."
+      "description": "A modern, secure file management application with advanced encryption, secure file sharing, P2P synchronization, and comprehensive security auditing.",
+      "maintainer": "Secure File Manager Team <admin@secure-file-manager.com>"
     },
     "win": {
       "target": [
