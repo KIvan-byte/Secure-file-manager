@@ -95,7 +95,12 @@ RUN set -e && \
     echo "Checking package.json..." && \
     cat package.json | grep -A5 -B5 '"name"' && \
     npm cache clean --force && \
-if [ -f "package-lock.json" ]; then npm ci --unsafe-perm --prefer-offline; else npm install --unsafe-perm --prefer-offline; fi    echo "Dependencies installed successfully" && \
+    if [ -f "package-lock.json" ]; then \
+        npm ci --unsafe-perm --prefer-offline; \
+    else \
+        npm install --unsafe-perm --prefer-offline; \
+    fi && \
+    echo "Dependencies installed successfully" && \
     echo "Verifying installation..." && \
     npm ls --depth=0 || echo "Some peer dependencies missing, but continuing..."
 
