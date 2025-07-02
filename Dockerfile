@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for building Secure File Manager on Linux
 # This container provides a consistent build environment with all necessary dependencies
 
-FROM node:18-bullseye as base
+FROM node:23-bullseye as base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
