@@ -92,7 +92,12 @@ jobs:
         
     - name: Install dependencies
       run: |
-        if [ -f "package-lock.json" ]; then npm ci --include=dev --unsafe-perm; else npm install --include=dev --unsafe-perm; fi
+        if (Test-Path "package-lock.json") {
+          npm ci --include=dev --unsafe-perm
+        } else {
+          npm install --include=dev --unsafe-perm
+        }
+      shell: pwsh
       env:
         npm_config_cache: .npm-cache
         
@@ -144,6 +149,7 @@ jobs:
     - name: Install dependencies
       run: |
         if [ -f "package-lock.json" ]; then npm ci --include=dev --unsafe-perm; else npm install --include=dev --unsafe-perm; fi
+      shell: bash
       env:
         npm_config_cache: .npm-cache
         
