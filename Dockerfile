@@ -23,6 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-dev \
     pkg-config \
+    # Package building tools
+    rpm \
+    fakeroot \
+    dpkg-dev \
     # GUI libraries for Electron
     libgtk-3-0 \
     libgtk-3-dev \

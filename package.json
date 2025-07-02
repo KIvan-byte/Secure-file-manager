@@ -99,29 +99,19 @@
         {
           "target": "AppImage",
           "arch": [
-            "x64",
-            "arm64"
+            "x64"
           ]
         },
         {
           "target": "deb",
           "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "rpm",
-          "arch": [
-            "x64",
-            "arm64"
+            "x64"
           ]
         },
         {
           "target": "tar.gz",
           "arch": [
-            "x64",
-            "arm64"
+            "x64"
           ]
         }
       ],
@@ -129,7 +119,7 @@
       "icon": "assets/icons/",
       "synopsis": "Secure file manager with encryption and P2P sync",
       "description": "A modern, secure file management application with advanced encryption, secure file sharing, P2P synchronization, and comprehensive security auditing.",
-      "maintainer": "Secure File Manager Team <admin@secure-file-manager.com>"
+      "maintainer": "Secure File Manager Team <ivankorobkin0@gmail.com>"
     },
     "win": {
       "target": [
