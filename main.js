@@ -3129,5 +3129,3 @@ ipcMain.handle('security:check-file-format', async (event, filePath) => {
     };
   }
 });
-
-// =============================================================================

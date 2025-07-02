@@ -1,0 +1,278 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Build for Linux using Docker container
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker build -t secure-file-manager-builder:latest .
+        
+    - name: Build Linux applications in Docker
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          -e CI=true \
+          -e ELECTRON_CACHE=/tmp/.electron-cache \
+          -e ELECTRON_BUILDER_CACHE=/tmp/.electron-builder-cache \
+          secure-file-manager-builder:latest \
+          bash -c "
+            set -e
+            echo 'Installing dependencies...'
+            npm ci --unsafe-perm --prefer-offline
+            echo 'Building web application...'
+            npm run build
+            echo 'Building Linux packages...'
+            npm run dist:linux
+          "
+          
+    - name: List build artifacts
+      run: ls -la dist/
+      
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-builds
+        path: |
+          dist/*.AppImage
+          dist/*.deb
+          dist/*.rpm
+          dist/*.tar.gz
+        retention-days: 30
+
+  # Build for Windows
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Python for native modules
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --unsafe-perm
+      env:
+        npm_config_cache: .npm-cache
+        
+    - name: Build web application
+      run: npm run build
+      
+    - name: Build Windows packages
+      run: npm run dist:win
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: List build artifacts
+      run: dir dist\
+      
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-builds
+        path: |
+          dist/*.exe
+          dist/*.zip
+          dist/*.msi
+        retention-days: 30
+
+  # Build for macOS (optional, only on tags)
+  build-macos:
+    runs-on: macos-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Python for native modules
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        npm ci --unsafe-perm
+      env:
+        npm_config_cache: .npm-cache
+        
+    - name: Build web application
+      run: npm run build
+      
+    - name: Build macOS packages
+      run: npm run dist:mac
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload macOS artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-builds
+        path: |
+          dist/*.dmg
+          dist/*.zip
+        retention-days: 30
+
+  # Create GitHub release when tag is pushed
+  create-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Download Linux build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-builds
+        path: ./artifacts/linux/
+        
+    - name: Download Windows build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-builds
+        path: ./artifacts/windows/
+        
+    - name: Download macOS build artifacts (if available)
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-builds
+        path: ./artifacts/macos/
+      continue-on-error: true
+      
+    - name: List all build artifacts
+      run: |
+        echo "Available build artifacts:"
+        find ./artifacts -type f -name "*" | sort
+      
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        {
+          echo "RELEASE_NOTES<<EOF"
+          echo "##  What's New in ${GITHUB_REF_NAME}"
+          echo ""
+          echo "###  Features:"
+          echo "-  Secure file management with military-grade encryption"
+          echo "-  One-time secure sharing links with expiration"
+          echo "-  Comprehensive access logging and analytics"
+          echo "-  Two-factor authentication support"
+          echo "-  Zero-knowledge P2P file synchronization"
+          echo "-  Encrypted secure notes with master password"
+          echo "-  File compression and archive management"
+          echo ""
+          echo "###  Platform Support:"
+          echo "- **Linux**: AppImage, DEB, RPM packages"
+          echo "- **Windows**: NSIS Installer, Portable executable"
+          if [ -d "./artifacts/macos/" ] && [ -n "$(ls -A ./artifacts/macos/)" ]; then
+            echo "- **macOS**: DMG installer"
+          fi
+          echo ""
+          echo "###  Security:"
+          echo "- AES-256-GCM encryption for file protection"
+          echo "- PBKDF2 key derivation with 100,000+ iterations"
+          echo "- Rate limiting and intrusion detection"
+          echo "- Secure session management"
+          echo ""
+          echo "###  Installation:"
+          echo "1. Download the appropriate package for your platform"
+          echo "2. Install following your OS guidelines"
+          echo "3. Launch and configure your security preferences"
+          echo ""
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...${GITHUB_REF_NAME}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+        draft: false
+        prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+        files: |
+          ./artifacts/linux/*
+          ./artifacts/windows/*
+          ./artifacts/macos/*
+        fail_on_unmatched_files: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Build status notification and summary
+  notify-status:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Build Status Summary
+      run: |
+        echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Platform | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 🐧 Linux | ${{ needs.build-linux.result }} | - |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🪟 Windows | ${{ needs.build-windows.result }} | - |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.build-linux.result }}" == "success" && "${{ needs.build-windows.result }}" == "success" ]]; then
+          echo "✅ **All builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 Ready for deployment and distribution." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Some builds failed. Please check the logs above.**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔍 Review the failed jobs for detailed error information." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Expected Artifacts:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Linux**: AppImage, DEB, RPM packages" >> $GITHUB_STEP_SUMMARY
+        echo "- **Windows**: NSIS installer, Portable executable" >> $GITHUB_STEP_SUMMARY

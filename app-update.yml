@@ -1,0 +1,4 @@
+provider: github
+owner: KIvan-byte
+repo: Secure-file-manager
+updaterCacheDirName: secure-file-manager-updater

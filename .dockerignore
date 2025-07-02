@@ -1,0 +1,86 @@
+# Exclude from Docker build context for optimal performance
+
+# Dependencies and build artifacts
+node_modules/
+dist/
+build/
+.npm/
+.electron/
+.electron-builder/
+
+# Version control
+.git/
+.github/
+.gitignore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment and configuration
+.env*
+.config/
+.cache/
+
+# Test and coverage files
+coverage/
+.nyc_output/
+test-results/
+*.test.js
+*.spec.js
+__tests__/
+
+# Documentation (not needed for build)
+*.md
+docs/
+LICENSE
+
+# CI/CD files (not needed in container)
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Security and deployment files
+SECURITY.md
+app-update.yml
+local-build.sh
+
+# Package manager files (will be copied separately)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Electron specific
+electron-builder.env
+release/
+
+# Development tools
+.eslintrc*
+.prettierrc*
+.editorconfig
+tsconfig.json
+webpack.config.js
+rollup.config.js
