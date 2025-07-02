@@ -1,11 +1,40 @@
 name: Build and Release
 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
+  # Manual trigger only - no automatic builds
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release to create'
+        required: true
+        default: 'draft'
+        type: choice
+        options:
+          - draft
+          - prerelease
+          - release
+      version_tag:
+        description: 'Version tag (e.g., v1.0.1)'
+        required: true
+        type: string
+      build_platforms:
+        description: 'Platforms to build for'
+        required: true
+        default: 'linux,windows'
+        type: choice
+        options:
+          - linux
+          - windows
+          - macos
+          - linux,windows
+          - linux,macos
+          - windows,macos
+          - linux,windows,macos
+      skip_release:
+        description: 'Skip creating GitHub release (build only)'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '18'
@@ -15,6 +44,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: contains(github.event.inputs.build_platforms, 'linux')
     
     steps:
     - name: Checkout repository
@@ -71,6 +101,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     timeout-minutes: 30
+    if: contains(github.event.inputs.build_platforms, 'windows')
     
     steps:
     - name: Checkout repository
@@ -122,11 +153,11 @@ jobs:
           dist/*.msi
         retention-days: 30
 
-  # Build for macOS (optional, only on tags)
+  # Build for macOS (optional, when selected)
   build-macos:
     runs-on: macos-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     timeout-minutes: 30
+    if: contains(github.event.inputs.build_platforms, 'macos')
     
     steps:
     - name: Checkout repository
@@ -170,11 +201,11 @@ jobs:
           dist/*.zip
         retention-days: 30
 
-  # Create GitHub release when tag is pushed
+  # Create GitHub release when requested
   create-release:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event.inputs.skip_release != 'true' && always() && (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
     
     steps:
     - name: Checkout repository
@@ -187,14 +218,16 @@ jobs:
       with:
         name: linux-builds
         path: ./artifacts/linux/
+      continue-on-error: true
         
     - name: Download Windows build artifacts
       uses: actions/download-artifact@v4
       with:
         name: windows-builds
         path: ./artifacts/windows/
+      continue-on-error: true
         
-    - name: Download macOS build artifacts (if available)
+    - name: Download macOS build artifacts
       uses: actions/download-artifact@v4
       with:
         name: macos-builds
@@ -211,7 +244,7 @@ jobs:
       run: |
         {
           echo "RELEASE_NOTES<<EOF"
-          echo "##  What's New in ${GITHUB_REF_NAME}"
+          echo "##  What's New in ${{ github.event.inputs.version_tag }}"
           echo ""
           echo "###  Features:"
           echo "-  Secure file management with military-grade encryption"
@@ -223,9 +256,13 @@ jobs:
           echo "-  File compression and archive management"
           echo ""
           echo "###  Platform Support:"
-          echo "- **Linux**: AppImage, DEB, RPM packages"
-          echo "- **Windows**: NSIS Installer, Portable executable"
-          if [ -d "./artifacts/macos/" ] && [ -n "$(ls -A ./artifacts/macos/)" ]; then
+          if [ -d "./artifacts/linux/" ] && [ -n "$(ls -A ./artifacts/linux/ 2>/dev/null)" ]; then
+            echo "- **Linux**: AppImage, DEB, TAR.GZ packages"
+          fi
+          if [ -d "./artifacts/windows/" ] && [ -n "$(ls -A ./artifacts/windows/ 2>/dev/null)" ]; then
+            echo "- **Windows**: NSIS Installer, Portable executable"
+          fi
+          if [ -d "./artifacts/macos/" ] && [ -n "$(ls -A ./artifacts/macos/ 2>/dev/null)" ]; then
             echo "- **macOS**: DMG installer"
           fi
           echo ""
@@ -240,17 +277,18 @@ jobs:
           echo "2. Install following your OS guidelines"
           echo "3. Launch and configure your security preferences"
           echo ""
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...${GITHUB_REF_NAME}"
+          echo "**Build Configuration**: ${{ github.event.inputs.build_platforms }}"
+          echo "**Release Type**: ${{ github.event.inputs.release_type }}"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
+        tag_name: ${{ github.event.inputs.version_tag }}
+        name: Release ${{ github.event.inputs.version_tag }}
         body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
-        draft: false
-        prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+        draft: ${{ github.event.inputs.release_type == 'draft' }}
+        prerelease: ${{ github.event.inputs.release_type == 'prerelease' }}
         files: |
           ./artifacts/linux/*
           ./artifacts/windows/*
@@ -261,7 +299,7 @@ jobs:
 
   # Build status notification and summary
   notify-status:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     if: always()
     
@@ -269,16 +307,41 @@ jobs:
     - name: Build Status Summary
       run: |
         echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
-        echo "| Platform | Status | Duration |" >> $GITHUB_STEP_SUMMARY
-        echo "|----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
-        echo "| 🐧 Linux | ${{ needs.build-linux.result }} | - |" >> $GITHUB_STEP_SUMMARY
-        echo "| 🪟 Windows | ${{ needs.build-windows.result }} | - |" >> $GITHUB_STEP_SUMMARY
+        echo "| Platform | Status | Requested |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|--------|-----------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Linux status
+        if [[ "${{ github.event.inputs.build_platforms }}" == *"linux"* ]]; then
+          echo "| 🐧 Linux | ${{ needs.build-linux.result }} | ✅ Yes |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| 🐧 Linux | skipped | ❌ No |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Windows status  
+        if [[ "${{ github.event.inputs.build_platforms }}" == *"windows"* ]]; then
+          echo "| 🪟 Windows | ${{ needs.build-windows.result }} | ✅ Yes |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| 🪟 Windows | skipped | ❌ No |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # macOS status
+        if [[ "${{ github.event.inputs.build_platforms }}" == *"macos"* ]]; then
+          echo "| 🍎 macOS | ${{ needs.build-macos.result }} | ✅ Yes |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| 🍎 macOS | skipped | ❌ No |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        if [[ "${{ needs.build-linux.result }}" == "success" && "${{ needs.build-windows.result }}" == "success" ]]; then
-          echo "✅ **All builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
+        # Overall status
+        linux_ok="${{ needs.build-linux.result == 'success' || !contains(github.event.inputs.build_platforms, 'linux') }}"
+        windows_ok="${{ needs.build-windows.result == 'success' || !contains(github.event.inputs.build_platforms, 'windows') }}"
+        macos_ok="${{ needs.build-macos.result == 'success' || !contains(github.event.inputs.build_platforms, 'macos') }}"
+        
+        if [[ "$linux_ok" == "true" && "$windows_ok" == "true" && "$macos_ok" == "true" ]]; then
+          echo "✅ **All requested builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎉 Ready for deployment and distribution." >> $GITHUB_STEP_SUMMARY
+          echo "🎉 Ready for release: **${{ github.event.inputs.version_tag }}**" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ **Some builds failed. Please check the logs above.**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -286,6 +349,8 @@ jobs:
         fi
         
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📦 Expected Artifacts:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Linux**: AppImage, DEB, RPM packages" >> $GITHUB_STEP_SUMMARY
-        echo "- **Windows**: NSIS installer, Portable executable" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Build Configuration:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ github.event.inputs.version_tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Platforms**: ${{ github.event.inputs.build_platforms }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release Type**: ${{ github.event.inputs.release_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Skip Release**: ${{ github.event.inputs.skip_release }}" >> $GITHUB_STEP_SUMMARY

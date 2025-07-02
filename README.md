@@ -216,41 +216,51 @@ npm run dist:mac
 
 ## 🚀 Release Process
 
-### Automated Releases (Recommended)
+### Manual Releases (Recommended)
 
-Our CI/CD pipeline automatically creates releases when you push version tags:
+Our CI/CD pipeline creates releases only when manually triggered, giving you full control:
 
-1. **Create a new version**:
-   ```bash
-   # Patch version (1.0.0 → 1.0.1)
-   npm version patch
-   
-   # Minor version (1.0.0 → 1.1.0)
-   npm version minor
-   
-   # Major version (1.0.0 → 2.0.0)
-   npm version major
-   ```
+1. **Go to GitHub Actions**:
+   - Navigate to: https://github.com/KIvan-byte/Secure-file-manager/actions
+   - Select **"Build and Release"** workflow
+   - Click **"Run workflow"**
 
-2. **Push the tag**:
-   ```bash
-   git push origin main --tags
-   ```
+2. **Configure the release**:
+   - **Release Type**: 
+     - `draft` - Creates a draft release for review
+     - `prerelease` - Marks as pre-release (beta, alpha, rc)
+     - `release` - Creates a public release
+   - **Version Tag**: e.g., `v1.0.1`, `v1.1.0`, `v2.0.0-beta.1`
+   - **Build Platforms**: Choose which platforms to build:
+     - `linux` - Only Linux packages
+     - `windows` - Only Windows packages
+     - `macos` - Only macOS packages
+     - `linux,windows` - Both Linux and Windows
+     - `linux,windows,macos` - All platforms
+   - **Skip Release**: Check to build packages without creating a release
 
 3. **Automatic process**:
-   - GitHub Actions builds for all platforms
-   - Creates GitHub release with changelogs
+   - GitHub Actions builds for selected platforms
+   - Creates GitHub release with changelogs (if not skipped)
    - Uploads all build artifacts
    - Publishes release notes
 
-### Manual Release
+### Quick Release Commands
 
-You can also trigger releases manually through GitHub Actions:
+For convenience, you can also use npm version commands locally and then trigger the workflow:
 
-1. Go to **Actions** tab in GitHub
-2. Select **Build and Release** workflow
-3. Click **Run workflow**
-4. Choose the branch and trigger the build
+```bash
+# Update version locally (optional)
+npm version patch   # 1.0.0 → 1.0.1
+npm version minor   # 1.0.0 → 1.1.0  
+npm version major   # 1.0.0 → 2.0.0
+
+# Commit and push changes
+git push origin main
+
+# Then manually trigger the workflow in GitHub Actions
+# with the corresponding version tag (e.g., v1.0.1)
+```
 
 ## 🔒 Security
 
