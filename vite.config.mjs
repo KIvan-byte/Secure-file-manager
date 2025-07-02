@@ -30,8 +30,8 @@ export default defineConfig({
           'ui-vendor': ['react-icons', 'styled-components'],
           'chart-vendor': ['recharts'],
           'router-vendor': ['react-router-dom'],
-          'crypto-vendor': ['speakeasy'],
           'utils-vendor': ['uuid', 'qrcode', 'qrcode.react'],
+          // Remove crypto-vendor as speakeasy is externalized
         },
       },
     },
