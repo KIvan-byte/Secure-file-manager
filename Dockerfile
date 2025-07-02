@@ -1,14 +1,16 @@
 # Multi-stage Dockerfile for building Secure File Manager on Linux
 # This container provides a consistent build environment with all necessary dependencies
 
-FROM node:23-bullseye as base
+FROM node:20-bullseye AS base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=production \
     npm_config_cache=/tmp/.npm-cache \
     ELECTRON_CACHE=/tmp/.electron-cache \
-    ELECTRON_BUILDER_CACHE=/tmp/.electron-builder-cache
+    ELECTRON_BUILDER_CACHE=/tmp/.electron-builder-cache \
+    PYTHONUNBUFFERED=1 \
+    npm_config_python=/usr/bin/python3
 
 # Install system dependencies required for Electron and native modules
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -64,7 +66,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/tmp/*
 
 # Install global npm packages
-RUN npm install -g electron-builder@latest --unsafe-perm
+RUN npm install -g electron-builder@24.9.1 --unsafe-perm
 
 # Create non-root user for security
 RUN groupadd -g 1001 builder && \
@@ -85,12 +87,24 @@ ENV HOME=/home/builder \
 COPY --chown=builder:builder package*.json ./
 
 # Pre-install dependencies in a separate layer for better caching
-# Use npm install instead of npm ci in case package-lock.json is not available
-RUN if [ -f "package-lock.json" ]; then \
-        npm ci --unsafe-perm --prefer-offline --no-audit --no-fund; \
+# Clean install with proper error handling
+RUN set -e && \
+    echo "Node version: $(node --version)" && \
+    echo "NPM version: $(npm --version)" && \
+    echo "Python version: $(python3 --version)" && \
+    echo "Checking package.json..." && \
+    cat package.json | grep -A5 -B5 '"name"' && \
+    npm cache clean --force && \
+    if [ -f "package-lock.json" ]; then \
+        echo "Found package-lock.json, using npm ci..." && \
+        npm ci --unsafe-perm --no-audit --no-fund --loglevel=info; \
     else \
-        npm install --unsafe-perm --prefer-offline --no-audit --no-fund; \
-    fi
+        echo "No package-lock.json found, using npm install..." && \
+        npm install --unsafe-perm --no-audit --no-fund --loglevel=info; \
+    fi && \
+    echo "Dependencies installed successfully" && \
+    echo "Verifying installation..." && \
+    npm ls --depth=0 || echo "Some peer dependencies missing, but continuing..."
 
 # Copy the rest of the application
 COPY --chown=builder:builder . .
