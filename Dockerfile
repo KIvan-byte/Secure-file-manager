@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for building Secure File Manager on Linux
 # This container provides a consistent build environment with all necessary dependencies
 
-FROM node:20-bullseye AS base
+FROM node:23-bullseye AS base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -95,13 +95,7 @@ RUN set -e && \
     echo "Checking package.json..." && \
     cat package.json | grep -A5 -B5 '"name"' && \
     npm cache clean --force && \
-    if [ -f "package-lock.json" ]; then \
-        echo "Found package-lock.json, using npm ci..." && \
-        npm ci --unsafe-perm --no-audit --no-fund --loglevel=info; \
-    else \
-        echo "No package-lock.json found, using npm install..." && \
-        npm install --unsafe-perm --no-audit --no-fund --loglevel=info; \
-    fi && \
+    if [ -f "package-lock.json" ]; then npm ci --unsafe-perm --prefer-offline; else npm install --unsafe-perm --prefer-offline; fi && \
     echo "Dependencies installed successfully" && \
     echo "Verifying installation..." && \
     npm ls --depth=0 || echo "Some peer dependencies missing, but continuing..."
@@ -114,3 +108,4 @@ VOLUME ["/workspace"]
 
 # Default command
 CMD ["npm", "run", "dist:linux"]
+
