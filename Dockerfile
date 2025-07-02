@@ -83,33 +83,5 @@ ENV HOME=/home/builder \
     XDG_CACHE_HOME=/tmp/.cache \
     DISPLAY=:99
 
-# Copy package files first for better layer caching
-COPY --chown=builder:builder package*.json ./
-
-# Pre-install dependencies in a separate layer for better caching
-# Clean install with proper error handling
-RUN set -e && \
-    echo "Node version: $(node --version)" && \
-    echo "NPM version: $(npm --version)" && \
-    echo "Python version: $(python3 --version)" && \
-    echo "Checking package.json..." && \
-    cat package.json | grep -A5 -B5 '"name"' && \
-    npm cache clean --force && \
-    if [ -f "package-lock.json" ]; then \
-        npm ci --unsafe-perm --prefer-offline; \
-    else \
-        npm install --unsafe-perm --prefer-offline; \
-    fi && \
-    echo "Dependencies installed successfully" && \
-    echo "Verifying installation..." && \
-    npm ls --depth=0 || echo "Some peer dependencies missing, but continuing..."
-
-# Copy the rest of the application
-COPY --chown=builder:builder . .
-
-# Expose workspace as volume mount point
-VOLUME ["/workspace"]
-
-# Default command
-CMD ["npm", "run", "dist:linux"]
-
+# Default command - build will happen when container runs
+CMD ["bash", "-c", "if [ -f 'package-lock.json' ]; then npm ci --unsafe-perm; else npm install --unsafe-perm; fi && npm run build && npm run dist:linux"]
