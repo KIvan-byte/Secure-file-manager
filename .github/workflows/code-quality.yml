@@ -27,10 +27,11 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
         
     - name: Install dependencies
       run: |
-        npm ci --prefer-offline --no-audit
+        if [ -f "package-lock.json" ]; then npm ci --prefer-offline; else npm install --prefer-offline; fi --no-audit
         
     - name: Security vulnerability scan
       run: |
@@ -126,6 +127,7 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
         
     - name: Analyze package structure
       run: |
@@ -159,7 +161,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Install dependencies to check for conflicts
-        if npm ci --prefer-offline 2>&1 | grep -i "warn\|error"; then
+        if if [ -f "package-lock.json" ]; then npm ci --prefer-offline; else npm install --prefer-offline; fi 2>&1 | grep -i "warn\|error"; then
           echo " Dependency warnings or errors detected" >> $GITHUB_STEP_SUMMARY
         else
           echo " No dependency conflicts found" >> $GITHUB_STEP_SUMMARY
@@ -193,9 +195,10 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
         
     - name: Install dependencies
-      run: npm ci --prefer-offline
+      run: if [ -f "package-lock.json" ]; then npm ci --prefer-offline; else npm install --prefer-offline; fi
       
     - name: Analyze package size
       run: |

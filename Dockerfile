@@ -85,7 +85,12 @@ ENV HOME=/home/builder \
 COPY --chown=builder:builder package*.json ./
 
 # Pre-install dependencies in a separate layer for better caching
-RUN npm ci --unsafe-perm --prefer-offline --no-audit --no-fund
+# Use npm install instead of npm ci in case package-lock.json is not available
+RUN if [ -f "package-lock.json" ]; then \
+        npm ci --unsafe-perm --prefer-offline --no-audit --no-fund; \
+    else \
+        npm install --unsafe-perm --prefer-offline --no-audit --no-fund; \
+    fi
 
 # Copy the rest of the application
 COPY --chown=builder:builder . .
