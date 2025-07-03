@@ -1,0 +1,297 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 4 * * 1'  # Weekly performance check
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lighthouse-audit:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci --prefer-offline --no-audit
+        else
+          npm install --prefer-offline --no-audit
+        fi
+        
+    - name: Build application
+      run: npm run build
+      
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli@0.12.x
+      
+    - name: Serve application
+      run: |
+        npx serve -s build -l 3000 &
+        sleep 10
+      
+    - name: Run Lighthouse audit
+      run: |
+        echo "## Lighthouse Performance Audit" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Simple lighthouse run without config file
+        if command -v lhci > /dev/null 2>&1; then
+          if lhci autorun --url=http://localhost:3000 > lighthouse-results.txt 2>&1; then
+            echo "- Lighthouse audit completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Lighthouse audit encountered issues" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Parse results if available
+          if [ -f "lighthouse-results.txt" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Results Summary:" >> $GITHUB_STEP_SUMMARY
+            grep -E "Performance|Accessibility|Best Practices|SEO" lighthouse-results.txt | head -10 >> $GITHUB_STEP_SUMMARY || true
+          fi
+        else
+          echo "- Lighthouse CLI not available, skipping audit" >> $GITHUB_STEP_SUMMARY
+        fi
+      continue-on-error: true
+
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci --prefer-offline --no-audit
+        else
+          npm install --prefer-offline --no-audit
+        fi
+        
+    - name: Build and analyze bundle
+      run: |
+        npm run build
+        
+        echo "## Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -d "build" ]; then
+          # Calculate bundle sizes
+          JS_TOTAL=$(find build -name "*.js" -exec du -b {} + | awk '{sum+=$1} END {print sum}')
+          CSS_TOTAL=$(find build -name "*.css" -exec du -b {} + | awk '{sum+=$1} END {print sum}')
+          TOTAL_SIZE=$(du -b -s build | cut -f1)
+          
+          # Convert to human readable
+          JS_SIZE=$(numfmt --to=iec-i --suffix=B $JS_TOTAL 2>/dev/null || echo "${JS_TOTAL}B")
+          CSS_SIZE=$(numfmt --to=iec-i --suffix=B $CSS_TOTAL 2>/dev/null || echo "${CSS_TOTAL}B")
+          TOTAL_HR=$(numfmt --to=iec-i --suffix=B $TOTAL_SIZE 2>/dev/null || echo "${TOTAL_SIZE}B")
+          
+          echo "### Bundle Sizes:" >> $GITHUB_STEP_SUMMARY
+          echo "| Asset Type | Size | Percentage |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|------|------------|" >> $GITHUB_STEP_SUMMARY
+          
+          JS_PERCENT=$((JS_TOTAL * 100 / TOTAL_SIZE))
+          CSS_PERCENT=$((CSS_TOTAL * 100 / TOTAL_SIZE))
+          
+          echo "| JavaScript | $JS_SIZE | ${JS_PERCENT}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| CSS | $CSS_SIZE | ${CSS_PERCENT}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | **$TOTAL_HR** | **100%** |" >> $GITHUB_STEP_SUMMARY
+          
+          # Warnings for large bundles
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Size Analysis:" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $JS_TOTAL -gt $((2 * 1024 * 1024)) ]; then
+            echo "- WARNING: JavaScript bundle is large ($JS_SIZE). Consider code splitting." >> $GITHUB_STEP_SUMMARY
+          elif [ $JS_TOTAL -gt $((1 * 1024 * 1024)) ]; then
+            echo "- NOTICE: JavaScript bundle is moderate ($JS_SIZE). Monitor growth." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- JavaScript bundle size is reasonable ($JS_SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ $CSS_TOTAL -gt $((500 * 1024)) ]; then
+            echo "- WARNING: CSS bundle is large ($CSS_SIZE). Consider optimization." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- CSS bundle size is reasonable ($CSS_SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # List largest files
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Largest Files:" >> $GITHUB_STEP_SUMMARY
+          find build -type f \( -name "*.js" -o -name "*.css" \) -exec du -h {} + | sort -hr | head -5 | while read size file; do
+            filename=$(basename "$file")
+            echo "- $filename: $size" >> $GITHUB_STEP_SUMMARY
+          done
+        fi
+        
+    - name: Check for unused dependencies
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Dependency Usage Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Simple check for potentially unused dependencies
+        UNUSED_COUNT=0
+        
+        if [ -f "package.json" ]; then
+          # Check if dependencies are imported
+          jq -r '.dependencies | keys[]' package.json 2>/dev/null | while read dep; do
+            # Simple check: look for imports/requires of the dependency
+            if ! find src/ -name "*.js" -o -name "*.jsx" | xargs grep -l "from ['\"]$dep['\"]" > /dev/null 2>&1 && \
+               ! find src/ -name "*.js" -o -name "*.jsx" | xargs grep -l "require(['\"]$dep['\"])" > /dev/null 2>&1; then
+              echo "- INFO: $dep might be unused (manual verification needed)" >> unused_deps.txt
+            fi
+          done
+          
+          if [ -f "unused_deps.txt" ]; then
+            UNUSED_COUNT=$(wc -l < unused_deps.txt)
+            echo "### Potentially Unused Dependencies:" >> $GITHUB_STEP_SUMMARY
+            cat unused_deps.txt >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Note**: These are potential candidates. Manual verification is required." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- All dependencies appear to be used" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+  memory-leak-check:
+    name: Memory Leak Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci --prefer-offline --no-audit
+        else
+          npm install --prefer-offline --no-audit
+        fi
+        
+    - name: Check for potential memory leaks
+      run: |
+        echo "## Memory Leak Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        POTENTIAL_LEAKS=0
+        
+        # Check for common memory leak patterns
+        if [ -d "src" ]; then
+          # Check for missing cleanup in useEffect
+          MISSING_CLEANUP=$(find src/ -name "*.jsx" | xargs grep -l "useEffect" | xargs grep -L "return.*=>" | wc -l)
+          if [ $MISSING_CLEANUP -gt 0 ]; then
+            echo "- INFO: $MISSING_CLEANUP useEffect hooks without cleanup found (review needed)" >> $GITHUB_STEP_SUMMARY
+            POTENTIAL_LEAKS=$((POTENTIAL_LEAKS + 1))
+          fi
+          
+          # Check for addEventListener without removeEventListener
+          ADD_LISTENERS=$(find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "addEventListener" | wc -l)
+          REMOVE_LISTENERS=$(find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "removeEventListener" | wc -l)
+          
+          if [ $ADD_LISTENERS -gt 0 ] && [ $REMOVE_LISTENERS -eq 0 ]; then
+            echo "- WARNING: Event listeners added but no cleanup found" >> $GITHUB_STEP_SUMMARY
+            POTENTIAL_LEAKS=$((POTENTIAL_LEAKS + 1))
+          elif [ $ADD_LISTENERS -gt $REMOVE_LISTENERS ]; then
+            echo "- INFO: More event listeners added than removed (review cleanup)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for setInterval without clearInterval
+          SET_INTERVALS=$(find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "setInterval" | wc -l)
+          CLEAR_INTERVALS=$(find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "clearInterval" | wc -l)
+          
+          if [ $SET_INTERVALS -gt 0 ] && [ $CLEAR_INTERVALS -eq 0 ]; then
+            echo "- WARNING: setInterval used but no clearInterval found" >> $GITHUB_STEP_SUMMARY
+            POTENTIAL_LEAKS=$((POTENTIAL_LEAKS + 1))
+          fi
+          
+          # Check for setTimeout without clearTimeout
+          SET_TIMEOUTS=$(find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "setTimeout" | wc -l)
+          CLEAR_TIMEOUTS=$(find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "clearTimeout" | wc -l)
+          
+          if [ $SET_TIMEOUTS -gt 5 ] && [ $CLEAR_TIMEOUTS -eq 0 ]; then
+            echo "- INFO: Multiple setTimeout calls without clearTimeout (review if cleanup needed)" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+        if [ $POTENTIAL_LEAKS -eq 0 ]; then
+          echo "- No obvious memory leak patterns found" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- Found $POTENTIAL_LEAKS potential memory leak patterns" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Memory Leak Prevention Tips:" >> $GITHUB_STEP_SUMMARY
+        echo "- Always cleanup useEffect hooks" >> $GITHUB_STEP_SUMMARY
+        echo "- Remove event listeners in cleanup functions" >> $GITHUB_STEP_SUMMARY
+        echo "- Clear intervals and timeouts when unmounting" >> $GITHUB_STEP_SUMMARY
+        echo "- Avoid creating objects in render functions" >> $GITHUB_STEP_SUMMARY
+        echo "- Use React.memo for expensive components" >> $GITHUB_STEP_SUMMARY
+
+  performance-summary:
+    name: Performance Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lighthouse-audit, bundle-analysis, memory-leak-check]
+    if: always()
+    
+    steps:
+    - name: Generate performance report
+      run: |
+        echo "# Performance Monitoring Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Generated on: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## Job Status:" >> $GITHUB_STEP_SUMMARY
+        echo "- Lighthouse Audit: ${{ needs.lighthouse-audit.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Bundle Analysis: ${{ needs.bundle-analysis.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Memory Leak Check: ${{ needs.memory-leak-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## Performance Recommendations:" >> $GITHUB_STEP_SUMMARY
+        echo "1. **Monitor bundle sizes** - Keep JavaScript under 1MB when possible" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Optimize images** - Use WebP format and appropriate sizing" >> $GITHUB_STEP_SUMMARY
+        echo "3. **Implement code splitting** - Split large bundles into smaller chunks" >> $GITHUB_STEP_SUMMARY
+        echo "4. **Remove unused code** - Regularly audit and remove unused dependencies" >> $GITHUB_STEP_SUMMARY
+        echo "5. **Profile in production** - Use browser DevTools to identify bottlenecks" >> $GITHUB_STEP_SUMMARY
+        echo "6. **Test on slow devices** - Ensure good performance on low-end hardware" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "For detailed analysis, check individual job outputs above." >> $GITHUB_STEP_SUMMARY

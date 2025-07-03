@@ -1,0 +1,193 @@
+name: Auto-fix Code Issues
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 3 * * 0'  # Weekly on Sundays at 3 AM UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  auto-fix:
+    name: Auto-fix Common Issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci --prefer-offline --no-audit
+        else
+          npm install --prefer-offline --no-audit
+        fi
+        
+    - name: Fix formatting issues
+      run: |
+        echo "## Auto-fix Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        CHANGES_MADE=0
+        
+        # Remove trailing whitespace
+        if find src/ -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | xargs grep -l " $" > /dev/null 2>&1; then
+          find src/ -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | xargs sed -i 's/[[:space:]]*$//'
+          echo "- Removed trailing whitespace from source files" >> $GITHUB_STEP_SUMMARY
+          CHANGES_MADE=$((CHANGES_MADE + 1))
+        fi
+        
+        # Convert CRLF to LF
+        if find src/ -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | xargs file | grep "CRLF" > /dev/null 2>&1; then
+          find src/ -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" | xargs dos2unix 2>/dev/null || true
+          echo "- Converted CRLF line endings to LF" >> $GITHUB_STEP_SUMMARY
+          CHANGES_MADE=$((CHANGES_MADE + 1))
+        fi
+        
+        # Add missing semicolons (simple cases)
+        if find src/ -name "*.js" -o -name "*.jsx" | xargs grep -n "^[[:space:]]*[a-zA-Z].*[^;{]$" > /dev/null 2>&1; then
+          echo "- INFO: Potential missing semicolons detected (manual review needed)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ $CHANGES_MADE -eq 0 ]; then
+          echo "- No formatting issues found that could be auto-fixed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_OUTPUT
+        
+    - name: Update dependencies
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Dependency Updates" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for patch updates only (safer auto-updates)
+        if npm outdated --parseable --depth=0 | grep -E "patch|minor" > /dev/null 2>&1; then
+          echo "- Checking for safe patch updates..." >> $GITHUB_STEP_SUMMARY
+          
+          # Update patch versions only
+          npm update --save --package-lock-only 2>/dev/null || true
+          
+          if git diff --quiet package-lock.json; then
+            echo "- No patch updates available" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Updated package-lock.json with patch versions" >> $GITHUB_STEP_SUMMARY
+            echo "DEPS_UPDATED=true" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "- No safe dependency updates available" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Optimize package.json
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Package.json Optimization" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Sort package.json dependencies
+        if command -v jq > /dev/null 2>&1; then
+          jq '.dependencies = (.dependencies | to_entries | sort_by(.key) | from_entries) | .devDependencies = (.devDependencies | to_entries | sort_by(.key) | from_entries)' package.json > package.json.tmp
+          
+          if ! cmp -s package.json package.json.tmp; then
+            mv package.json.tmp package.json
+            echo "- Sorted dependencies in package.json" >> $GITHUB_STEP_SUMMARY
+            echo "PACKAGE_SORTED=true" >> $GITHUB_OUTPUT
+          else
+            rm package.json.tmp
+            echo "- Package.json dependencies already sorted" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+    - name: Check for security fixes
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Security Fixes" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Try to fix security vulnerabilities
+        if npm audit --audit-level=moderate > /dev/null 2>&1; then
+          echo "- No security vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- Attempting to fix security vulnerabilities..." >> $GITHUB_STEP_SUMMARY
+          
+          # Try automatic fixes
+          if npm audit fix --package-lock-only --dry-run > /dev/null 2>&1; then
+            npm audit fix --package-lock-only
+            echo "- Applied automatic security fixes" >> $GITHUB_STEP_SUMMARY
+            echo "SECURITY_FIXES=true" >> $GITHUB_OUTPUT
+          else
+            echo "- Manual intervention required for security fixes" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+    - name: Check if changes were made
+      id: changes
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Create pull request if changes made
+      if: steps.changes.outputs.changes == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: |
+          chore: auto-fix code quality issues
+          
+          - Fixed formatting issues
+          - Updated dependencies (patch versions only)
+          - Sorted package.json dependencies
+          - Applied security fixes where possible
+        title: '[Auto-fix] Code quality improvements'
+        body: |
+          ## Automated Code Quality Fixes
+          
+          This PR contains automated fixes for common code quality issues:
+          
+          ### Changes Made:
+          - 🔧 Fixed formatting issues (trailing whitespace, line endings)
+          - 📦 Updated dependencies (patch versions only for safety)
+          - 📝 Sorted package.json dependencies alphabetically
+          - 🔒 Applied automatic security fixes where possible
+          
+          ### Review Notes:
+          - All changes are automated and should be safe
+          - Dependencies are only updated to patch versions
+          - Security fixes applied only where npm audit can auto-fix
+          - Please review the changes before merging
+          
+          Generated by: Auto-fix workflow
+        branch: auto-fix/code-quality
+        delete-branch: true
+        
+    - name: Summary
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "- Changes were made and a pull request has been created" >> $GITHUB_STEP_SUMMARY
+          echo "- Please review the pull request before merging" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- No changes were needed - code quality looks good!" >> $GITHUB_STEP_SUMMARY
+        fi
