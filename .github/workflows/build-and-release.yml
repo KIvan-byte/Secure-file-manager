@@ -275,10 +275,17 @@ jobs:
         
     - name: List all build artifacts
       run: |
-        echo "Available build artifacts:"
-        find ./artifacts -type f -name "*" 2>/dev/null | sort || echo "No artifacts found"
+        echo "🔍 Scanning for build artifacts..."
         echo ""
-        echo "File sizes:"
+        echo "📁 Directory structure:"
+        find ./artifacts -type d 2>/dev/null | sort || echo "No artifact directories found"
+        echo ""
+        echo "📦 Available build artifacts:"
+        find ./artifacts -type f -name "*" 2>/dev/null | while read file; do
+          echo "  $(basename "$file") ($(du -h "$file" | cut -f1))"
+        done || echo "No artifacts found"
+        echo ""
+        echo "🗂️ Detailed file listing:"
         find ./artifacts -type f -name "*" 2>/dev/null | xargs ls -lh || echo "No artifacts found"
       
     - name: Generate release notes
@@ -351,6 +358,22 @@ jobs:
         
         echo "📋 Final release assets:"
         ls -la ./release-assets/ || echo "No release assets found"
+        
+        # Count and validate release assets
+        asset_count=$(find ./release-assets -type f 2>/dev/null | wc -l)
+        echo ""
+        echo "📊 Asset Summary:"
+        echo "  Total files: $asset_count"
+        
+        if [ "$asset_count" -eq 0 ]; then
+          echo "⚠️  WARNING: No release assets prepared!"
+          echo "This may result in a release with only source code."
+        else
+          echo "✅ Release assets prepared successfully!"
+          echo ""
+          echo "📦 Assets to be uploaded:"
+          find ./release-assets -type f -exec basename {} \; 2>/dev/null | sort
+        fi
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
