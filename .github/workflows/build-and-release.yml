@@ -277,6 +277,9 @@ jobs:
       run: |
         echo "Available build artifacts:"
         find ./artifacts -type f -name "*" 2>/dev/null | sort || echo "No artifacts found"
+        echo ""
+        echo "File sizes:"
+        find ./artifacts -type f -name "*" 2>/dev/null | xargs ls -lh || echo "No artifacts found"
       
     - name: Generate release notes
       id: release_notes
@@ -320,6 +323,35 @@ jobs:
           echo "**Release Type**: ${{ github.event.inputs.release_type }}"
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
+    - name: Prepare release assets
+      run: |
+        # Create a single directory for all release assets
+        mkdir -p ./release-assets
+        
+        # Copy all artifacts to release assets directory with better names
+        if [ -d "./artifacts/linux/" ]; then
+          echo "📦 Adding Linux packages..."
+          find ./artifacts/linux/ -name "*.AppImage" -exec cp {} ./release-assets/ \;
+          find ./artifacts/linux/ -name "*.deb" -exec cp {} ./release-assets/ \;
+          find ./artifacts/linux/ -name "*.tar.gz" -exec cp {} ./release-assets/ \;
+        fi
+        
+        if [ -d "./artifacts/windows/" ]; then
+          echo "📦 Adding Windows packages..."
+          find ./artifacts/windows/ -name "*.exe" -exec cp {} ./release-assets/ \;
+          find ./artifacts/windows/ -name "*.zip" -exec cp {} ./release-assets/ \;
+          find ./artifacts/windows/ -name "*.msi" -exec cp {} ./release-assets/ \;
+        fi
+        
+        if [ -d "./artifacts/macos/" ]; then
+          echo "📦 Adding macOS packages..."
+          find ./artifacts/macos/ -name "*.dmg" -exec cp {} ./release-assets/ \;
+          find ./artifacts/macos/ -name "*.zip" -exec cp {} ./release-assets/ \;
+        fi
+        
+        echo "📋 Final release assets:"
+        ls -la ./release-assets/ || echo "No release assets found"
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
@@ -328,7 +360,7 @@ jobs:
         body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
         draft: ${{ github.event.inputs.release_type == 'draft' }}
         prerelease: ${{ github.event.inputs.release_type == 'prerelease' }}
-        files: ./artifacts/**/*
+        files: ./release-assets/*
         fail_on_unmatched_files: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
