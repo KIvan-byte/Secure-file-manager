@@ -84,7 +84,7 @@ jobs:
       run: |
         {
           echo "CHANGELOG<<EOF"
-          echo "## 🚀 Release ${{ steps.version.outputs.new_version }}"
+          echo "## Release ${{ steps.version.outputs.new_version }}"
           echo ""
           echo "### What's Changed"
           echo ""

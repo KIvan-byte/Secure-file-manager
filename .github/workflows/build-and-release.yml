@@ -229,10 +229,10 @@ jobs:
         
         if [[ "$linux_success" == "true" || "$windows_success" == "true" || "$macos_success" == "true" ]]; then
           echo "has_successful_builds=true" >> $GITHUB_OUTPUT
-          echo "✅ At least one build succeeded, proceeding with release"
+          echo "At least one build succeeded, proceeding with release"
         else
           echo "has_successful_builds=false" >> $GITHUB_OUTPUT
-          echo "❌ No builds succeeded, skipping release"
+          echo "No builds succeeded, skipping release"
           exit 1
         fi
         
@@ -275,17 +275,17 @@ jobs:
         
     - name: List all build artifacts
       run: |
-        echo "🔍 Scanning for build artifacts..."
+        echo "Scanning for build artifacts..."
         echo ""
-        echo "📁 Directory structure:"
+        echo "Directory structure:"
         find ./artifacts -type d 2>/dev/null | sort || echo "No artifact directories found"
         echo ""
-        echo "📦 Available build artifacts:"
+        echo "Available build artifacts:"
         find ./artifacts -type f -name "*" 2>/dev/null | while read file; do
           echo "  $(basename "$file") ($(du -h "$file" | cut -f1))"
         done || echo "No artifacts found"
         echo ""
-        echo "🗂️ Detailed file listing:"
+        echo "Detailed file listing:"
         find ./artifacts -type f -name "*" 2>/dev/null | xargs ls -lh || echo "No artifacts found"
       
     - name: Generate release notes
@@ -337,41 +337,41 @@ jobs:
         
         # Copy all artifacts to release assets directory with better names
         if [ -d "./artifacts/linux/" ]; then
-          echo "📦 Adding Linux packages..."
+          echo "Adding Linux packages..."
           find ./artifacts/linux/ -name "*.AppImage" -exec cp {} ./release-assets/ \;
           find ./artifacts/linux/ -name "*.deb" -exec cp {} ./release-assets/ \;
           find ./artifacts/linux/ -name "*.tar.gz" -exec cp {} ./release-assets/ \;
         fi
         
         if [ -d "./artifacts/windows/" ]; then
-          echo "📦 Adding Windows packages..."
+          echo "Adding Windows packages..."
           find ./artifacts/windows/ -name "*.exe" -exec cp {} ./release-assets/ \;
           find ./artifacts/windows/ -name "*.zip" -exec cp {} ./release-assets/ \;
           find ./artifacts/windows/ -name "*.msi" -exec cp {} ./release-assets/ \;
         fi
         
         if [ -d "./artifacts/macos/" ]; then
-          echo "📦 Adding macOS packages..."
+          echo "Adding macOS packages..."
           find ./artifacts/macos/ -name "*.dmg" -exec cp {} ./release-assets/ \;
           find ./artifacts/macos/ -name "*.zip" -exec cp {} ./release-assets/ \;
         fi
-        
-        echo "📋 Final release assets:"
+
+        echo "Final release assets:"
         ls -la ./release-assets/ || echo "No release assets found"
         
         # Count and validate release assets
         asset_count=$(find ./release-assets -type f 2>/dev/null | wc -l)
         echo ""
-        echo "📊 Asset Summary:"
+        echo "Asset Summary:"
         echo "  Total files: $asset_count"
         
         if [ "$asset_count" -eq 0 ]; then
-          echo "⚠️  WARNING: No release assets prepared!"
+          echo "WARNING: No release assets prepared!"
           echo "This may result in a release with only source code."
         else
-          echo "✅ Release assets prepared successfully!"
+          echo "Release assets prepared successfully!"
           echo ""
-          echo "📦 Assets to be uploaded:"
+          echo "Assets to be uploaded:"
           find ./release-assets -type f -exec basename {} \; 2>/dev/null | sort
         fi
 
@@ -397,29 +397,29 @@ jobs:
     steps:
     - name: Build Status Summary
       run: |
-        echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
         echo "| Platform | Status | Requested |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|--------|-----------|" >> $GITHUB_STEP_SUMMARY
         
         # Linux status
         if [[ "${{ github.event.inputs.build_platforms }}" == *"linux"* ]]; then
-          echo "| 🐧 Linux | ${{ needs.build-linux.result }} | ✅ Yes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux | ${{ needs.build-linux.result }} | Yes |" >> $GITHUB_STEP_SUMMARY
         else
-          echo "| 🐧 Linux | skipped | ❌ No |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux | skipped | No |" >> $GITHUB_STEP_SUMMARY
         fi
         
         # Windows status  
         if [[ "${{ github.event.inputs.build_platforms }}" == *"windows"* ]]; then
-          echo "| 🪟 Windows | ${{ needs.build-windows.result }} | ✅ Yes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | ${{ needs.build-windows.result }} | Yes |" >> $GITHUB_STEP_SUMMARY
         else
-          echo "| 🪟 Windows | skipped | ❌ No |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | skipped | No |" >> $GITHUB_STEP_SUMMARY
         fi
         
         # macOS status
         if [[ "${{ github.event.inputs.build_platforms }}" == *"macos"* ]]; then
-          echo "| 🍎 macOS | ${{ needs.build-macos.result }} | ✅ Yes |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | ${{ needs.build-macos.result }} | Yes |" >> $GITHUB_STEP_SUMMARY
         else
-          echo "| 🍎 macOS | skipped | ❌ No |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | skipped | No |" >> $GITHUB_STEP_SUMMARY
         fi
         
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -430,17 +430,17 @@ jobs:
         macos_ok="${{ needs.build-macos.result == 'success' || !contains(github.event.inputs.build_platforms, 'macos') }}"
         
         if [[ "$linux_ok" == "true" && "$windows_ok" == "true" && "$macos_ok" == "true" ]]; then
-          echo "✅ **All requested builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "**All requested builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎉 Ready for release: **${{ github.event.inputs.version_tag }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Ready for release: **${{ github.event.inputs.version_tag }}**" >> $GITHUB_STEP_SUMMARY
         else
-          echo "❌ **Some builds failed. Please check the logs above.**" >> $GITHUB_STEP_SUMMARY
+          echo "**Some builds failed. Please check the logs above.**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔍 Review the failed jobs for detailed error information." >> $GITHUB_STEP_SUMMARY
+          echo "Review the failed jobs for detailed error information." >> $GITHUB_STEP_SUMMARY
         fi
         
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📦 Build Configuration:" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Configuration:" >> $GITHUB_STEP_SUMMARY
         echo "- **Version**: ${{ github.event.inputs.version_tag }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Platforms**: ${{ github.event.inputs.build_platforms }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Release Type**: ${{ github.event.inputs.release_type }}" >> $GITHUB_STEP_SUMMARY

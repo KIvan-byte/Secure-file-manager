@@ -82,7 +82,7 @@ jobs:
     - name: Build project
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 🔨 Build Process" >> $GITHUB_STEP_SUMMARY
+        echo "## Build Process" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         if npm run build; then
