@@ -114,6 +114,7 @@ contextBridge.exposeInMainWorld(
       getStorageInfo: () => ipcRenderer.invoke('getStorageInfo'),
       getFileTypeDistribution: () => ipcRenderer.invoke('getFileTypeDistribution'),
       getActivityTrends: () => ipcRenderer.invoke('getActivityTrends'),
+      getEncryptedFilesStats: () => ipcRenderer.invoke('getEncryptedFilesStats'),
       
       // Secure Notes functions
       secureNotes: {
