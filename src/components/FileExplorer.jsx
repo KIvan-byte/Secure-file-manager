@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { styled } from 'styled-components';
-import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes, FaCalendarAlt, FaList, FaThLarge, FaCut, FaPaste } from 'react-icons/fa';
+import { FaFolder, FaFile, FaArrowUp, FaShare, FaEye, FaSearch, FaExclamationTriangle, FaInfoCircle, FaFilePdf, FaFileImage, FaFileAlt, FaFileVideo, FaFileAudio, FaFile as FaFileGeneric, FaSearchPlus, FaSearchMinus, FaRedo, FaTimesCircle, FaCode, FaLock, FaLockOpen, FaFileArchive, FaArchive, FaCompress, FaClone, FaCheck, FaHome, FaTimes, FaCalendarAlt, FaList, FaThLarge, FaCut, FaPaste, FaShieldAlt } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 import path from 'path-browserify';
 import SearchResults from './SearchResults';
@@ -8,6 +8,7 @@ import FileEncryptionModal from './FileEncryptionModal';
 import FileCompressionModal from './FileCompressionModal';
 // Import the FilePropertiesModal component
 import FilePropertiesModal from './FilePropertiesModal';
+import VirusTotalModal from './VirusTotalModal';
 
 const Container = styled.div`
   display: flex;
@@ -1059,6 +1060,12 @@ function FileExplorer() {
   const [isPathEditing, setIsPathEditing] = useState(false);
   const [pathInputValue, setPathInputValue] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  
+  // VirusTotal scanning state
+  const [virusTotalScanning, setVirusTotalScanning] = useState(false);
+  const [virusTotalResults, setVirusTotalResults] = useState(null);
+  const [showVirusTotalModal, setShowVirusTotalModal] = useState(false);
+  const [virusTotalFile, setVirusTotalFile] = useState(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -1695,6 +1702,35 @@ function FileExplorer() {
     setCompressionFiles([file]);
     setCompressionMode('extract');
     setShowCompressionModal(true);
+  };
+  
+  const handleVirusTotalScan = async (file) => {
+    if (file.isDirectory) {
+      setError('Cannot scan directories with VirusTotal');
+      return;
+    }
+    
+    setVirusTotalScanning(true);
+    setVirusTotalFile(file);
+    setVirusTotalResults(null);
+    setShowVirusTotalModal(true);
+    
+    try {
+      const filePath = path.join(currentPath, file.name);
+      const result = await window.electron.virusTotalScanFile(filePath);
+      
+      if (result.success) {
+        setVirusTotalResults(result.data);
+      } else {
+        setError(`VirusTotal scan failed: ${result.error}`);
+        setShowVirusTotalModal(false);
+      }
+    } catch (error) {
+      setError(`Error scanning file: ${error.message}`);
+      setShowVirusTotalModal(false);
+    } finally {
+      setVirusTotalScanning(false);
+    }
   };
   
   const toggleFileSelection = (file, event) => {
@@ -2620,6 +2656,14 @@ function FileExplorer() {
         file={propertiesFile}
       />
 
+      <VirusTotalModal
+        isOpen={showVirusTotalModal}
+        onClose={() => setShowVirusTotalModal(false)}
+        file={virusTotalFile}
+        results={virusTotalResults}
+        isScanning={virusTotalScanning}
+      />
+
       {/* Create Folder Modal */}
       {showCreateFolderModal && (
         <ModalOverlay onClick={() => setShowCreateFolderModal(false)}>
@@ -2775,6 +2819,10 @@ function FileExplorer() {
                     <FaArchive /> Extract
                   </ContextMenuItem>
                 )}
+                
+                <ContextMenuItem onClick={() => handleVirusTotalScan(contextMenu.file)}>
+                  <FaShieldAlt /> Scan with VirusTotal
+                </ContextMenuItem>
               </>
             )}
             

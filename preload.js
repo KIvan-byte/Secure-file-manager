@@ -162,6 +162,12 @@ contextBridge.exposeInMainWorld(
       verifyTwoFactorCode: (code) => ipcRenderer.invoke('auth:verify-2fa-code', code),
       disableTwoFactor: () => ipcRenderer.invoke('auth:disable-2fa')
     },
+    // Security API
+    security: {
+      validatePassword: (password) => ipcRenderer.invoke('security-validate-password', password),
+      getVirusTotalSettings: () => ipcRenderer.invoke('security-get-virustotal-settings'),
+      setVirusTotalSettings: (settings) => ipcRenderer.invoke('security-set-virustotal-settings', settings)
+    },
     // Secure storage API
     secureStorage: {
       initialize: initializeSecureSession,
@@ -232,7 +238,120 @@ contextBridge.exposeInMainWorld(
       clearEvents: () => ipcRenderer.invoke('security:clear-events'),
       validatePassword: (password) => ipcRenderer.invoke('security:validate-password', password),
       checkFileFormat: (filePath) => ipcRenderer.invoke('security:check-file-format', filePath)
-    }
+    },
+    // Security API for VirusTotal and other security features
+    security: {
+      validatePassword: async (password) => {
+        try {
+          // Mock implementation - in real app this would validate password strength
+          const result = {
+            isValid: password.length >= 8,
+            score: Math.min(password.length / 2, 6),
+            issues: []
+          };
+          
+          if (password.length < 8) {
+            result.issues.push('Password must be at least 8 characters long');
+          }
+          if (!/[A-Z]/.test(password)) {
+            result.issues.push('Password must contain at least one uppercase letter');
+          }
+          if (!/[a-z]/.test(password)) {
+            result.issues.push('Password must contain at least one lowercase letter');
+          }
+          if (!/[0-9]/.test(password)) {
+            result.issues.push('Password must contain at least one number');
+          }
+          if (!/[^A-Za-z0-9]/.test(password)) {
+            result.issues.push('Password must contain at least one special character');
+          }
+          
+          return { success: true, data: result };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      }
+    },
+    // Secure storage API
+    secureStorage: {
+      initialize: initializeSecureSession,
+      store: storeSecureData,
+      retrieve: retrieveSecureData,
+      remove: removeSecureData,
+      clear: clearSecureData,
+      isEnabled: () => isSecureStorageEnabled
+    },
+    secureNotes: {
+      setupVault: async (password) => {
+        return await ipcRenderer.invoke('secure-notes:setup-vault', password);
+      },
+      getEntries: async (password) => {
+        return await ipcRenderer.invoke('secure-notes:get-entries', password);
+      },
+      saveEntry: async (entry, password) => {
+        return await ipcRenderer.invoke('secure-notes:save-entry', { entry, password });
+      },
+      deleteEntry: async (id, password) => {
+        return await ipcRenderer.invoke('secure-notes:delete-entry', { entryId: id, password });
+      },
+      // Enhanced security methods
+      changePassword: async (oldPassword, newPassword) => {
+        // Validate old password first
+        const validateResult = await ipcRenderer.invoke('secure-notes:validate-master-password', oldPassword);
+        if (!validateResult.success) {
+          return { success: false, error: 'Invalid current password' };
+        }
+        
+        // Get existing entries with old password
+        const entriesResult = await ipcRenderer.invoke('secure-notes:get-entries', oldPassword);
+        if (!entriesResult.success) {
+          return { success: false, error: 'Failed to get existing entries' };
+        }
+        
+        // Setup new vault with new password
+        const setupResult = await ipcRenderer.invoke('secure-notes:setup-vault', newPassword);
+        if (!setupResult.success) {
+          return { success: false, error: 'Failed to setup new vault' };
+        }
+        
+        // Restore entries with new password
+        for (const entry of entriesResult.entries) {
+          const saveResult = await ipcRenderer.invoke('secure-notes:save-entry', { entry, password: newPassword });
+          if (!saveResult.success) {
+            return { success: false, error: 'Failed to migrate entries' };
+          }
+        }
+        
+        return { success: true };
+      },
+      validatePassword: async (password) => {
+        return await ipcRenderer.invoke('secure-notes:validate-master-password', password);
+      },
+      checkVault: async () => {
+        const result = await ipcRenderer.invoke('secure-notes:validate-master-password', '');
+        return {
+          hasVault: !result.newUser,
+          isInitialized: !result.newUser
+        };
+      }
+    },
+    // Security monitoring functions
+    security: {
+      getStats: () => ipcRenderer.invoke('security:get-stats'),
+      getEvents: (limit) => ipcRenderer.invoke('security:get-events', limit),
+      clearEvents: () => ipcRenderer.invoke('security:clear-events'),
+      validatePassword: (password) => ipcRenderer.invoke('security:validate-password', password),
+      checkFileFormat: (filePath) => ipcRenderer.invoke('security:check-file-format', filePath),
+      getVirusTotalSettings: () => ipcRenderer.invoke('security-get-virustotal-settings'),
+      setVirusTotalSettings: (settings) => ipcRenderer.invoke('security-set-virustotal-settings', settings)
+    },
+    // VirusTotal operations
+    virusTotalGetSettings: () => ipcRenderer.invoke('virustotal-get-settings'),
+    virusTotalSetSettings: (settings) => ipcRenderer.invoke('virustotal-set-settings', settings),
+    virusTotalValidateApiKey: (apiKey) => ipcRenderer.invoke('virustotal-validate-api-key', apiKey),
+    virusTotalScanFile: (filePath) => ipcRenderer.invoke('virustotal-scan-file', filePath),
+    virusTotalGetScanResults: (fileHash) => ipcRenderer.invoke('virustotal-get-scan-results', fileHash),
+    virusTotalGetAnalysisResults: (analysisId) => ipcRenderer.invoke('virustotal-get-analysis-results', analysisId)
   }
 );
 
@@ -408,6 +527,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   syncGetPeers: () => ipcRenderer.invoke('sync-get-peers'),
   syncGetStatus: () => ipcRenderer.invoke('sync-get-status'),
   syncShutdown: () => ipcRenderer.invoke('sync-shutdown'),
+  
+  // VirusTotal operations
+  virusTotalGetSettings: () => ipcRenderer.invoke('virustotal-get-settings'),
+  virusTotalSetSettings: (settings) => ipcRenderer.invoke('virustotal-set-settings', settings),
+  virusTotalValidateApiKey: (apiKey) => ipcRenderer.invoke('virustotal-validate-api-key', apiKey),
+  virusTotalScanFile: (filePath) => ipcRenderer.invoke('virustotal-scan-file', filePath),
+  virusTotalGetScanResults: (fileHash) => ipcRenderer.invoke('virustotal-get-scan-results', fileHash),
+  virusTotalGetAnalysisResults: (analysisId) => ipcRenderer.invoke('virustotal-get-analysis-results', analysisId),
   
   // Helper function to require modules (for sync manager)
   require: (moduleName) => {

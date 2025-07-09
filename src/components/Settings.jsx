@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
-import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt, FaShieldAlt } from 'react-icons/fa';
+import { FaCog, FaLock, FaClock, FaKey, FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaMobileAlt, FaShieldAlt, FaVirus } from 'react-icons/fa';
 import TwoFactorSettings from './TwoFactorSettings';
 import SecurityDashboard from './SecurityDashboard';
+import VirusTotalSettings from './VirusTotalSettings';
 
 // Enhanced password validation component
 const PasswordValidator = ({ password, onValidationChange }) => {
@@ -823,6 +824,12 @@ function Settings() {
           <FaShieldAlt /> Privacy
         </TabButton>
         <TabButton 
+          $active={activeTab === 'virustotal'} 
+          onClick={() => setActiveTab('virustotal')}
+        >
+          <FaVirus /> VirusTotal
+        </TabButton>
+        <TabButton 
           $active={activeTab === 'dashboard'} 
           onClick={() => setActiveTab('dashboard')}
         >
@@ -1027,6 +1034,10 @@ function Settings() {
             </FormGroup>
           </CardContent>
         </SettingsCard>
+      )}
+      
+      {activeTab === 'virustotal' && (
+        <VirusTotalSettings />
       )}
       
       {activeTab === 'dashboard' && (

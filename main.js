@@ -14,6 +14,7 @@ const CompressionUtils = require('./utils/compression-utils');
 const TwoFactorAuth = require('./utils/two-factor-auth');
 const SecureStorage = require('./utils/secure-storage');
 const SecurityMiddleware = require('./utils/security-middleware');
+const VirusTotalService = require('./utils/virustotal-service');
 
 // Initialize security components
 const secureStorage = new SecureStorage();
@@ -21,6 +22,9 @@ const securityMiddleware = new SecurityMiddleware({
   maxRequestSize: 50 * 1024 * 1024, // 50MB
   allowedOrigins: ['http://localhost:5175', 'file://', 'app://']
 });
+
+// Initialize VirusTotal service
+const virusTotalService = new VirusTotalService();
 
 // Security event logging
 securityMiddleware.on('securityEvent', (event) => {
@@ -1270,6 +1274,40 @@ async function startApp() {
     await app.whenReady();
     await createWindow();
     
+    // Initialize VirusTotal service with saved settings (after secure storage is ready)
+    setTimeout(async () => {
+      try {
+        let savedSettings = null;
+        
+        if (secureStorage && typeof secureStorage.retrieve === 'function') {
+          const result = await secureStorage.retrieve('virusTotalSettings');
+          if (result && result.success && result.data) {
+            savedSettings = JSON.parse(result.data);
+          }
+        } else {
+          // Fallback to file system
+          const fs = require('fs');
+          const path = require('path');
+          const os = require('os');
+          
+          const settingsPath = path.join(os.homedir(), '.secure-file-manager', 'virustotal-settings.json');
+          if (fs.existsSync(settingsPath)) {
+            const fileContent = fs.readFileSync(settingsPath, 'utf8');
+            savedSettings = JSON.parse(fileContent);
+          }
+        }
+        
+        if (savedSettings) {
+          await virusTotalService.initialize(savedSettings);
+          console.log('VirusTotal service initialized with saved settings');
+        } else {
+          console.log('No saved VirusTotal settings found, using defaults');
+        }
+      } catch (error) {
+        console.log('VirusTotal service initialization failed:', error.message);
+      }
+    }, 2000); // Wait 2 seconds for secure storage to be ready
+    
     app.on('activate', function () {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -2192,7 +2230,7 @@ ipcMain.handle('getStorageInfo', async () => {
     return { success: true, storage };
   } catch (error) {
     console.error('Error getting storage info:', error);
-    // Fallback to example data if real data can't be retrieved
+          // Fallback to example data if real data can't be retrieved
     const total = 1024 * 1024 * 1024 * 500; // 500GB
     const available = 1024 * 1024 * 1024 * 200; // 200GB free
     
@@ -2315,7 +2353,7 @@ async function analyzeDirectorySizes(dirPath, typeDistribution, maxDepth = 2, cu
   } catch (error) {
     console.error(`Error reading directory ${dirPath}:`, error);
   }
-}
+};
 
 // Get activity trends from the logs
 ipcMain.handle('getActivityTrends', async () => {
@@ -3128,4 +3166,255 @@ ipcMain.handle('security:check-file-format', async (event, filePath) => {
       error: error.message 
     };
   }
+});
+
+// VirusTotal IPC handlers
+ipcMain.handle('virustotal-get-settings', async (event) => {
+  try {
+    const settings = virusTotalService.getSettings();
+    return { success: true, data: settings };
+  } catch (error) {
+    console.error('Failed to get VirusTotal settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('virustotal-set-settings', async (event, settings) => {
+  try {
+    const result = await virusTotalService.updateSettings(settings);
+    
+    // Save settings to secure storage
+    await secureStorage.store('virusTotalSettings', JSON.stringify(settings));
+    
+    return result;
+  } catch (error) {
+    console.error('Failed to set VirusTotal settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('virustotal-validate-api-key', async (event, apiKey) => {
+  try {
+    const tempService = new VirusTotalService();
+    tempService.apiKey = apiKey;
+    const isValid = await tempService.validateApiKey();
+    
+    if (isValid) {
+      const userInfo = await tempService.getUserInfo();
+      return { 
+        success: true, 
+        valid: true, 
+        userInfo: userInfo?.data || null 
+      };
+    } else {
+      return { 
+        success: true, 
+        valid: false, 
+        error: 'Invalid API key' 
+      };
+    }
+  } catch (error) {
+    console.error('Failed to validate VirusTotal API key:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('virustotal-scan-file', async (event, filePath) => {
+  try {
+    if (!virusTotalService.isEnabled()) {
+      return { success: false, error: 'VirusTotal service is not enabled' };
+    }
+    
+    const result = await virusTotalService.scanFile(filePath);
+    return result;
+  } catch (error) {
+    console.error('Failed to scan file with VirusTotal:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('virustotal-get-scan-results', async (event, fileHash) => {
+  try {
+    if (!virusTotalService.isEnabled()) {
+      return { success: false, error: 'VirusTotal service is not enabled' };
+    }
+    
+    const result = await virusTotalService.getScanResults(fileHash);
+    return result;
+  } catch (error) {
+    console.error('Failed to get VirusTotal scan results:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('virustotal-get-analysis-results', async (event, analysisId) => {
+  try {
+    if (!virusTotalService.isEnabled()) {
+      return { success: false, error: 'VirusTotal service is not enabled' };
+    }
+    
+    const result = await virusTotalService.getAnalysisResults(analysisId);
+    return result;
+  } catch (error) {
+    console.error('Failed to get VirusTotal analysis results:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Security API handlers
+ipcMain.handle('security-validate-password', async (event, password) => {
+  try {
+    // Basic password validation
+    const validation = {
+      isValid: false,
+      score: 0,
+      issues: []
+    };
+
+    if (!password) {
+      validation.issues.push('Password is required');
+      return { success: true, data: validation };
+    }
+
+    let score = 0;
+    
+    // Length check
+    if (password.length >= 8) score++;
+    else validation.issues.push('Password should be at least 8 characters long');
+    
+    // Uppercase check
+    if (/[A-Z]/.test(password)) score++;
+    else validation.issues.push('Password should contain uppercase letters');
+    
+    // Lowercase check
+    if (/[a-z]/.test(password)) score++;
+    else validation.issues.push('Password should contain lowercase letters');
+    
+    // Number check
+    if (/\d/.test(password)) score++;
+    else validation.issues.push('Password should contain numbers');
+    
+    // Special character check
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
+    else validation.issues.push('Password should contain special characters');
+    
+    // Length bonus
+    if (password.length >= 12) score++;
+    
+    validation.score = score;
+    validation.isValid = score >= 4 && validation.issues.length === 0;
+    
+    return { success: true, data: validation };
+  } catch (error) {
+    console.error('Password validation error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('security-get-virustotal-settings', async (event) => {
+  try {
+    let settings = virusTotalService.getSettings();
+    
+    // Try to load saved settings from secure storage or file system
+    try {
+      let savedSettings = null;
+      
+      if (secureStorage && typeof secureStorage.retrieve === 'function') {
+        const result = await secureStorage.retrieve('virusTotalSettings');
+        if (result && result.success && result.data) {
+          savedSettings = JSON.parse(result.data);
+        }
+      } else {
+        // Fallback to file system
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
+        
+        const settingsPath = path.join(os.homedir(), '.secure-file-manager', 'virustotal-settings.json');
+        if (fs.existsSync(settingsPath)) {
+          const fileContent = fs.readFileSync(settingsPath, 'utf8');
+          savedSettings = JSON.parse(fileContent);
+        }
+      }
+      
+      if (savedSettings) {
+        // Merge saved settings with defaults
+        settings = { ...settings, ...savedSettings };
+        // Re-initialize the service with saved settings
+        await virusTotalService.initialize(settings);
+      }
+    } catch (loadError) {
+      console.warn('Failed to load saved VirusTotal settings:', loadError.message);
+      // Continue with default settings
+    }
+    
+    return { success: true, data: settings };
+  } catch (error) {
+    console.error('Failed to get VirusTotal settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('security-set-virustotal-settings', async (event, settings) => {
+  try {
+    const result = await virusTotalService.updateSettings(settings);
+    
+    // Save settings to secure storage if available
+    try {
+      if (secureStorage && typeof secureStorage.store === 'function') {
+        await secureStorage.store('virusTotalSettings', JSON.stringify(settings));
+      } else {
+        // Fallback to file system if secure storage is not available
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
+        
+        const configDir = path.join(os.homedir(), '.secure-file-manager');
+        if (!fs.existsSync(configDir)) {
+          fs.mkdirSync(configDir, { recursive: true });
+        }
+        
+        const settingsPath = path.join(configDir, 'virustotal-settings.json');
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      }
+    } catch (storageError) {
+      console.warn('Failed to save VirusTotal settings to storage:', storageError.message);
+      // Continue anyway, the main settings update succeeded
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Failed to set VirusTotal settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Cleanup sync on app exit
+app.on('before-quit', async () => {
+  console.log('Application shutting down, cleaning up security resources...');
+  
+  // Cleanup sync manager
+  if (syncManager) {
+    try {
+      await syncManager.shutdown();
+    } catch (error) {
+      console.error('Error shutting down sync on app exit:', error);
+    }
+  }
+  
+  // Cleanup secure storage
+  try {
+    secureStorage.cleanup();
+  } catch (error) {
+    console.error('Error cleaning up secure storage:', error);
+  }
+  
+  // Cleanup security middleware
+  try {
+    securityMiddleware.destroy();
+  } catch (error) {
+    console.error('Error cleaning up security middleware:', error);
+  }
+  
+  console.log('Security cleanup completed');
 });
