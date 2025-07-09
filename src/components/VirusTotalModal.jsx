@@ -13,6 +13,7 @@ const VirusTotalModal = ({
   const [pollResults, setPollResults] = useState(results);
   const [isPolling, setIsPolling] = useState(false);
   const [pollingError, setPollingError] = useState(null);
+  const [showAllResults, setShowAllResults] = useState(false);
 
   useEffect(() => {
     setPollResults(results);
@@ -305,6 +306,33 @@ const VirusTotalModal = ({
                 ))}
             </DetectionsList>
           </ThreatDetails>
+        )}
+
+        {/* All Engine Results */}
+        {currentResults.results && Object.keys(currentResults.results).length > 0 && (
+          <AllEngineResults>
+            <CollapsibleSection>
+              <SectionHeader onClick={() => setShowAllResults(!showAllResults)}>
+                <h4><FaShieldAlt /> All Security Vendors' Analysis ({Object.keys(currentResults.results).length} engines)</h4>
+                <ToggleIcon $expanded={showAllResults}>▼</ToggleIcon>
+              </SectionHeader>
+              
+              {showAllResults && (
+                <EngineGrid>
+                  {Object.entries(currentResults.results)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([engine, result]) => (
+                      <EngineItem key={engine} $category={result.category}>
+                        <EngineNameFull>{engine}</EngineNameFull>
+                        <EngineResult $category={result.category}>
+                          {result.result || result.category || 'Unknown'}
+                        </EngineResult>
+                      </EngineItem>
+                    ))}
+                </EngineGrid>
+              )}
+            </CollapsibleSection>
+          </AllEngineResults>
         )}
 
         <ButtonGroup>
@@ -860,6 +888,109 @@ const ThreatName = styled.span`
         return 'color: #fd7e14;';
       default:
         return 'color: #6c757d;';
+    }
+  }}
+`;
+
+const AllEngineResults = styled.div`
+  margin-bottom: 20px;
+`;
+
+const CollapsibleSection = styled.div`
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background: #e9ecef;
+  }
+  
+  h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const ToggleIcon = styled.span`
+  font-size: 12px;
+  color: #6c757d;
+  transition: transform 0.2s ease;
+  transform: ${props => props.$expanded ? 'rotate(180deg)' : 'rotate(0deg)'};
+`;
+
+const EngineGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1px;
+  background: #e9ecef;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const EngineItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: white;
+  
+  ${props => {
+    switch (props.$category) {
+      case 'malicious':
+        return 'border-left: 4px solid #dc3545;';
+      case 'suspicious':
+        return 'border-left: 4px solid #fd7e14;';
+      case 'timeout':
+        return 'border-left: 4px solid #ffc107;';
+      case 'type-unsupported':
+        return 'border-left: 4px solid #6c757d;';
+      default:
+        return 'border-left: 4px solid #28a745;';
+    }
+  }}
+`;
+
+const EngineNameFull = styled.span`
+  font-weight: 600;
+  color: #495057;
+  font-size: 13px;
+  flex: 1;
+`;
+
+const EngineResult = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  
+  ${props => {
+    switch (props.$category) {
+      case 'malicious':
+        return 'color: #dc3545;';
+      case 'suspicious':
+        return 'color: #fd7e14;';
+      case 'timeout':
+        return 'color: #ffc107;';
+      case 'type-unsupported':
+        return 'color: #6c757d;';
+      default:
+        return 'color: #28a745;';
     }
   }}
 `;
