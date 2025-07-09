@@ -3065,6 +3065,10 @@ ipcMain.handle('secure-storage-is-active', async (event) => {
   }
 });
 
+ipcMain.handle('secure-storage-is-enabled', (event) => {
+  return secureStorage.isSessionActive();
+});
+
 // Store secure data
 ipcMain.handle('secure-storage-store', async (event, key, value) => {
   try {

@@ -1,8 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// SECURITY WARNING: This is a temporary migration solution
-let isSecureStorageEnabled = false;
-
 // Secure storage for sensitive data (replacing localStorage)
 function checkSecureStorage() {
   // Try to initialize secure storage
@@ -12,8 +9,7 @@ function checkSecureStorage() {
 // Initialize secure storage session
 async function initializeSecureSession(masterPassword) {
   try {
-    isSecureStorageEnabled = await ipcRenderer.invoke('secure-storage-init', masterPassword);
-    return isSecureStorageEnabled;
+    return await ipcRenderer.invoke('secure-storage-init', masterPassword);
   } catch (error) {
     console.error('Failed to initialize secure storage:', error);
     return false;
@@ -22,42 +18,22 @@ async function initializeSecureSession(masterPassword) {
 
 // Store sensitive data securely
 async function storeSecureData(key, value) {
-  if (isSecureStorageEnabled) {
-    return await ipcRenderer.invoke('secure-storage-store', key, value);
-  } else {
-    console.error('SECURITY ERROR: Secure storage not initialized. Cannot store sensitive data.');
-    throw new Error('Secure storage not initialized');
-  }
+  return await ipcRenderer.invoke('secure-storage-store', key, value);
 }
 
 // Retrieve sensitive data securely
 async function retrieveSecureData(key) {
-  if (isSecureStorageEnabled) {
-    return await ipcRenderer.invoke('secure-storage-retrieve', key);
-  } else {
-    console.error('SECURITY ERROR: Secure storage not initialized. Cannot retrieve sensitive data.');
-    throw new Error('Secure storage not initialized');
-  }
+  return await ipcRenderer.invoke('secure-storage-retrieve', key);
 }
 
 // Remove sensitive data
 async function removeSecureData(key) {
-  if (isSecureStorageEnabled) {
-    return await ipcRenderer.invoke('secure-storage-remove', key);
-  } else {
-    console.error('SECURITY ERROR: Secure storage not initialized. Cannot remove sensitive data.');
-    throw new Error('Secure storage not initialized');
-  }
+  return await ipcRenderer.invoke('secure-storage-remove', key);
 }
 
 // Clear all secure data
 async function clearSecureData() {
-  if (isSecureStorageEnabled) {
-    return await ipcRenderer.invoke('secure-storage-clear');
-  } else {
-    console.error('SECURITY ERROR: Secure storage not initialized. Cannot clear sensitive data.');
-    throw new Error('Secure storage not initialized');
-  }
+  return await ipcRenderer.invoke('secure-storage-clear');
 }
 
 // Initialize secure storage check only in Electron context
@@ -176,7 +152,7 @@ contextBridge.exposeInMainWorld(
       retrieve: retrieveSecureData,
       remove: removeSecureData,
       clear: clearSecureData,
-      isEnabled: () => isSecureStorageEnabled
+      isEnabled: () => ipcRenderer.invoke('secure-storage-is-enabled')
     },
     secureNotes: {
       setupVault: async (password) => {
@@ -280,7 +256,7 @@ contextBridge.exposeInMainWorld(
       retrieve: retrieveSecureData,
       remove: removeSecureData,
       clear: clearSecureData,
-      isEnabled: () => isSecureStorageEnabled
+      isEnabled: () => ipcRenderer.invoke('secure-storage-is-enabled')
     },
     secureNotes: {
       setupVault: async (password) => {
@@ -362,9 +338,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Initialize secure session with master password
     initialize: async (masterPassword) => {
       try {
-        const result = await ipcRenderer.invoke('secure-storage-init', masterPassword);
-        isSecureStorageEnabled = result.success;
-        return result;
+        return await ipcRenderer.invoke('secure-storage-init', masterPassword);
       } catch (error) {
         console.error('Failed to initialize secure storage:', error);
         return { success: false, error: error.message };
@@ -452,7 +426,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     
     // Legacy compatibility - for backward compatibility during migration
-    isEnabled: () => isSecureStorageEnabled
+    isEnabled: () => ipcRenderer.invoke('secure-storage-is-enabled')
   },
   
   // Event listeners for sync events
