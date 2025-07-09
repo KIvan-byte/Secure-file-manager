@@ -90,17 +90,51 @@ class VirusTotalService {
     }
 
     try {
-      // Check file size
+      // Verify file exists and get stats
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
       const stats = fs.statSync(filePath);
-      const fileSizeInMB = stats.size / (1024 * 1024);
+      const fileSizeInBytes = stats.size;
+      const fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      
+      console.log(`=== VirusTotal Upload Debug ===`);
+      console.log(`File path: ${filePath}`);
+      console.log(`File name: ${path.basename(filePath)}`);
+      console.log(`File size: ${fileSizeInBytes} bytes (${fileSizeInMB.toFixed(2)} MB)`);
+      console.log(`File modified: ${stats.mtime}`);
+      console.log(`================================`);
       
       if (fileSizeInMB > this.settings.maxFileSize) {
         throw new Error(`File size (${fileSizeInMB.toFixed(2)}MB) exceeds maximum allowed size (${this.settings.maxFileSize}MB)`);
       }
 
+      // Calculate file hash before upload for verification
+      const fileHash = await this.calculateFileHash(filePath);
+      console.log(`File SHA256: ${fileHash}`);
+
       // Prepare form data
       const formData = new FormData();
-      formData.append('file', fs.createReadStream(filePath));
+      
+      // Read file content to verify
+      const fileBuffer = fs.readFileSync(filePath);
+      console.log(`Buffer size: ${fileBuffer.length} bytes`);
+      
+      // Show first few bytes as hex for verification
+      const firstBytes = fileBuffer.slice(0, 16);
+      console.log(`First 16 bytes (hex): ${firstBytes.toString('hex')}`);
+      
+      // Show first part as text (if printable)
+      const firstTextBytes = fileBuffer.slice(0, Math.min(100, fileBuffer.length));
+      const printableText = firstTextBytes.toString('utf8').replace(/[^\x20-\x7E]/g, '.');
+      console.log(`First 100 chars as text: ${printableText}`);
+      
+      // Use buffer instead of stream to ensure we send exactly what we expect
+      formData.append('file', fileBuffer, {
+        filename: path.basename(filePath),
+        contentType: 'application/octet-stream'
+      });
 
       // Upload file
       const response = await axios.post(`${this.baseUrl}/files`, formData, {
@@ -112,6 +146,8 @@ class VirusTotalService {
         maxContentLength: this.settings.maxFileSize * 1024 * 1024,
         maxBodyLength: this.settings.maxFileSize * 1024 * 1024
       });
+
+      console.log('VirusTotal upload response:', response.data);
 
       return {
         success: true,
@@ -275,8 +311,25 @@ class VirusTotalService {
     }
 
     try {
+      // Verify file exists and get basic info
+      if (!fs.existsSync(filePath)) {
+        return {
+          success: false,
+          error: `File not found: ${filePath}`
+        };
+      }
+
+      const stats = fs.statSync(filePath);
+      console.log(`=== VirusTotal Scan Debug ===`);
+      console.log(`File path: ${filePath}`);
+      console.log(`File name: ${path.basename(filePath)}`);
+      console.log(`File size: ${stats.size} bytes`);
+      console.log(`File modified: ${stats.mtime}`);
+      console.log(`=============================`);
+
       // Calculate file hash
       const fileHash = await this.calculateFileHash(filePath);
+      console.log(`VirusTotal scan - SHA256: ${fileHash}`);
       
       // Try to get existing scan results
       const hashResult = await this.scanByHash(fileHash);
@@ -287,6 +340,7 @@ class VirusTotalService {
 
       // If file not found and upload is required, upload it
       if (hashResult.requiresUpload) {
+        console.log('File not found in VirusTotal database, uploading...');
         const uploadResult = await this.uploadFile(filePath);
         
         if (uploadResult.success) {
@@ -296,7 +350,9 @@ class VirusTotalService {
               scanned: false,
               scanId: uploadResult.scanId,
               message: 'File uploaded for scanning. Results will be available shortly.',
-              permalink: `https://www.virustotal.com/gui/file-analysis/${uploadResult.scanId}`
+              permalink: `https://www.virustotal.com/gui/file-analysis/${uploadResult.scanId}`,
+              fileSize: stats.size,
+              fileHash: fileHash
             }
           };
         } else {
@@ -306,6 +362,7 @@ class VirusTotalService {
 
       return hashResult;
     } catch (error) {
+      console.error('VirusTotal scan error:', error);
       return {
         success: false,
         error: error.message

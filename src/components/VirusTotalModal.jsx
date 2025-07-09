@@ -1,14 +1,114 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
-import { FaTimes, FaShieldAlt, FaExclamationTriangle, FaCheck, FaSpinner, FaExternalLinkAlt, FaInfoCircle } from 'react-icons/fa';
+import { FaTimes, FaShieldAlt, FaExclamationTriangle, FaCheck, FaSpinner, FaExternalLinkAlt, FaInfoCircle, FaRedo, FaClock, FaFile, FaHashtag } from 'react-icons/fa';
 
 const VirusTotalModal = ({ 
   isOpen, 
   onClose, 
   file, 
   results, 
-  isScanning 
+  isScanning,
+  onRescan 
 }) => {
+  const [pollResults, setPollResults] = useState(results);
+  const [isPolling, setIsPolling] = useState(false);
+  const [pollingError, setPollingError] = useState(null);
+
+  useEffect(() => {
+    setPollResults(results);
+    setPollingError(null);
+  }, [results]);
+
+  // Auto-poll for results if analysis is pending
+  useEffect(() => {
+    if (!isOpen || !pollResults || isScanning) return;
+
+    // Check if analysis is pending (file uploaded but no scan results yet)
+    if (!pollResults.scanned && pollResults.scanId) {
+      startPolling(pollResults.scanId);
+    }
+  }, [isOpen, pollResults, isScanning]);
+
+  const startPolling = async (analysisId) => {
+    if (isPolling) return;
+    
+    setIsPolling(true);
+    setPollingError(null);
+    
+    const maxAttempts = 20; // Poll for up to 10 minutes (30s * 20)
+    let attempts = 0;
+    
+    const poll = async () => {
+      try {
+        attempts++;
+        console.log(`Polling attempt ${attempts}/${maxAttempts} for analysis: ${analysisId}`);
+        
+        const result = await window.electron.virusTotalGetAnalysisResults(analysisId);
+        
+        if (result.success && result.data) {
+          const analysis = result.data.data;
+          console.log('Analysis result:', analysis);
+          
+          if (analysis.attributes && analysis.attributes.status === 'completed') {
+            // Analysis completed, get the file results
+            const stats = analysis.attributes.stats;
+            const scanResults = {
+              scanned: true,
+              scanDate: analysis.attributes.date,
+              positives: stats.malicious + stats.suspicious,
+              total: stats.malicious + stats.suspicious + stats.undetected + stats.harmless,
+              results: analysis.attributes.results || {},
+              permalink: `https://www.virustotal.com/gui/file-analysis/${analysisId}`,
+              fileHash: pollResults.fileHash,
+              fileSize: pollResults.fileSize,
+              stats: stats
+            };
+            
+            setPollResults(scanResults);
+            setIsPolling(false);
+            return;
+          } else if (analysis.attributes && analysis.attributes.status === 'queued') {
+            // Still queued, continue polling
+            if (attempts < maxAttempts) {
+              setTimeout(poll, 30000); // Poll every 30 seconds
+            } else {
+              setPollingError('Analysis is taking longer than expected. Please check the online report.');
+              setIsPolling(false);
+            }
+          } else {
+            // Unknown status
+            setPollingError(`Analysis status: ${analysis.attributes?.status || 'unknown'}`);
+            setIsPolling(false);
+          }
+        } else {
+          // Error or no data
+          if (attempts < maxAttempts) {
+            setTimeout(poll, 30000);
+          } else {
+            setPollingError(result.error || 'Failed to get analysis results');
+            setIsPolling(false);
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 30000);
+        } else {
+          setPollingError('Failed to check analysis status');
+          setIsPolling(false);
+        }
+      }
+    };
+    
+    // Start polling after 10 seconds (give VirusTotal time to process)
+    setTimeout(poll, 10000);
+  };
+
+  const handleRescan = async () => {
+    if (onRescan && file) {
+      onRescan(file);
+    }
+  };
   if (!isOpen) return null;
 
   const formatDate = (timestamp) => {
@@ -18,12 +118,22 @@ const VirusTotalModal = ({
 
   const getThreatLevel = (positives, total) => {
     if (positives === 0) return 'clean';
-    if (positives <= 2) return 'low';
-    if (positives <= 5) return 'medium';
+    const percentage = (positives / total) * 100;
+    if (percentage <= 5) return 'low';
+    if (percentage <= 15) return 'medium';
     return 'high';
   };
 
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  };
+
   const renderScanResults = () => {
+    const currentResults = pollResults || results;
+
     if (isScanning) {
       return (
         <ScanningContainer>
@@ -34,24 +144,69 @@ const VirusTotalModal = ({
       );
     }
 
-    if (!results) {
+    if (!currentResults) {
       return (
         <ErrorContainer>
           <FaExclamationTriangle size={48} />
           <h3>Scan Failed</h3>
           <p>Unable to scan the file. Please try again.</p>
+          <RetryButton onClick={handleRescan}>
+            <FaRedo /> Try Again
+          </RetryButton>
         </ErrorContainer>
       );
     }
 
-    if (!results.scanned) {
+    // Show polling status for pending analysis
+    if (!currentResults.scanned && currentResults.scanId) {
+      return (
+        <AnalysisPendingContainer>
+          <div className="status-icon">
+            {isPolling ? (
+              <FaSpinner className="spinning" size={48} />
+            ) : (
+              <FaClock size={48} />
+            )}
+          </div>
+          <h3>
+            {isPolling ? 'Checking Analysis Status...' : 'Analysis in Progress'}
+          </h3>
+          <p>
+            {isPolling 
+              ? 'Waiting for VirusTotal to complete the analysis...'
+              : currentResults.message || 'Your file has been submitted for analysis.'
+            }
+          </p>
+          
+          {pollingError && (
+            <ErrorMessage>
+              <FaExclamationTriangle />
+              {pollingError}
+            </ErrorMessage>
+          )}
+          
+          <ButtonGroup>
+            {currentResults.permalink && (
+              <ViewOnlineButton href={currentResults.permalink} target="_blank" rel="noopener noreferrer">
+                <FaExternalLinkAlt /> View Analysis Online
+              </ViewOnlineButton>
+            )}
+            <RetryButton onClick={handleRescan}>
+              <FaRedo /> Rescan File
+            </RetryButton>
+          </ButtonGroup>
+        </AnalysisPendingContainer>
+      );
+    }
+
+    if (!currentResults.scanned) {
       return (
         <UploadContainer>
           <FaInfoCircle size={48} />
           <h3>File Uploaded for Analysis</h3>
-          <p>{results.message}</p>
-          {results.permalink && (
-            <ViewOnlineButton href={results.permalink} target="_blank" rel="noopener noreferrer">
+          <p>{currentResults.message}</p>
+          {currentResults.permalink && (
+            <ViewOnlineButton href={currentResults.permalink} target="_blank" rel="noopener noreferrer">
               <FaExternalLinkAlt /> View Analysis Online
             </ViewOnlineButton>
           )}
@@ -59,7 +214,7 @@ const VirusTotalModal = ({
       );
     }
 
-    const threatLevel = getThreatLevel(results.positives, results.total);
+    const threatLevel = getThreatLevel(currentResults.positives, currentResults.total);
 
     return (
       <ResultsContainer>
@@ -71,7 +226,7 @@ const VirusTotalModal = ({
           )}
           <div>
             <h3>
-              {results.positives} / {results.total} detections
+              {currentResults.positives} / {currentResults.total} detections
             </h3>
             <p>
               {threatLevel === 'clean' && 'File appears to be clean'}
@@ -82,38 +237,86 @@ const VirusTotalModal = ({
           </div>
         </ResultsHeader>
 
-        <ResultsInfo>
-          <InfoRow>
-            <InfoLabel>Scan Date:</InfoLabel>
-            <InfoValue>{formatDate(results.scanDate)}</InfoValue>
-          </InfoRow>
-          <InfoRow>
-            <InfoLabel>File Name:</InfoLabel>
-            <InfoValue>{file?.name || 'Unknown'}</InfoValue>
-          </InfoRow>
-        </ResultsInfo>
+        {/* File Information */}
+        <FileInfoSection>
+          <h4><FaFile /> File Information</h4>
+          <FileInfoGrid>
+            <InfoRow>
+              <InfoLabel>File Name:</InfoLabel>
+              <InfoValue>{file?.name || 'Unknown'}</InfoValue>
+            </InfoRow>
+            <InfoRow>
+              <InfoLabel>File Size:</InfoLabel>
+              <InfoValue>{formatFileSize(currentResults.fileSize || file?.size)}</InfoValue>
+            </InfoRow>
+            <InfoRow>
+              <InfoLabel>Scan Date:</InfoLabel>
+              <InfoValue>{formatDate(currentResults.scanDate)}</InfoValue>
+            </InfoRow>
+            {currentResults.fileHash && (
+              <InfoRow>
+                <InfoLabel>SHA256:</InfoLabel>
+                <InfoValue className="hash">{currentResults.fileHash}</InfoValue>
+              </InfoRow>
+            )}
+          </FileInfoGrid>
+        </FileInfoSection>
 
-        {results.positives > 0 && (
+        {/* Scan Statistics */}
+        {currentResults.stats && (
+          <StatsSection>
+            <h4><FaShieldAlt /> Scan Statistics</h4>
+            <StatsGrid>
+              <StatItem $type="clean">
+                <StatNumber>{currentResults.stats.harmless || 0}</StatNumber>
+                <StatLabel>Clean</StatLabel>
+              </StatItem>
+              <StatItem $type="suspicious">
+                <StatNumber>{currentResults.stats.suspicious || 0}</StatNumber>
+                <StatLabel>Suspicious</StatLabel>
+              </StatItem>
+              <StatItem $type="malicious">
+                <StatNumber>{currentResults.stats.malicious || 0}</StatNumber>
+                <StatLabel>Malicious</StatLabel>
+              </StatItem>
+              <StatItem $type="undetected">
+                <StatNumber>{currentResults.stats.undetected || 0}</StatNumber>
+                <StatLabel>Undetected</StatLabel>
+              </StatItem>
+            </StatsGrid>
+          </StatsSection>
+        )}
+
+        {currentResults.positives > 0 && currentResults.results && (
           <ThreatDetails>
-            <h4>Threat Detections:</h4>
+            <h4><FaExclamationTriangle /> Threat Detections</h4>
             <DetectionsList>
-              {Object.entries(results.results)
-                .filter(([engine, result]) => result.category === 'malicious')
+              {Object.entries(currentResults.results)
+                .filter(([engine, result]) => 
+                  result.category === 'malicious' || result.category === 'suspicious'
+                )
                 .map(([engine, result]) => (
                   <DetectionItem key={engine}>
                     <EngineName>{engine}</EngineName>
-                    <ThreatName>{result.result}</ThreatName>
+                    <ThreatName $category={result.category}>
+                      {result.result}
+                    </ThreatName>
                   </DetectionItem>
                 ))}
             </DetectionsList>
           </ThreatDetails>
         )}
 
-        {results.permalink && (
-          <ViewOnlineButton href={results.permalink} target="_blank" rel="noopener noreferrer">
-            <FaExternalLinkAlt /> View Full Report Online
-          </ViewOnlineButton>
-        )}
+        <ButtonGroup>
+          {currentResults.permalink && (
+            <ViewOnlineButton href={currentResults.permalink} target="_blank" rel="noopener noreferrer">
+              <FaExternalLinkAlt /> View Full Report Online
+            </ViewOnlineButton>
+          )}
+          <RetryButton onClick={handleRescan}>
+            <FaRedo /> Rescan File
+          </RetryButton>
+        </ButtonGroup>
       </ResultsContainer>
     );
   };
@@ -410,11 +613,6 @@ const InfoLabel = styled.span`
   color: #495057;
 `;
 
-const InfoValue = styled.span`
-  color: #6c757d;
-  word-break: break-word;
-`;
-
 const ThreatDetails = styled.div`
   margin-bottom: 20px;
   
@@ -422,6 +620,9 @@ const ThreatDetails = styled.div`
     margin: 0 0 15px 0;
     color: #2c3e50;
     font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 `;
 
@@ -450,12 +651,6 @@ const EngineName = styled.span`
   font-size: 14px;
 `;
 
-const ThreatName = styled.span`
-  color: #dc3545;
-  font-size: 14px;
-  font-weight: 500;
-`;
-
 const ViewOnlineButton = styled.a`
   display: inline-flex;
   align-items: center;
@@ -467,7 +662,6 @@ const ViewOnlineButton = styled.a`
   border-radius: 6px;
   font-size: 14px;
   transition: all 0.3s ease;
-  align-self: flex-start;
   
   &:hover {
     background: #0056b3;
@@ -475,6 +669,199 @@ const ViewOnlineButton = styled.a`
     color: white;
     text-decoration: none;
   }
+`;
+
+const RetryButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #218838;
+    transform: translateY(-1px);
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 20px;
+`;
+
+const AnalysisPendingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  
+  .status-icon {
+    color: #007bff;
+    margin-bottom: 20px;
+  }
+  
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+  }
+  
+  p {
+    margin: 0 0 20px 0;
+    color: #6c757d;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  margin: 15px 0;
+  font-size: 14px;
+`;
+
+const FileInfoSection = styled.div`
+  margin-bottom: 25px;
+  
+  h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const FileInfoGrid = styled.div`
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+`;
+
+const StatsSection = styled.div`
+  margin-bottom: 25px;
+  
+  h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 15px;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+const StatItem = styled.div`
+  text-align: center;
+  padding: 15px 10px;
+  border-radius: 8px;
+  
+  ${props => {
+    switch (props.$type) {
+      case 'clean':
+        return `
+          background: #d4edda;
+          border: 1px solid #c3e6cb;
+        `;
+      case 'suspicious':
+        return `
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+        `;
+      case 'malicious':
+        return `
+          background: #f8d7da;
+          border: 1px solid #f5c6cb;
+        `;
+      case 'undetected':
+        return `
+          background: #e2e3e5;
+          border: 1px solid #d6d8db;
+        `;
+      default:
+        return `
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+        `;
+    }
+  }}
+`;
+
+const StatNumber = styled.div`
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #2c3e50;
+`;
+
+const StatLabel = styled.div`
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+`;
+
+const InfoValue = styled.span`
+  color: #6c757d;
+  word-break: break-word;
+  
+  &.hash {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+`;
+
+const ThreatName = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  
+  ${props => {
+    switch (props.$category) {
+      case 'malicious':
+        return 'color: #dc3545;';
+      case 'suspicious':
+        return 'color: #fd7e14;';
+      default:
+        return 'color: #6c757d;';
+    }
+  }}
 `;
 
 export default VirusTotalModal;

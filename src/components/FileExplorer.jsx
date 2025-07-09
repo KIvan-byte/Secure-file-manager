@@ -1716,7 +1716,12 @@ function FileExplorer() {
     setShowVirusTotalModal(true);
     
     try {
-      const filePath = path.join(currentPath, file.name);
+      // Use file.path directly as it already contains the full path
+      const filePath = file.path;
+      console.log(`VirusTotal scan - Using file path: ${filePath}`);
+      console.log(`VirusTotal scan - File name: ${file.name}`);
+      console.log(`VirusTotal scan - File size: ${file.size} bytes`);
+      
       const result = await window.electron.virusTotalScanFile(filePath);
       
       if (result.success) {
@@ -2662,6 +2667,7 @@ function FileExplorer() {
         file={virusTotalFile}
         results={virusTotalResults}
         isScanning={virusTotalScanning}
+        onRescan={handleVirusTotalScan}
       />
 
       {/* Create Folder Modal */}
