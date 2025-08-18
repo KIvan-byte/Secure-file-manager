@@ -1,0 +1,15 @@
+{
+  "ignore": [
+    "config/**",
+    "settings.json",
+    "user-data/**",
+    "*.db",
+    "*.sqlite",
+    "profiles/**",
+    "sessions/**",
+    "app-state.json",
+    "window-state.json",
+    "*.config",
+    "userdata/**"
+  ]
+}
