@@ -85,7 +85,16 @@
       "preload.js",
       "utils/**/*",
       "node_modules/**/*",
-      "package.json"
+      "package.json",
+      "!**/.*",
+      "!**/.secure-file-manager/**",
+      "!**/config.json",
+      "!**/settings.json",
+      "!**/user-data/**",
+      "!**/*.db",
+      "!**/*.sqlite*",
+      "!**/profiles/**",
+      "!**/sessions/**"
     ],
     "extraResources": [
       {
