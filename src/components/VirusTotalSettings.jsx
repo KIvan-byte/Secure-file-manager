@@ -11,7 +11,7 @@ const VirusTotalSettings = ({ onSettingsChange }) => {
     scanOnUpload: false,
     maxFileSize: 32 // MB
   });
-  
+
   const [showApiKey, setShowApiKey] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
@@ -52,8 +52,8 @@ const VirusTotalSettings = ({ onSettingsChange }) => {
         const result = await window.electron.virusTotalValidateApiKey(apiKey);
         if (result.success) {
           if (result.valid) {
-            return { 
-              valid: true, 
+            return {
+              valid: true,
               message: `API key valid${result.userInfo ? ` - User: ${result.userInfo.id}` : ''}`,
               userInfo: result.userInfo
             };
@@ -90,7 +90,7 @@ const VirusTotalSettings = ({ onSettingsChange }) => {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage(null);
-    
+
     try {
       // If VirusTotal is enabled, ensure API key is provided
       if (settings.enabled && !settings.apiKey) {
@@ -194,14 +194,14 @@ const VirusTotalSettings = ({ onSettingsChange }) => {
                   {showApiKey ? <FaEyeSlash /> : <FaEye />}
                 </IconButton>
               </InputGroup>
-              
+
               {isValidating && (
                 <ValidationMessage $type="info">
                   <FaSpinner className="spinning" />
                   Validating API key...
                 </ValidationMessage>
               )}
-              
+
               {validationResult && !isValidating && (
                 <ValidationMessage $type={validationResult.valid ? 'success' : 'error'}>
                   {validationResult.valid ? <FaCheck /> : <FaTimes />}
@@ -258,8 +258,8 @@ const VirusTotalSettings = ({ onSettingsChange }) => {
             <InfoBox>
               <FaInfoCircle />
               <div>
-                <strong>Important:</strong> VirusTotal is a third-party service. Files sent for scanning 
-                will be uploaded to VirusTotal's servers and may be stored for analysis. 
+                <strong>Important:</strong> VirusTotal is a third-party service. Files sent for scanning
+                will be uploaded to VirusTotal's servers and may be stored for analysis.
                 Do not scan sensitive or confidential files.
               </div>
             </InfoBox>
@@ -322,7 +322,7 @@ const Content = styled.div`
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -340,11 +340,11 @@ const Description = styled.p`
   color: #6c757d;
   margin: 5px 0 10px 0;
   line-height: 1.4;
-  
+
   a {
     color: #007bff;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
@@ -363,13 +363,13 @@ const Input = styled.input`
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  
+
   &:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
   }
-  
+
   &:disabled {
     background: #f8f9fa;
     cursor: not-allowed;
@@ -383,7 +383,7 @@ const IconButton = styled.button`
   color: #6c757d;
   cursor: pointer;
   margin-left: 8px;
-  
+
   &:hover {
     color: #495057;
   }
@@ -418,7 +418,7 @@ const Select = styled.select`
   border-radius: 4px;
   font-size: 14px;
   background: white;
-  
+
   &:focus {
     outline: none;
     border-color: #007bff;
@@ -434,7 +434,7 @@ const ValidationMessage = styled.div`
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 14px;
-  
+
   ${props => {
     if (props.$type === 'success') {
       return `
@@ -456,11 +456,11 @@ const ValidationMessage = styled.div`
       `;
     }
   }}
-  
+
   .spinning {
     animation: spin 1s linear infinite;
   }
-  
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -498,7 +498,7 @@ const SaveMessage = styled.div`
   border-radius: 4px;
   font-size: 14px;
   position: relative;
-  
+
   ${props => {
     if (props.$type === 'success') {
       return `
@@ -526,7 +526,7 @@ const CloseButton = styled.button`
   margin-left: auto;
   display: flex;
   align-items: center;
-  
+
   &:hover {
     opacity: 0.7;
   }
@@ -544,21 +544,21 @@ const SaveButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
-  
+
   &:hover:not(:disabled) {
     background: #218838;
     transform: translateY(-1px);
   }
-  
+
   &:disabled {
     background: #6c757d;
     cursor: not-allowed;
   }
-  
+
   .spinning {
     animation: spin 1s linear infinite;
   }
-  
+
   @keyframes spin {
     to {
       transform: rotate(360deg);

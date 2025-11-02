@@ -57,7 +57,7 @@ const DownloadButton = styled.button`
   margin: 20px auto 0;
   padding: 10px 20px;
   background-color: #2ecc71;
-  
+
   &:hover {
     background-color: #27ae60;
   }
@@ -92,11 +92,11 @@ function AccessSharedFile() {
 
     try {
       setIsLoading(true);
-      const result = await window.electron.fileManager.accessSharedFile({ 
-        token, 
-        encryptionKey 
+      const result = await window.electron.fileManager.accessSharedFile({
+        token,
+        encryptionKey
       });
-      
+
       if (result.success) {
         setFileName(result.fileName);
         setFileContent(result.content);
@@ -114,23 +114,23 @@ function AccessSharedFile() {
 
   const downloadFile = () => {
     if (!fileContent || !fileName) return;
-    
+
     const element = document.createElement('a');
     const content = atob(fileContent);
     const byteArray = new Uint8Array(content.length);
-    
+
     for (let i = 0; i < content.length; i++) {
       byteArray[i] = content.charCodeAt(i);
     }
-    
+
     const blob = new Blob([byteArray]);
     const url = URL.createObjectURL(blob);
-    
+
     element.href = url;
     element.download = fileName;
     document.body.appendChild(element);
     element.click();
-    
+
     setTimeout(() => {
       document.body.removeChild(element);
       URL.revokeObjectURL(url);
@@ -148,40 +148,40 @@ function AccessSharedFile() {
           <LockIcon>
             <FaLock />
           </LockIcon>
-          
+
           <Card>
             <h3>Access Secure File</h3>
             <p>Enter the encryption key to access the shared file.</p>
-            
+
             <FormGroup>
               <Label>Token</Label>
-              <input 
-                type="text" 
-                value={token} 
-                readOnly 
+              <input
+                type="text"
+                value={token}
+                readOnly
                 style={{ width: '100%' }}
               />
             </FormGroup>
-            
+
             <FormGroup>
               <Label>Encryption Key</Label>
-              <input 
-                type="text" 
-                value={encryptionKey} 
-                onChange={e => setEncryptionKey(e.target.value)} 
-                placeholder="Enter encryption key" 
+              <input
+                type="text"
+                value={encryptionKey}
+                onChange={e => setEncryptionKey(e.target.value)}
+                placeholder="Enter encryption key"
                 style={{ width: '100%' }}
               />
             </FormGroup>
-            
-            <button 
-              onClick={accessFile} 
+
+            <button
+              onClick={accessFile}
               disabled={isLoading}
               style={{ width: '100%' }}
             >
               {isLoading ? 'Accessing...' : 'Access File'}
             </button>
-            
+
             {error && <div style={{ color: 'red', marginTop: '15px' }}>{error}</div>}
           </Card>
         </AccessForm>

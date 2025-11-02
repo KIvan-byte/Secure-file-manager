@@ -37,11 +37,11 @@ const LockContainer = styled.div`
   z-index: 2000;
   padding: 20px;
   animation: ${fadeIn} 0.4s ease;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -58,22 +58,22 @@ const LockForm = styled.div`
   transform: translateY(0);
   transition: all 0.3s ease;
   animation: ${slideUp} 0.5s ease;
-  
+
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
-  
+
   @media (max-width: 768px) {
     max-width: 380px;
     padding: 32px;
     border-radius: 20px;
-    
+
     &:hover {
       transform: none;
     }
   }
-  
+
   @media (max-width: 480px) {
     max-width: 320px;
     padding: 24px;
@@ -96,22 +96,22 @@ const LockIcon = styled.div`
   box-shadow: 0 10px 20px rgba(41, 128, 185, 0.3);
   transition: all 0.3s ease;
   animation: ${pulse} 2s infinite ease-in-out;
-  
+
   &:hover {
     transform: scale(1.05) rotate(5deg);
   }
-  
+
   @media (max-width: 768px) {
     height: 80px;
     width: 80px;
     font-size: 28px;
     margin-bottom: 20px;
-    
+
     &:hover {
       transform: scale(1.02);
     }
   }
-  
+
   @media (max-width: 480px) {
     height: 70px;
     width: 70px;
@@ -148,7 +148,7 @@ const PasswordInput = styled.input`
   font-size: 16px;
   transition: all 0.3s;
   background-color: ${props => props.$error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
-  
+
   &:focus {
     border-color: ${props => props.$error ? '#e74c3c' : '#3498db'};
     outline: none;
@@ -170,7 +170,7 @@ const PasswordToggle = styled.button`
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  
+
   &:hover {
     color: #3498db;
   }
@@ -200,18 +200,18 @@ const UnlockButton = styled.button`
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-  
+
   &:hover {
     background: linear-gradient(135deg, #2980b9 0%, #1a5276 100%);
     transform: translateY(-2px);
     box-shadow: 0 7px 15px rgba(52, 152, 219, 0.4);
   }
-  
+
   &:active {
     transform: translateY(0);
     box-shadow: 0 2px 5px rgba(52, 152, 219, 0.4);
   }
-  
+
   &:disabled {
     background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
     cursor: not-allowed;
@@ -232,7 +232,7 @@ const ForgotPasswordLink = styled.button`
   align-items: center;
   justify-content: center;
   gap: 5px;
-  
+
   &:hover {
     color: #2980b9;
   }
@@ -342,14 +342,14 @@ const TwoFactorInput = styled.input`
   letter-spacing: 0.5em;
   transition: all 0.3s;
   background-color: ${props => props.$error ? 'rgba(231, 76, 60, 0.05)' : '#f8f9fa'};
-  
+
   &:focus {
     border-color: ${props => props.$error ? '#e74c3c' : '#3498db'};
     outline: none;
     box-shadow: 0 0 0 3px ${props => props.$error ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)'};
     background-color: white;
   }
-  
+
   &::placeholder {
     letter-spacing: normal;
   }
@@ -391,7 +391,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!inputPassword) {
       setError('Please enter password');
       return;
@@ -403,11 +403,11 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
     try {
       // Try to initialize secure storage with the provided password
       const initResult = await window.electronAPI.secureStorage.initialize(inputPassword);
-      
+
       if (initResult.success) {
         // Password is correct if secure storage initialization succeeds
         setPasswordVerified(true);
-        
+
         // Try to load security settings from secure storage
         try {
           const hasPasswordResult = await window.electronAPI.secureStorage.retrieve('hasPassword');
@@ -418,7 +418,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
               const savedSettings = JSON.parse(settingsResult.value);
               // Restore the password for this session
               savedSettings.password = inputPassword;
-              
+
               // Notify the app about the settings
               window.dispatchEvent(new CustomEvent('securitySettingsChanged', {
                 detail: savedSettings
@@ -428,7 +428,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
         } catch (settingsError) {
           console.warn('Could not load saved settings, using defaults:', settingsError);
         }
-        
+
         // Check if 2FA is enabled after password verification
         const has2FA = await checkTwoFactorSetup();
         if (has2FA) {
@@ -451,7 +451,7 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
 
   const handleTwoFactorSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!twoFactorCode || twoFactorCode.length !== 6) {
       setTwoFactorError('Please enter a 6-digit code');
       return;
@@ -475,18 +475,18 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
   };
 
   const formatTime = (date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -501,11 +501,11 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
         <LockIcon>
           <FaLock />
         </LockIcon>
-        
+
         <LockTitle>Application Locked</LockTitle>
         <LockMessage>
-          {showTwoFactor 
-            ? 'Enter the code from your authenticator app' 
+          {showTwoFactor
+            ? 'Enter the code from your authenticator app'
             : 'Enter your password to unlock the application'}
         </LockMessage>
 
@@ -573,8 +573,8 @@ const LockScreen = ({ onUnlock, password, onForgotPassword }) => {
               )}
 
               <ButtonGroup>
-                <UnlockButton 
-                  type="button" 
+                <UnlockButton
+                  type="button"
                   onClick={() => {
                     setShowTwoFactor(false);
                     setInputPassword('');

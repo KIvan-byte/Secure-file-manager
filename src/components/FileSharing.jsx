@@ -9,11 +9,11 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -26,7 +26,7 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -39,12 +39,12 @@ const Title = styled.h2`
   margin: 0;
   font-weight: 600;
   color: #2c3e50;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     text-align: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
   }
@@ -57,13 +57,13 @@ const Card = styled.div`
   padding: 24px;
   margin-bottom: 24px;
   transition: all 0.3s ease;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     margin-bottom: 16px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     margin-bottom: 12px;
@@ -72,11 +72,11 @@ const Card = styled.div`
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
   }
@@ -94,7 +94,7 @@ const FileInput = styled.div`
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     align-items: stretch;
@@ -108,18 +108,18 @@ const Input = styled.input`
   font-size: 14px;
   flex: 1;
   transition: border 0.3s ease;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   @media (max-width: 768px) {
     padding: 8px 10px;
     font-size: 13px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px;
     font-size: 12px;
@@ -141,7 +141,7 @@ const Checkbox = styled.input`
 const ButtonsContainer = styled.div`
   display: flex;
   gap: 10px;
-  
+
   @media (max-width: 576px) {
     width: 100%;
   }
@@ -160,15 +160,15 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
-  
+
   @media (max-width: 576px) {
     flex: 1;
     padding: 12px 16px;
@@ -234,7 +234,7 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$hoverColor || '#2980b9'};
   }
@@ -277,7 +277,7 @@ const Tab = styled.div`
   color: ${props => props.$active ? '#3498db' : '#7f8c8d'};
   font-weight: ${props => props.$active ? '600' : '400'};
   transition: all 0.3s ease;
-  
+
   &:hover {
     color: #3498db;
   }
@@ -310,7 +310,7 @@ const FileItem = styled.div`
   &:hover {
     background-color: #f9f9f9;
   }
-  
+
   &:last-child {
     border-bottom: none;
   }
@@ -397,7 +397,7 @@ const DropZone = styled.div`
   background-color: ${props => props.$isDragOver ? 'rgba(52, 152, 219, 0.1)' : '#f9f9f9'};
   margin-bottom: 16px;
   cursor: pointer;
-  
+
   &:hover {
     border-color: #3498db;
     background-color: rgba(52, 152, 219, 0.05);
@@ -444,7 +444,7 @@ function FileSharing() {
       setFilePath(location.state.filePath);
     }
   }, [location.state]);
-  
+
   useEffect(() => {
     if (currentDirectory) {
       loadDirectory(currentDirectory);
@@ -536,7 +536,7 @@ function FileSharing() {
   const toggleQRCode = () => {
     setShowQRCode(!showQRCode);
   };
-  
+
   const showAlert = (type, message) => {
     setAlert({ type, message });
     if (type === 'success') {
@@ -560,15 +560,15 @@ function FileSharing() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
-    
+
     if (files.length === 0) {
       return;
     }
-    
+
     const file = files[0];
-    
+
     if (file.path) {
       setFilePath(file.path);
     } else {
@@ -582,7 +582,7 @@ function FileSharing() {
             reader.readAsDataURL(file);
           })
         });
-        
+
         if (result.success) {
           setFilePath(result.path);
           showAlert('success', 'File uploaded successfully');
@@ -599,12 +599,12 @@ function FileSharing() {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let unitIndex = 0;
     let fileSize = size;
-    
+
     while (fileSize >= 1024 && unitIndex < units.length - 1) {
       fileSize /= 1024;
       unitIndex++;
     }
-    
+
     return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
   };
 
@@ -613,16 +613,16 @@ function FileSharing() {
       <Header>
         <Title>Secure File Sharing</Title>
       </Header>
-      
+
       <TabContainer>
-        <Tab 
-          $active={currentTab === 'select'} 
+        <Tab
+          $active={currentTab === 'select'}
           onClick={() => setCurrentTab('select')}
         >
           Select File
         </Tab>
-        <Tab 
-          $active={currentTab === 'browse'} 
+        <Tab
+          $active={currentTab === 'browse'}
           onClick={() => setCurrentTab('browse')}
         >
           Browse Files
@@ -643,7 +643,7 @@ function FileSharing() {
 
       {currentTab === 'select' ? (
         <Card>
-          <DropZone 
+          <DropZone
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -664,11 +664,11 @@ function FileSharing() {
           <FormGroup>
             <Label>File to share</Label>
             <FileInput>
-              <Input 
-                type="text" 
-                value={filePath} 
-                onChange={e => setFilePath(e.target.value)} 
-                placeholder="Select or browse for a file" 
+              <Input
+                type="text"
+                value={filePath}
+                onChange={e => setFilePath(e.target.value)}
+                placeholder="Select or browse for a file"
                 readOnly
               />
               <ButtonsContainer>
@@ -732,7 +732,7 @@ function FileSharing() {
                     <ActionButton onClick={() => copyToClipboard(shareLink)}>
                       {copied ? <><FaCheck /> Copied!</> : <><FaClipboard /> Copy Link</>}
                     </ActionButton>
-                    <ActionButton 
+                    <ActionButton
                       $color={showQRCode ? '#e74c3c' : '#3498db'}
                       $hoverColor={showQRCode ? '#c0392b' : '#2980b9'}
                       onClick={toggleQRCode}
@@ -791,8 +791,8 @@ function FileSharing() {
                     <FileSize>{formatSize(file.size)}</FileSize>
                     {!file.isDirectory && (
                       <FileActions onClick={(e) => e.stopPropagation()}>
-                        <ActionButton 
-                          $color="#e74c3c" 
+                        <ActionButton
+                          $color="#e74c3c"
                           $hoverColor="#c0392b"
                           onClick={(e) => {
                             e.stopPropagation();

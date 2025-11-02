@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
 import { FaTimes, FaShieldAlt, FaExclamationTriangle, FaCheck, FaSpinner, FaExternalLinkAlt, FaInfoCircle, FaRedo, FaClock, FaFile, FaHashtag } from 'react-icons/fa';
 
-const VirusTotalModal = ({ 
-  isOpen, 
-  onClose, 
-  file, 
-  results, 
+const VirusTotalModal = ({
+  isOpen,
+  onClose,
+  file,
+  results,
   isScanning,
-  onRescan 
+  onRescan
 }) => {
   const [pollResults, setPollResults] = useState(results);
   const [isPolling, setIsPolling] = useState(false);
@@ -32,24 +32,24 @@ const VirusTotalModal = ({
 
   const startPolling = async (analysisId) => {
     if (isPolling) return;
-    
+
     setIsPolling(true);
     setPollingError(null);
-    
+
     const maxAttempts = 20; // Poll for up to 10 minutes (30s * 20)
     let attempts = 0;
-    
+
     const poll = async () => {
       try {
         attempts++;
         console.log(`Polling attempt ${attempts}/${maxAttempts} for analysis: ${analysisId}`);
-        
+
         const result = await window.electron.virusTotalGetAnalysisResults(analysisId);
-        
+
         if (result.success && result.data) {
           const analysis = result.data.data;
           console.log('Analysis result:', analysis);
-          
+
           if (analysis.attributes && analysis.attributes.status === 'completed') {
             // Analysis completed, get the file results
             const stats = analysis.attributes.stats;
@@ -64,7 +64,7 @@ const VirusTotalModal = ({
               fileSize: pollResults.fileSize,
               stats: stats
             };
-            
+
             setPollResults(scanResults);
             setIsPolling(false);
             return;
@@ -100,7 +100,7 @@ const VirusTotalModal = ({
         }
       }
     };
-    
+
     // Start polling after 10 seconds (give VirusTotal time to process)
     setTimeout(poll, 10000);
   };
@@ -173,19 +173,19 @@ const VirusTotalModal = ({
             {isPolling ? 'Checking Analysis Status...' : 'Analysis in Progress'}
           </h3>
           <p>
-            {isPolling 
+            {isPolling
               ? 'Waiting for VirusTotal to complete the analysis...'
               : currentResults.message || 'Your file has been submitted for analysis.'
             }
           </p>
-          
+
           {pollingError && (
             <ErrorMessage>
               <FaExclamationTriangle />
               {pollingError}
             </ErrorMessage>
           )}
-          
+
           <ButtonGroup>
             {currentResults.permalink && (
               <ViewOnlineButton href={currentResults.permalink} target="_blank" rel="noopener noreferrer">
@@ -293,7 +293,7 @@ const VirusTotalModal = ({
             <h4><FaExclamationTriangle /> Threat Detections</h4>
             <DetectionsList>
               {Object.entries(currentResults.results)
-                .filter(([engine, result]) => 
+                .filter(([engine, result]) =>
                   result.category === 'malicious' || result.category === 'suspicious'
                 )
                 .map(([engine, result]) => (
@@ -316,7 +316,7 @@ const VirusTotalModal = ({
                 <h4><FaShieldAlt /> All Security Vendors' Analysis ({Object.keys(currentResults.results).length} engines)</h4>
                 <ToggleIcon $expanded={showAllResults}>▼</ToggleIcon>
               </SectionHeader>
-              
+
               {showAllResults && (
                 <EngineGrid>
                   {Object.entries(currentResults.results)
@@ -399,7 +399,7 @@ const ModalContent = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  
+
   @media (max-width: 768px) {
     max-width: 95%;
     border-radius: 8px;
@@ -415,7 +415,7 @@ const ModalHeader = styled.div`
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-radius: 12px 12px 0 0;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     border-radius: 8px 8px 0 0;
@@ -428,7 +428,7 @@ const HeaderTitle = styled.h2`
   align-items: center;
   gap: 10px;
   font-size: 20px;
-  
+
   @media (max-width: 768px) {
     font-size: 18px;
   }
@@ -445,7 +445,7 @@ const CloseButton = styled.button`
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.1);
   }
@@ -453,7 +453,7 @@ const CloseButton = styled.button`
 
 const ModalBody = styled.div`
   padding: 20px;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
   }
@@ -465,7 +465,7 @@ const ModalFooter = styled.div`
   gap: 10px;
   padding: 20px;
   border-top: 1px solid #e9ecef;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
   }
@@ -480,7 +480,7 @@ const ActionButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: #5a6268;
     transform: translateY(-1px);
@@ -495,23 +495,23 @@ const ScanningContainer = styled.div`
   padding: 40px 20px;
   text-align: center;
   color: #007bff;
-  
+
   .spinning {
     animation: spin 1s linear infinite;
     margin-bottom: 20px;
   }
-  
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
     }
   }
-  
+
   h3 {
     margin: 0 0 10px 0;
     color: #2c3e50;
   }
-  
+
   p {
     margin: 0;
     color: #6c757d;
@@ -526,12 +526,12 @@ const ErrorContainer = styled.div`
   padding: 40px 20px;
   text-align: center;
   color: #dc3545;
-  
+
   h3 {
     margin: 20px 0 10px 0;
     color: #2c3e50;
   }
-  
+
   p {
     margin: 0;
     color: #6c757d;
@@ -546,12 +546,12 @@ const UploadContainer = styled.div`
   padding: 40px 20px;
   text-align: center;
   color: #007bff;
-  
+
   h3 {
     margin: 20px 0 10px 0;
     color: #2c3e50;
   }
-  
+
   p {
     margin: 0 0 20px 0;
     color: #6c757d;
@@ -570,7 +570,7 @@ const ResultsHeader = styled.div`
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  
+
   ${props => {
     switch (props.$threatLevel) {
       case 'clean':
@@ -605,12 +605,12 @@ const ResultsHeader = styled.div`
         `;
     }
   }}
-  
+
   h3 {
     margin: 0;
     font-size: 18px;
   }
-  
+
   p {
     margin: 5px 0 0 0;
     font-size: 14px;
@@ -630,7 +630,7 @@ const InfoRow = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -643,7 +643,7 @@ const InfoLabel = styled.span`
 
 const ThreatDetails = styled.div`
   margin-bottom: 20px;
-  
+
   h4 {
     margin: 0 0 15px 0;
     color: #2c3e50;
@@ -667,7 +667,7 @@ const DetectionItem = styled.div`
   align-items: center;
   padding: 10px 15px;
   border-bottom: 1px solid #f8f9fa;
-  
+
   &:last-child {
     border-bottom: none;
   }
@@ -690,7 +690,7 @@ const ViewOnlineButton = styled.a`
   border-radius: 6px;
   font-size: 14px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: #0056b3;
     transform: translateY(-1px);
@@ -711,7 +711,7 @@ const RetryButton = styled.button`
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: #218838;
     transform: translateY(-1px);
@@ -733,27 +733,27 @@ const AnalysisPendingContainer = styled.div`
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
-  
+
   .status-icon {
     color: #007bff;
     margin-bottom: 20px;
   }
-  
+
   .spinning {
     animation: spin 1s linear infinite;
   }
-  
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
     }
   }
-  
+
   h3 {
     margin: 0 0 10px 0;
     color: #2c3e50;
   }
-  
+
   p {
     margin: 0 0 20px 0;
     color: #6c757d;
@@ -775,7 +775,7 @@ const ErrorMessage = styled.div`
 
 const FileInfoSection = styled.div`
   margin-bottom: 25px;
-  
+
   h4 {
     margin: 0 0 15px 0;
     color: #2c3e50;
@@ -794,7 +794,7 @@ const FileInfoGrid = styled.div`
 
 const StatsSection = styled.div`
   margin-bottom: 25px;
-  
+
   h4 {
     margin: 0 0 15px 0;
     color: #2c3e50;
@@ -809,7 +809,7 @@ const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 15px;
-  
+
   @media (max-width: 480px) {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -819,7 +819,7 @@ const StatItem = styled.div`
   text-align: center;
   padding: 15px 10px;
   border-radius: 8px;
-  
+
   ${props => {
     switch (props.$type) {
       case 'clean':
@@ -868,7 +868,7 @@ const StatLabel = styled.div`
 const InfoValue = styled.span`
   color: #6c757d;
   word-break: break-word;
-  
+
   &.hash {
     font-family: 'Courier New', monospace;
     font-size: 12px;
@@ -879,7 +879,7 @@ const InfoValue = styled.span`
 const ThreatName = styled.span`
   font-size: 14px;
   font-weight: 500;
-  
+
   ${props => {
     switch (props.$category) {
       case 'malicious':
@@ -911,11 +911,11 @@ const SectionHeader = styled.div`
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background: #e9ecef;
   }
-  
+
   h4 {
     margin: 0;
     color: #2c3e50;
@@ -938,7 +938,7 @@ const EngineGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1px;
   background: #e9ecef;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
@@ -950,7 +950,7 @@ const EngineItem = styled.div`
   align-items: center;
   padding: 12px 15px;
   background: white;
-  
+
   ${props => {
     switch (props.$category) {
       case 'malicious':
@@ -978,7 +978,7 @@ const EngineResult = styled.span`
   font-size: 13px;
   font-weight: 500;
   text-align: right;
-  
+
   ${props => {
     switch (props.$category) {
       case 'malicious':

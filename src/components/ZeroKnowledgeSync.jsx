@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { 
-  FaSync, FaWifi, FaShieldAlt, FaUsers, FaCog, FaPlay, FaStop, 
+import {
+  FaSync, FaWifi, FaShieldAlt, FaUsers, FaCog, FaPlay, FaStop,
   FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaNetworkWired,
   FaLock, FaUnlock, FaEye, FaEyeSlash, FaPlus, FaTrash, FaEdit,
   FaDownload, FaUpload, FaHistory, FaGlobe, FaDesktop
@@ -31,12 +31,12 @@ const Container = styled.div`
   max-width: 100%;
   gap: 24px;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     gap: 16px;
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 12px;
     padding: 0 8px;
@@ -50,7 +50,7 @@ const Header = styled.div`
   margin-bottom: 0;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -65,13 +65,13 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 12px;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     gap: 10px;
     justify-content: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
     gap: 8px;
@@ -99,16 +99,16 @@ const SyncGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  
+
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   @media (max-width: 768px) {
     gap: 16px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 12px;
   }
@@ -120,20 +120,20 @@ const Card = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transition: all 0.3s ease;
-  
+
   &:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
-  
+
   @media (max-width: 768px) {
     border-radius: 8px;
-    
+
     &:hover {
       transform: none;
     }
   }
-  
+
   @media (max-width: 480px) {
     border-radius: 6px;
   }
@@ -146,11 +146,11 @@ const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   @media (max-width: 768px) {
     padding: 16px 20px 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px 16px 8px;
   }
@@ -162,12 +162,12 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   @media (max-width: 768px) {
     font-size: 16px;
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 14px;
     gap: 6px;
@@ -176,11 +176,11 @@ const CardTitle = styled.h3`
 
 const CardContent = styled.div`
   padding: 24px;
-  
+
   @media (max-width: 768px) {
     padding: 20px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 16px;
   }
@@ -190,11 +190,11 @@ const ControlPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  
+
   @media (max-width: 768px) {
     gap: 16px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 12px;
   }
@@ -206,12 +206,12 @@ const InitializationSection = styled.div`
   padding: 20px;
   border: 2px dashed ${props => props.$initialized ? '#2ecc71' : '#dee2e6'};
   transition: all 0.3s ease;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -224,23 +224,23 @@ const PasswordInput = styled.input`
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: #3498db;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
   }
-  
+
   &:disabled {
     background-color: #f8f9fa;
     cursor: not-allowed;
   }
-  
+
   @media (max-width: 768px) {
     padding: 10px 14px;
     font-size: 13px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 12px;
     font-size: 12px;
@@ -267,29 +267,29 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 120px;
-  
+
   &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
   }
-  
+
   @media (max-width: 768px) {
     padding: 10px 16px;
     min-width: 100px;
     gap: 6px;
-    
+
     &:hover:not(:disabled) {
       transform: none;
     }
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 14px;
     font-size: 14px;
@@ -304,12 +304,12 @@ const PeersList = styled.div`
   gap: 12px;
   max-height: 300px;
   overflow-y: auto;
-  
+
   @media (max-width: 768px) {
     gap: 10px;
     max-height: 250px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 8px;
     max-height: 200px;
@@ -332,23 +332,23 @@ const PeerItem = styled.div`
     }
   }};
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: #ecf0f1;
     transform: translateX(4px);
   }
-  
+
   @media (max-width: 768px) {
     padding: 10px 12px;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
-    
+
     &:hover {
       transform: none;
     }
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 10px;
     border-radius: 6px;
@@ -359,7 +359,7 @@ const PeerInfo = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
-  
+
   @media (max-width: 768px) {
     align-items: center;
     text-align: center;
@@ -377,13 +377,13 @@ const PeerDetails = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   @media (max-width: 768px) {
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 11px;
     gap: 4px;
@@ -419,13 +419,13 @@ const SyncStats = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 16px;
   margin-top: 20px;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 12px;
     margin-top: 16px;
   }
-  
+
   @media (max-width: 480px) {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
@@ -468,7 +468,7 @@ const ActivityItem = styled.div`
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
-  
+
   &:last-child {
     border-bottom: none;
   }
@@ -507,7 +507,7 @@ const EmptyState = styled.div`
   text-align: center;
   padding: 40px 20px;
   color: #7f8c8d;
-  
+
   svg {
     font-size: 48px;
     margin-bottom: 16px;
@@ -573,21 +573,21 @@ function ZeroKnowledgeSync() {
   const [syncedFiles, setSyncedFiles] = useState([]);
   const [syncDirectory, setSyncDirectory] = useState('');
   const [lastEventTimestamp, setLastEventTimestamp] = useState(0); // Add timestamp tracking
-  
+
   const syncManagerRef = useRef(null);
 
   useEffect(() => {
     // Initialize sync system
     initializeSyncSystem();
-    
+
     // Setup polling for updates
     const cleanup = setupEventListeners();
-    
+
     // Also poll immediately and more frequently for peers
     const peerPollInterval = setInterval(async () => {
       await updatePeersList();
     }, 1000); // Check for peers every second
-    
+
     // Set up event listeners for sync events
     const handleFileReceived = (data) => {
       console.log('File received from sync:', data);
@@ -616,11 +616,11 @@ function ZeroKnowledgeSync() {
       window.electronAPI.on('sync-file-received', handleFileReceived);
       window.electronAPI.on('sync-file-added', handleFileAdded);
     }
-    
+
     return () => {
       if (cleanup) cleanup();
       clearInterval(peerPollInterval);
-      
+
       // Cleanup listeners on unmount
       if (window.electronAPI && window.electronAPI.removeListener) {
         window.electronAPI.removeListener('sync-file-received', handleFileReceived);
@@ -637,14 +637,14 @@ function ZeroKnowledgeSync() {
         const status = statusResult.status;
         setIsInitialized(status.isInitialized);
         setIsRunning(status.isRunning);
-        
+
         if (status.isInitialized) {
           // Get current peers
           const peersResult = await window.electron.fileManager.syncGetPeers();
           if (peersResult.success) {
             setPeers(peersResult.peers);
           }
-          
+
           // Update stats
           setSyncStats(prev => ({
             ...prev,
@@ -653,7 +653,7 @@ function ZeroKnowledgeSync() {
           }));
         }
       }
-      
+
     } catch (error) {
       console.error('Failed to initialize sync system:', error);
       addAlert('error', 'Failed to initialize sync system');
@@ -671,7 +671,7 @@ function ZeroKnowledgeSync() {
         await updateSyncDirectory();
       }
     }, 2000); // Poll every 2 seconds for faster peer discovery updates
-    
+
     return () => clearInterval(pollInterval);
   };
 
@@ -684,7 +684,7 @@ function ZeroKnowledgeSync() {
       addAlert('warning', 'Please enter a master password');
       return;
     }
-    
+
     setLoading(true);
     try {
       const result = await window.electron.fileManager.syncInitialize(masterPassword);
@@ -730,13 +730,13 @@ function ZeroKnowledgeSync() {
       const result = await window.electron.fileManager.selectFile();
       if (result && result.success && result.path) {
         const filePath = result.path;
-        
+
         // Add file to sync
         const addResult = await window.electron.fileManager.syncAddFile(filePath);
         if (addResult.success) {
           addAlert('success', `File added to sync: ${addResult.metadata.fileName}`);
           addActivity('sync', `Added file to sync: ${addResult.metadata.fileName}`);
-          
+
           // Update UI immediately
           await updateSyncedFiles();
           await updateSyncStats();
@@ -804,24 +804,24 @@ function ZeroKnowledgeSync() {
 
   const addAlert = (type, message) => {
     const now = Date.now();
-    
+
     // Prevent duplicate alerts within 2 seconds
     if (now - lastEventTimestamp < 2000) {
       console.log('Skipping duplicate alert:', message);
       return;
     }
-    
+
     setLastEventTimestamp(now);
-    
+
     const alert = {
       id: Date.now() + Math.random(), // Make ID more unique
       type,
       message,
       timestamp: Date.now()
     };
-    
+
     setAlerts(prev => [alert, ...prev.slice(0, 4)]); // Keep only 5 alerts
-    
+
     // Auto-remove alerts after 5 seconds
     setTimeout(() => {
       setAlerts(prev => prev.filter(a => a.id !== alert.id));
@@ -835,7 +835,7 @@ function ZeroKnowledgeSync() {
       message,
       timestamp: Date.now()
     };
-    
+
     setActivity(prev => [activityItem, ...prev.slice(0, 49)]); // Keep only 50 items
   };
 
@@ -847,7 +847,7 @@ function ZeroKnowledgeSync() {
         const content = atob(result.content);
         const blob = new Blob([content], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
-        
+
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
@@ -855,7 +855,7 @@ function ZeroKnowledgeSync() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         addAlert('success', `File downloaded: ${fileName}`);
         addActivity('download', `Downloaded file: ${fileName}`);
       } else {
@@ -998,7 +998,7 @@ function ZeroKnowledgeSync() {
                     <FaPlus />
                     Add File to Sync
                   </Button>
-                  
+
                   <SyncStats>
                     <StatCard>
                       <StatValue>{syncStats.filesInSync}</StatValue>
@@ -1170,10 +1170,10 @@ function ZeroKnowledgeSync() {
               </EmptyState>
             )}
             {syncDirectory && (
-              <div style={{ 
-                marginTop: '16px', 
-                padding: '12px', 
-                backgroundColor: '#f8f9fa', 
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                backgroundColor: '#f8f9fa',
                 borderRadius: '8px',
                 fontSize: '12px',
                 color: '#7f8c8d'

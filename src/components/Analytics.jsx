@@ -45,11 +45,11 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -62,12 +62,12 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
     gap: 12px;
   }
-  
+
   @media (max-width: 480px) {
     flex-direction: column;
     align-items: stretch;
@@ -82,12 +82,12 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
     text-align: center;
@@ -100,17 +100,17 @@ const DashboardGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   grid-gap: 24px;
   margin-bottom: 24px;
-  
+
   @media (max-width: 1024px) {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     grid-gap: 16px;
   }
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     grid-gap: 16px;
   }
-  
+
   @media (max-width: 480px) {
     grid-gap: 12px;
     margin-bottom: 16px;
@@ -122,16 +122,16 @@ const DashboardRow = styled.div`
   grid-template-columns: ${props => props.$columns || '1fr 1fr'};
   grid-gap: 24px;
   margin-bottom: 24px;
-  
+
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
     grid-gap: 16px;
   }
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     grid-gap: 12px;
     margin-bottom: 12px;
@@ -144,21 +144,21 @@ const Card = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transition: all 0.3s ease;
-  
+
   &:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
-  
+
   @media (max-width: 768px) {
     margin-bottom: 0;
     border-radius: 8px;
-    
+
     &:hover {
       transform: none;
     }
   }
-  
+
   @media (max-width: 480px) {
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -172,11 +172,11 @@ const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   @media (max-width: 768px) {
     padding: 12px 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -190,12 +190,12 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   @media (max-width: 768px) {
     font-size: 15px;
     gap: 6px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 14px;
   }
@@ -204,11 +204,11 @@ const CardTitle = styled.h3`
 const CardContent = styled.div`
   padding: 24px;
   height: ${props => props.$height || 'auto'};
-  
+
   @media (max-width: 768px) {
     padding: 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -218,16 +218,16 @@ const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-gap: 16px;
-  
+
   @media (max-width: 768px) {
     grid-gap: 12px;
   }
-  
+
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
     grid-gap: 16px;
   }
-  
+
   @media (max-width: 480px) {
     grid-gap: 12px;
   }
@@ -244,21 +244,21 @@ const StatsItem = styled.div`
   text-align: center;
   transition: all 0.3s ease;
   border: 1px solid ${props => props.$border || 'transparent'};
-  
+
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
   }
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     border-radius: 8px;
-    
+
     &:hover {
       transform: translateY(-1px);
     }
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     border-radius: 6px;
@@ -277,14 +277,14 @@ const StatsIcon = styled.div`
   font-size: 22px;
   margin-bottom: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  
+
   @media (max-width: 768px) {
     width: 48px;
     height: 48px;
     font-size: 20px;
     margin-bottom: 12px;
   }
-  
+
   @media (max-width: 480px) {
     width: 40px;
     height: 40px;
@@ -298,12 +298,12 @@ const StatsValue = styled.div`
   font-weight: 700;
   color: ${COLORS.secondaryLight};
   margin-bottom: 8px;
-  
+
   @media (max-width: 768px) {
     font-size: 24px;
     margin-bottom: 6px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 20px;
     margin-bottom: 4px;
@@ -314,11 +314,11 @@ const StatsLabel = styled.div`
   font-size: 14px;
   color: ${COLORS.grayDark};
   font-weight: 500;
-  
+
   @media (max-width: 768px) {
     font-size: 13px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 12px;
   }
@@ -331,13 +331,13 @@ const StatsTrend = styled.div`
   margin-top: 6px;
   font-size: 13px;
   color: ${props => props.$isUp ? COLORS.success : COLORS.danger};
-  
+
   @media (max-width: 768px) {
     font-size: 12px;
     gap: 4px;
     margin-top: 4px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 11px;
   }
@@ -347,14 +347,14 @@ const ChartContainer = styled.div`
   width: 100%;
   height: ${props => props.$height || '300px'};
   margin-top: ${props => props.$marginTop || '0'};
-  
+
   @media (max-width: 768px) {
-    height: ${props => props.$height ? 
+    height: ${props => props.$height ?
       (parseInt(props.$height) * 0.8 + 'px') : '240px'};
   }
-  
+
   @media (max-width: 480px) {
-    height: ${props => props.$height ? 
+    height: ${props => props.$height ?
       (parseInt(props.$height) * 0.7 + 'px') : '200px'};
   }
 `;
@@ -365,12 +365,12 @@ const LegendContainer = styled.div`
   gap: 16px;
   margin-top: 16px;
   justify-content: center;
-  
+
   @media (max-width: 768px) {
     gap: 12px;
     margin-top: 12px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 8px;
     margin-top: 8px;
@@ -381,11 +381,11 @@ const LegendItem = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 8px;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 6px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 4px;
   }
@@ -397,7 +397,7 @@ const LegendColor = styled.div`
   border-radius: 4px;
   background-color: ${props => props.$color};
   margin-right: 8px;
-  
+
   @media (max-width: 480px) {
     width: 12px;
     height: 12px;
@@ -409,11 +409,11 @@ const LegendText = styled.div`
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  
+
   @media (max-width: 768px) {
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 6px;
     font-size: 14px;
@@ -422,7 +422,7 @@ const LegendText = styled.div`
 
 const LegendLabel = styled.span`
   color: ${COLORS.secondaryLight};
-  
+
   @media (max-width: 480px) {
     font-size: 14px;
   }
@@ -431,7 +431,7 @@ const LegendLabel = styled.span`
 const LegendValue = styled.span`
   color: ${COLORS.grayDark};
   font-weight: 500;
-  
+
   @media (max-width: 480px) {
     font-size: 14px;
   }
@@ -441,20 +441,20 @@ const TableContainer = styled.div`
   overflow-x: auto;
   border-radius: 8px;
   border: 1px solid #eaeaea;
-  
+
   @media (max-width: 768px) {
     border-radius: 6px;
   }
-  
+
   /* Custom scrollbar for mobile */
   &::-webkit-scrollbar {
     height: 4px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: ${COLORS.grayMedium};
     border-radius: 2px;
@@ -465,11 +465,11 @@ const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   min-width: 600px;
-  
+
   @media (max-width: 768px) {
     min-width: 500px;
   }
-  
+
   @media (max-width: 480px) {
     min-width: 400px;
   }
@@ -477,11 +477,11 @@ const Table = styled.table`
 
 const TableRow = styled.tr`
   border-bottom: 1px solid #eaeaea;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   &:hover {
     background-color: ${COLORS.grayLight};
   }
@@ -493,12 +493,12 @@ const TableHeader = styled.th`
   color: ${COLORS.secondaryLight};
   font-weight: 600;
   background-color: ${COLORS.grayLight};
-  
+
   @media (max-width: 768px) {
     padding: 10px 12px;
     font-size: 14px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 10px;
     font-size: 13px;
@@ -509,12 +509,12 @@ const TableCell = styled.td`
   padding: 12px 16px;
   color: ${COLORS.secondaryLight};
   vertical-align: middle;
-  
+
   @media (max-width: 768px) {
     padding: 10px 12px;
     font-size: 14px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 10px;
     font-size: 13px;
@@ -528,11 +528,11 @@ const LoadingState = styled.div`
   justify-content: center;
   padding: 60px 24px;
   color: ${COLORS.grayDark};
-  
+
   @media (max-width: 768px) {
     padding: 40px 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 30px 12px;
   }
@@ -548,14 +548,14 @@ const ErrorState = styled.div`
   gap: 12px;
   margin-bottom: 24px;
   border-radius: 0 8px 8px 0;
-  
+
   @media (max-width: 768px) {
     padding: 12px;
     gap: 8px;
     margin-bottom: 16px;
     border-radius: 0 6px 6px 0;
   }
-  
+
   @media (max-width: 480px) {
     padding: 10px;
     gap: 6px;
@@ -596,34 +596,34 @@ const RefreshButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: ${COLORS.primaryDark};
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
-  
+
   &:disabled {
     background-color: ${COLORS.gray};
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
   }
-  
+
   @media (max-width: 768px) {
     padding: 8px 12px;
     gap: 6px;
     font-size: 14px;
-    
+
     &:hover {
       transform: none;
     }
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 10px;
     font-size: 13px;
@@ -633,7 +633,7 @@ const RefreshButton = styled.button`
 
 const SpinningIcon = styled.div`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -684,20 +684,20 @@ const TabsContainer = styled.div`
   border-bottom: 1px solid #ddd;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  
+
   &::-webkit-scrollbar {
     height: 4px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background-color: ${COLORS.grayMedium};
     border-radius: 4px;
   }
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
   }
@@ -711,17 +711,17 @@ const Tab = styled.div`
   color: ${props => props.$active ? COLORS.primary : COLORS.grayDark};
   font-weight: ${props => props.$active ? '600' : '400'};
   transition: all 0.3s ease;
-  
+
   &:hover {
     color: ${COLORS.primary};
     background-color: ${COLORS.primaryLight};
   }
-  
+
   @media (max-width: 768px) {
     padding: 10px 16px;
     font-size: 14px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 12px;
     font-size: 13px;
@@ -740,14 +740,14 @@ const LastUpdatedBadge = styled.div`
   font-size: 14px;
   color: ${COLORS.grayDark};
   margin-bottom: 24px;
-  
+
   @media (max-width: 768px) {
     padding: 6px 12px;
     gap: 6px;
     font-size: 13px;
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 6px 10px;
     font-size: 12px;
@@ -761,13 +761,13 @@ const SummaryText = styled.div`
   color: ${COLORS.secondaryLight};
   line-height: 1.6;
   font-size: 15px;
-  
+
   @media (max-width: 768px) {
     margin: 12px 0;
     font-size: 14px;
     line-height: 1.5;
   }
-  
+
   @media (max-width: 480px) {
     margin: 10px 0;
     font-size: 13px;
@@ -785,7 +785,7 @@ const Badge = styled.span`
   background-color: ${props => props.$bg || COLORS.primaryLight};
   color: ${props => props.$color || COLORS.primary};
   margin-right: 8px;
-  
+
   @media (max-width: 480px) {
     font-size: 11px;
     padding: 4px 6px;
@@ -798,12 +798,12 @@ const FilterContainer = styled.div`
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 24px;
-  
+
   @media (max-width: 768px) {
     gap: 8px;
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 6px;
     margin-bottom: 12px;
@@ -823,18 +823,18 @@ const FilterButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$active ? COLORS.primaryDark : COLORS.grayMedium};
   }
-  
+
   @media (max-width: 768px) {
     padding: 6px 12px;
     gap: 6px;
     font-size: 14px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 6px 10px;
     font-size: 13px;
@@ -846,26 +846,26 @@ const FilterButton = styled.button`
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ 
-        backgroundColor: COLORS.white, 
-        padding: '10px 16px', 
+      <div style={{
+        backgroundColor: COLORS.white,
+        padding: '10px 16px',
         border: '1px solid #eaeaea',
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <p style={{ margin: '0 0 8px 0', fontWeight: 600, color: COLORS.secondaryLight }}>{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} style={{ 
-            margin: '5px 0 0 0', 
+          <p key={index} style={{
+            margin: '5px 0 0 0',
             color: entry.color,
             fontSize: '14px',
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
           }}>
-            <span style={{ 
-              display: 'inline-block', 
-              width: '10px', 
+            <span style={{
+              display: 'inline-block',
+              width: '10px',
               height: '10px',
               borderRadius: '50%',
               backgroundColor: entry.color
@@ -910,7 +910,7 @@ const getFileType = (extension) => {
   if (archiveExts.includes(extension.toLowerCase())) return 'archive';
   if (codeExts.includes(extension.toLowerCase())) return 'code';
   if (pdfExts.includes(extension.toLowerCase())) return 'pdf';
-  
+
   return 'other';
 };
 
@@ -924,25 +924,25 @@ function Analytics() {
   const [activeTab, setActiveTab] = useState('overview');
   const [timeFilter, setTimeFilter] = useState('week');
   const [chartView, setChartView] = useState('bar');
-  
+
   useEffect(() => {
     fetchAnalyticsData();
   }, []);
-  
+
   const fetchAnalyticsData = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Load real file statistics
       await fetchFileStats();
-      
+
       // Load real activity statistics
       await fetchActivityStats();
-      
+
       // Load real storage usage
       await fetchStorageUsage();
-      
+
       setLastRefreshed(new Date());
     } catch (err) {
       console.error('Error fetching analytics data:', err);
@@ -951,44 +951,44 @@ function Analytics() {
       setIsLoading(false);
     }
   };
-  
+
   const fetchFileStats = async () => {
     try {
       // Get all files list from the system
       const result = await window.electron.fileManager.getAllFiles();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch file statistics');
       }
-      
+
       const { files } = result;
-      
+
       // Calculate file type distribution
       const fileTypeMap = new Map();
       let encryptedCount = 0;
       let sharedCount = 0;
       let totalSize = 0;
       const recentlyModified = [];
-      
+
       // Process files
       for (const file of files) {
         // Skip directories
         if (file.isDirectory) continue;
-        
+
         // Add to total size
         totalSize += file.size;
-        
+
         const extension = path.extname(file.name);
         const fileType = getFileType(extension);
-        
+
         // Count by file type
         fileTypeMap.set(fileType, (fileTypeMap.get(fileType) || 0) + 1);
-        
+
         // Check if encrypted
         if (file.name.endsWith('.enc')) {
           encryptedCount++;
         }
-        
+
         // Add to recently modified files (limited to 8)
         if (recentlyModified.length < 8) {
           recentlyModified.push({
@@ -999,10 +999,10 @@ function Analytics() {
           });
         } else {
           // Replace if more recent
-          const oldest = recentlyModified.reduce((prev, curr) => 
+          const oldest = recentlyModified.reduce((prev, curr) =>
             new Date(prev.timestamp) < new Date(curr.timestamp) ? prev : curr
           );
-          
+
           if (new Date(file.mtime) > new Date(oldest.timestamp)) {
             const idx = recentlyModified.indexOf(oldest);
             recentlyModified[idx] = {
@@ -1014,16 +1014,16 @@ function Analytics() {
           }
         }
       }
-      
+
       // Get shared files info
       const sharedResult = await window.electron.fileManager.getSharedFilesCount();
       if (sharedResult.success) {
         sharedCount = sharedResult.count;
       }
-      
+
       // Sort recently modified by date (newest first)
       recentlyModified.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
+
       // Create filesByType array for the chart
       const filesByType = [];
       fileTypeMap.forEach((count, type) => {
@@ -1035,7 +1035,7 @@ function Analytics() {
           icon: getFileTypeIcon(type)
         });
       });
-      
+
       // Generate dummy growth stats for visual interest
       const growth = {
         files: Math.floor(Math.random() * 20) - 5,
@@ -1043,7 +1043,7 @@ function Analytics() {
         shared: Math.floor(Math.random() * 15),
         storage: Math.floor(Math.random() * 25) - 10
       };
-      
+
       // Set the file stats
       setFileStats({
         totalFiles: files.filter(f => !f.isDirectory).length,
@@ -1054,30 +1054,30 @@ function Analytics() {
         recentlyModified,
         growth
       });
-      
+
     } catch (err) {
       console.error('Error fetching file stats:', err);
       throw err;
     }
   };
-  
+
   const fetchActivityStats = async () => {
     try {
       // Get access logs from the system
       const result = await window.electron.fileManager.getAccessLogs();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch activity statistics');
       }
-      
+
       const { logs } = result;
-      
+
       // Calculate activity counts
       let fileReads = 0;
       let directoryReads = 0;
       let fileShares = 0;
       let sharedFileAccess = 0;
-      
+
       // Group by day of week
       const dayMap = {
         0: 'Sunday',
@@ -1088,7 +1088,7 @@ function Analytics() {
         5: 'Friday',
         6: 'Saturday'
       };
-      
+
       // Initialize with all days
       const activityByDay = {
         Monday: { reads: 0, shares: 0, access: 0 },
@@ -1099,19 +1099,19 @@ function Analytics() {
         Saturday: { reads: 0, shares: 0, access: 0 },
         Sunday: { reads: 0, shares: 0, access: 0 }
       };
-      
+
       // Activity by hour for heatmap
       const activityByHour = Array(24).fill(0).map((_, i) => ({
         hour: i,
         value: 0,
         label: `${i}:00`
       }));
-      
+
       // Monthly activity trend
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const currentMonth = new Date().getMonth();
       const monthlyActivity = [];
-      
+
       // Create the last 6 months
       for (let i = 5; i >= 0; i--) {
         const monthIndex = (currentMonth - i + 12) % 12;
@@ -1123,24 +1123,24 @@ function Analytics() {
           total: 0
         });
       }
-      
+
       // Process logs
       for (const log of logs) {
         const date = new Date(log.timestamp);
         const day = dayMap[date.getDay()];
         const hour = date.getHours();
-        
+
         // Increment hour activity
         activityByHour[hour].value++;
-        
+
         // Increment monthly activity if within last 6 months
         const logMonth = date.getMonth();
         const monthDiff = (currentMonth - logMonth + 12) % 12;
-        
+
         if (monthDiff < 6) {
           const monthIndex = 5 - monthDiff;
           monthlyActivity[monthIndex].total++;
-          
+
           switch (log.action) {
             case 'read_file':
               monthlyActivity[monthIndex].reads++;
@@ -1153,7 +1153,7 @@ function Analytics() {
               break;
           }
         }
-        
+
         switch (log.action) {
           case 'read_file':
             fileReads++;
@@ -1175,7 +1175,7 @@ function Analytics() {
             break;
         }
       }
-      
+
       // Format for the chart - preserve day order
       const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
       const activityByDayArray = dayOrder.map(day => ({
@@ -1185,7 +1185,7 @@ function Analytics() {
         access: activityByDay[day].access,
         total: activityByDay[day].reads + activityByDay[day].shares + activityByDay[day].access
       }));
-      
+
       // Set the activity stats
       setActivityStats({
         totalActivities: logs.length,
@@ -1197,33 +1197,33 @@ function Analytics() {
         activityByHour,
         monthlyActivity
       });
-      
+
     } catch (err) {
       console.error('Error fetching activity stats:', err);
       throw err;
     }
   };
-  
+
   const fetchStorageUsage = async () => {
     try {
       // Get storage information from the system
       const result = await window.electron.fileManager.getStorageInfo();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch storage usage');
       }
-      
+
       const { storage } = result;
-      
+
       // Get file type distribution by size
       const result2 = await window.electron.fileManager.getFileTypeDistribution();
-      
+
       if (!result2.success) {
         throw new Error(result2.error || 'Failed to fetch file type distribution');
       }
-      
+
       const { typeDistribution } = result2;
-      
+
       // Create usage by type array
       const usageByType = Object.entries(typeDistribution).map(([type, size]) => ({
         type,
@@ -1231,13 +1231,13 @@ function Analytics() {
         size,
         color: FILE_TYPE_COLORS[type]
       }));
-      
+
       // Calculate total used and available
       const totalStorage = storage.total;
       const usedStorage = storage.used;
       const availableStorage = storage.available;
       const usagePercent = (usedStorage / totalStorage) * 100;
-      
+
       // Set storage usage state
       setStorageUsage({
         totalStorage,
@@ -1246,53 +1246,53 @@ function Analytics() {
         usagePercent,
         usageByType
       });
-      
+
     } catch (err) {
       console.error('Error fetching storage usage:', err);
       throw err;
     }
   };
-  
+
   // Format bytes to human-readable size
   const formatBytes = (bytes, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    
+
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   };
-  
+
   // Format date to human-readable timestamp
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
-  
+
   // Get file type usage data for the pie chart
   const getStorageByTypeData = () => {
     if (!storageUsage) return [];
-    
+
     return storageUsage.usageByType.map(item => ({
       name: item.name,
       value: item.size,
       color: item.color
     }));
   };
-  
+
   // Get storage percent
   const getStoragePercent = () => {
     if (!storageUsage) return 0;
     return storageUsage.usagePercent;
   };
-  
+
   // Get activity data for bar chart
   const getActivityData = () => {
     if (!activityStats) return [];
-    
+
     switch(timeFilter) {
       case 'week':
         return activityStats.activityByDay;
@@ -1302,7 +1302,7 @@ function Analytics() {
         return activityStats.activityByDay;
     }
   };
-  
+
   const renderOverviewTab = () => {
     return (
       <>
@@ -1321,7 +1321,7 @@ function Analytics() {
               </StatsTrend>
             )}
           </StatsItem>
-          
+
           <StatsItem $bg={COLORS.successLight} $border={`1px solid ${COLORS.success}20`}>
             <StatsIcon $bgcolor={COLORS.success}>
               <FaLock />
@@ -1335,7 +1335,7 @@ function Analytics() {
               </StatsTrend>
             )}
           </StatsItem>
-          
+
           <StatsItem $bg={COLORS.dangerLight} $border={`1px solid ${COLORS.danger}20`}>
             <StatsIcon $bgcolor={COLORS.danger}>
               <FaShare />
@@ -1349,7 +1349,7 @@ function Analytics() {
               </StatsTrend>
             )}
           </StatsItem>
-          
+
           <StatsItem $bg={COLORS.warningLight} $border={`1px solid ${COLORS.warning}20`}>
             <StatsIcon $bgcolor={COLORS.warning}>
               <FaDatabase />
@@ -1364,7 +1364,7 @@ function Analytics() {
             )}
           </StatsItem>
         </DashboardGrid>
-        
+
         {/* Storage Usage and Summary */}
         <DashboardRow>
           <Card>
@@ -1378,26 +1378,26 @@ function Analytics() {
                 <div style={{ fontWeight: 600, color: COLORS.secondaryLight }}>
                   {formatBytes(storageUsage?.usedStorage)} used of {formatBytes(storageUsage?.totalStorage)}
                 </div>
-                <Badge $bg={getStoragePercent() > 80 ? COLORS.dangerLight : COLORS.primaryLight} 
+                <Badge $bg={getStoragePercent() > 80 ? COLORS.dangerLight : COLORS.primaryLight}
                        $color={getStoragePercent() > 80 ? COLORS.danger : COLORS.primary}>
                   {getStoragePercent().toFixed(1)}% Used
                 </Badge>
               </div>
-              
+
               <ProgressContainer $height="16px">
-                <ProgressBar 
-                  $percent={getStoragePercent()} 
-                  $startColor={getStoragePercent() > 80 ? COLORS.danger : COLORS.primary} 
+                <ProgressBar
+                  $percent={getStoragePercent()}
+                  $startColor={getStoragePercent() > 80 ? COLORS.danger : COLORS.primary}
                   $endColor={getStoragePercent() > 80 ? COLORS.dangerDark : COLORS.primaryDark}
                 />
               </ProgressContainer>
-              
+
               <SummaryText>
-                {getStoragePercent() > 80 ? 
-                  'Your storage is getting full. Consider cleaning up unused files or archives.' : 
+                {getStoragePercent() > 80 ?
+                  'Your storage is getting full. Consider cleaning up unused files or archives.' :
                   'Your storage usage is healthy. You still have plenty of space available.'}
               </SummaryText>
-              
+
               {storageUsage?.usageByType.length > 0 && (
                 <>
                   <h4 style={{ margin: '24px 0 16px 0', color: COLORS.secondaryLight }}>Storage Usage by File Type</h4>
@@ -1417,9 +1417,9 @@ function Analytics() {
                           paddingAngle={2}
                         >
                           {getStorageByTypeData().map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={entry.color} 
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.color}
                               stroke={COLORS.white}
                               strokeWidth={2}
                             />
@@ -1429,7 +1429,7 @@ function Analytics() {
                       </PieChart>
                     </ResponsiveContainer>
                   </ChartContainer>
-                  
+
                   <LegendContainer>
                     {storageUsage?.usageByType.map((item, index) => (
                       <LegendItem key={index}>
@@ -1445,7 +1445,7 @@ function Analytics() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>
@@ -1458,23 +1458,23 @@ function Analytics() {
                   <StatsValue>{activityStats?.totalActivities}</StatsValue>
                   <StatsLabel>Total Activities</StatsLabel>
                 </StatsItem>
-                
+
                 <StatsItem $bg={COLORS.successLight}>
                   <StatsValue>{activityStats?.fileReads}</StatsValue>
                   <StatsLabel>File Accesses</StatsLabel>
                 </StatsItem>
-                
+
                 <StatsItem $bg={COLORS.warningLight}>
                   <StatsValue>{activityStats?.fileShares}</StatsValue>
                   <StatsLabel>File Shares</StatsLabel>
                 </StatsItem>
-                
+
                 <StatsItem $bg={COLORS.dangerLight}>
                   <StatsValue>{activityStats?.sharedFileAccess}</StatsValue>
                   <StatsLabel>Link Downloads</StatsLabel>
                 </StatsItem>
               </StatsGrid>
-              
+
               <h4 style={{ margin: '24px 0 16px 0', color: COLORS.secondaryLight }}>Monthly Activity Trend</h4>
               <ChartContainer>
                 <ResponsiveContainer width="100%" height="100%">
@@ -1502,10 +1502,10 @@ function Analytics() {
                   </AreaChart>
                 </ResponsiveContainer>
               </ChartContainer>
-              
+
               <SummaryText>
                 This chart shows the trend of file reads and shares over the last 6 months.
-                {activityStats?.monthlyActivity.length > 0 && activityStats.monthlyActivity[5].total > activityStats.monthlyActivity[0].total 
+                {activityStats?.monthlyActivity.length > 0 && activityStats.monthlyActivity[5].total > activityStats.monthlyActivity[0].total
                   ? ' Your usage has increased over time, showing growing engagement with the app.'
                   : ' Consistent usage patterns help establish your normal activity baseline.'}
               </SummaryText>
@@ -1515,7 +1515,7 @@ function Analytics() {
       </>
     );
   };
-  
+
   const renderFilesTab = () => {
     return (
       <>
@@ -1523,7 +1523,7 @@ function Analytics() {
           This section provides detailed analytics about your files and how they're distributed across different types.
           You can see which file types are most common and check your recent file activity.
         </SummaryText>
-        
+
         {/* File Type Distribution */}
         <Card style={{ marginBottom: '24px' }}>
           <CardHeader>
@@ -1550,8 +1550,8 @@ function Analytics() {
                         paddingAngle={4}
                       >
                         {fileStats?.filesByType.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
+                          <Cell
+                            key={`cell-${index}`}
                             fill={entry.color}
                             stroke={COLORS.white}
                             strokeWidth={2}
@@ -1563,7 +1563,7 @@ function Analytics() {
                   </ResponsiveContainer>
                 </ChartContainer>
               </div>
-              
+
               <div style={{ flex: 1, minWidth: '300px', padding: '0 20px' }}>
                 <h4 style={{ margin: '0 0 15px 0', color: COLORS.secondaryLight }}>Distribution by File Type</h4>
                 <TableContainer>
@@ -1579,12 +1579,12 @@ function Analytics() {
                       {fileStats?.filesByType.map((item, index) => {
                         const total = fileStats.filesByType.reduce((sum, item) => sum + item.value, 0);
                         const percentage = ((item.value / total) * 100).toFixed(1);
-                        
+
                         return (
                           <TableRow key={index}>
                             <TableCell>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ 
+                                <span style={{
                                   color: FILE_TYPE_COLORS[item.type],
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1604,9 +1604,9 @@ function Analytics() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <div style={{ flex: 1, maxWidth: '100px' }}>
                                   <ProgressContainer $height="8px">
-                                    <ProgressBar 
-                                      $percent={percentage} 
-                                      $startColor={FILE_TYPE_COLORS[item.type]} 
+                                    <ProgressBar
+                                      $percent={percentage}
+                                      $startColor={FILE_TYPE_COLORS[item.type]}
                                       $endColor={FILE_TYPE_COLORS[item.type]}
                                     />
                                   </ProgressContainer>
@@ -1620,13 +1620,13 @@ function Analytics() {
                     </tbody>
                   </Table>
                 </TableContainer>
-                
+
                 <SummaryText style={{ marginTop: '20px' }}>
-                  {fileStats?.filesByType.length > 0 && 
-                    `Your most common file type is ${fileStats.filesByType[0].name}, 
+                  {fileStats?.filesByType.length > 0 &&
+                    `Your most common file type is ${fileStats.filesByType[0].name},
                     representing ${((fileStats.filesByType[0].value / fileStats.totalFiles) * 100).toFixed(1)}% of your files.`
                   }
-                  {fileStats?.encryptedFiles > 0 && 
+                  {fileStats?.encryptedFiles > 0 &&
                     ` You have ${fileStats.encryptedFiles} encrypted files, which is ${((fileStats.encryptedFiles / fileStats.totalFiles) * 100).toFixed(1)}% of your total files.`
                   }
                 </SummaryText>
@@ -1634,7 +1634,7 @@ function Analytics() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Recently Modified Files */}
         <Card>
           <CardHeader>
@@ -1658,7 +1658,7 @@ function Analytics() {
                     <TableRow key={index}>
                       <TableCell>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ 
+                          <span style={{
                             color: FILE_TYPE_COLORS[file.type],
                             display: 'flex',
                             alignItems: 'center',
@@ -1670,9 +1670,9 @@ function Analytics() {
                           }}>
                             {getFileTypeIcon(file.type)}
                           </span>
-                          <div style={{ 
-                            maxWidth: '250px', 
-                            overflow: 'hidden', 
+                          <div style={{
+                            maxWidth: '250px',
+                            overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                           }}>
@@ -1693,7 +1693,7 @@ function Analytics() {
       </>
     );
   };
-  
+
   const renderActivityTab = () => {
     return (
       <>
@@ -1701,41 +1701,41 @@ function Analytics() {
           This section shows detailed analytics about your activity patterns.
           You can see how your usage varies by day of the week, time of day, and over time.
         </SummaryText>
-        
+
         <FilterContainer>
           <div style={{ marginRight: '10px', color: COLORS.grayDark }}>
             Time Period:
           </div>
-          <FilterButton 
-            $active={timeFilter === 'week'} 
+          <FilterButton
+            $active={timeFilter === 'week'}
             onClick={() => setTimeFilter('week')}
           >
             <FaCalendarAlt /> Weekly
           </FilterButton>
-          <FilterButton 
-            $active={timeFilter === 'month'} 
+          <FilterButton
+            $active={timeFilter === 'month'}
             onClick={() => setTimeFilter('month')}
           >
             <FaCalendarAlt /> Monthly
           </FilterButton>
-          
+
           <div style={{ marginLeft: '20px', marginRight: '10px', color: COLORS.grayDark }}>
             Chart Type:
           </div>
-          <FilterButton 
-            $active={chartView === 'bar'} 
+          <FilterButton
+            $active={chartView === 'bar'}
             onClick={() => setChartView('bar')}
           >
             Bar Chart
           </FilterButton>
-          <FilterButton 
-            $active={chartView === 'line'} 
+          <FilterButton
+            $active={chartView === 'line'}
             onClick={() => setChartView('line')}
           >
             Line Chart
           </FilterButton>
         </FilterContainer>
-        
+
         {/* Activity Trends Chart */}
         <Card style={{ marginBottom: '24px' }}>
           <CardHeader>
@@ -1777,18 +1777,18 @@ function Analytics() {
                 )}
               </ResponsiveContainer>
             </ChartContainer>
-            
+
             <SummaryText>
-              {timeFilter === 'week' ? 
-                `Your most active day is ${activityStats?.activityByDay.reduce((max, day) => max.total > day.total ? max : day).day}, 
-                with ${activityStats?.activityByDay.reduce((max, day) => max.total > day.total ? max : day).total} total activities.` : 
-                `Over the last 6 months, your activity ${activityStats?.monthlyActivity[5].total > activityStats?.monthlyActivity[0].total ? 
+              {timeFilter === 'week' ?
+                `Your most active day is ${activityStats?.activityByDay.reduce((max, day) => max.total > day.total ? max : day).day},
+                with ${activityStats?.activityByDay.reduce((max, day) => max.total > day.total ? max : day).total} total activities.` :
+                `Over the last 6 months, your activity ${activityStats?.monthlyActivity[5].total > activityStats?.monthlyActivity[0].total ?
                   'has increased' : 'has been consistent or declined slightly'}.`
               }
             </SummaryText>
           </CardContent>
         </Card>
-        
+
         {/* Activity by Hour Heatmap */}
         <Card style={{ marginBottom: '24px' }}>
           <CardHeader>
@@ -1810,27 +1810,27 @@ function Analytics() {
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="value" name="Activities" fill={COLORS.primary}>
                     {activityStats?.activityByHour.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={`rgba(52, 152, 219, ${Math.max(0.3, entry.value / Math.max(...activityStats.activityByHour.map(h => h.value)))})`} 
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={`rgba(52, 152, 219, ${Math.max(0.3, entry.value / Math.max(...activityStats.activityByHour.map(h => h.value)))})`}
                       />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
-            
+
             <SummaryText>
               This heat map shows your activity distribution across different hours of the day.
-              {activityStats?.activityByHour && 
-                ` Your most active hour is ${activityStats.activityByHour.reduce((max, hour) => 
-                  hour.value > max.value ? hour : max).hour}:00, with ${activityStats.activityByHour.reduce((max, hour) => 
+              {activityStats?.activityByHour &&
+                ` Your most active hour is ${activityStats.activityByHour.reduce((max, hour) =>
+                  hour.value > max.value ? hour : max).hour}:00, with ${activityStats.activityByHour.reduce((max, hour) =>
                   hour.value > max.value ? hour : max).value} activities.`
               }
             </SummaryText>
           </CardContent>
         </Card>
-        
+
         {/* Security Stats */}
         <Card>
           <CardHeader>
@@ -1847,7 +1847,7 @@ function Analytics() {
                 <StatsValue>{fileStats?.encryptedFiles}</StatsValue>
                 <StatsLabel>Encrypted Files</StatsLabel>
               </StatsItem>
-              
+
               <StatsItem $bg={COLORS.warningLight}>
                 <StatsIcon $bgcolor={COLORS.warning}>
                   <FaShare />
@@ -1856,13 +1856,13 @@ function Analytics() {
                 <StatsLabel>File Shares</StatsLabel>
               </StatsItem>
             </StatsGrid>
-            
+
             <SummaryText style={{ marginTop: '16px' }}>
-              {fileStats?.encryptedFiles > 0 ? 
-                `You have encrypted ${((fileStats.encryptedFiles / fileStats.totalFiles) * 100).toFixed(1)}% of your files. ` : 
+              {fileStats?.encryptedFiles > 0 ?
+                `You have encrypted ${((fileStats.encryptedFiles / fileStats.totalFiles) * 100).toFixed(1)}% of your files. ` :
                 'You haven\'t encrypted any files yet. Consider encrypting sensitive files for better security. '}
-              {activityStats?.fileShares > 0 ? 
-                `You have shared files ${activityStats.fileShares} times.` : 
+              {activityStats?.fileShares > 0 ?
+                `You have shared files ${activityStats.fileShares} times.` :
                 'You haven\'t shared any files yet.'}
             </SummaryText>
           </CardContent>
@@ -1870,7 +1870,7 @@ function Analytics() {
       </>
     );
   };
-  
+
   return (
     <Container>
       <Header>
@@ -1892,7 +1892,7 @@ function Analytics() {
           )}
         </RefreshButton>
       </Header>
-      
+
       {error && (
         <ErrorState>
           <MessageIcon>
@@ -1904,14 +1904,14 @@ function Analytics() {
           </CloseButton>
         </ErrorState>
       )}
-      
+
       {lastRefreshed && (
         <LastUpdatedBadge>
           <FaCalendarAlt />
           Last updated: {lastRefreshed.toLocaleString()}
         </LastUpdatedBadge>
       )}
-      
+
       {isLoading ? (
         <LoadingState>
           <SpinningIcon style={{ fontSize: '48px', marginBottom: '16px' }}>
@@ -1932,7 +1932,7 @@ function Analytics() {
               <FaChartLine /> Activity Analytics
             </Tab>
           </TabsContainer>
-          
+
           {activeTab === 'overview' && renderOverviewTab()}
           {activeTab === 'files' && renderFilesTab()}
           {activeTab === 'activity' && renderActivityTab()}

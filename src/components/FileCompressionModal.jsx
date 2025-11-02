@@ -50,7 +50,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   color: #7f8c8d;
   padding: 5px;
-  
+
   &:hover {
     color: #34495e;
   }
@@ -83,13 +83,13 @@ const Input = styled.input`
   border-radius: 6px;
   font-size: 14px;
   transition: border 0.3s ease;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   &[disabled] {
     background-color: #f5f5f5;
     cursor: not-allowed;
@@ -102,7 +102,7 @@ const Select = styled.select`
   border-radius: 6px;
   font-size: 14px;
   transition: border 0.3s ease;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
@@ -128,7 +128,7 @@ const FileItem = styled.div`
   padding: 8px;
   border-radius: 4px;
   background-color: ${props => props.$isSelected ? '#ebf5fd' : 'transparent'};
-  
+
   &:not(:last-child) {
     border-bottom: 1px solid #eaeaea;
   }
@@ -158,11 +158,11 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
@@ -206,7 +206,7 @@ const MessageIcon = styled.div`
 
 const Spinner = styled(FaSpinner)`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -246,16 +246,16 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
   const [message, setMessage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sourcePaths, setSourcePaths] = useState([]);
-  
+
   useEffect(() => {
     if (files.length > 0) {
       // Set source paths from the file selection
       setSourcePaths(files.map(file => file.path));
-      
+
       // Generate a default output path
       if (mode === 'compress') {
         let defaultPath = '';
-        
+
         if (files.length === 1) {
           // For a single file or directory, use its name as the archive name
           const file = files[0];
@@ -268,7 +268,7 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
           const dirName = path.basename(commonDir);
           defaultPath = path.join(commonDir, `${dirName}_archive.${format}`);
         }
-        
+
         setOutputPath(defaultPath);
       } else {
         // For extraction mode, set the parent directory as default output
@@ -276,18 +276,18 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
         const dirPath = path.dirname(file.path);
         const baseName = path.basename(file.path, path.extname(file.path));
         const extractDir = path.join(dirPath, baseName);
-        
+
         setOutputPath(extractDir);
       }
     } else if (initialOutputPath) {
       setOutputPath(initialOutputPath);
     }
   }, [files, mode, format, initialOutputPath]);
-  
+
   const handleFormatChange = (e) => {
     const newFormat = e.target.value;
     setFormat(newFormat);
-    
+
     // Update the output path extension if we're in compress mode
     if (mode === 'compress' && outputPath) {
       const dirPath = path.dirname(outputPath);
@@ -295,7 +295,7 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
       setOutputPath(path.join(dirPath, `${baseName}.${newFormat}`));
     }
   };
-  
+
   const validateForm = () => {
     if (sourcePaths.length === 0) {
       setMessage({
@@ -304,7 +304,7 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
       });
       return false;
     }
-    
+
     if (!outputPath) {
       setMessage({
         type: 'error',
@@ -312,29 +312,29 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
       });
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     try {
       setIsProcessing(true);
       setMessage(null);
-      
+
       if (mode === 'compress') {
         // Compress files
         const result = await window.electron.fileManager.compressFiles({
           sourcePaths,
           outputPath,
           format,
-          options: { 
+          options: {
             compressionLevel: 9,
             gzip: format === 'tar' // Enable gzip for tar files
           }
         });
-        
+
         if (result.success) {
           setMessage({
             type: 'success',
@@ -349,12 +349,12 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
       } else {
         // Extract archive
         const archivePath = sourcePaths[0];
-        
+
         const result = await window.electron.fileManager.extractArchive({
           archivePath,
           outputPath
         });
-        
+
         if (result.success) {
           setMessage({
             type: 'success',
@@ -376,31 +376,31 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
       setIsProcessing(false);
     }
   };
-  
+
   const browseOutputLocation = async () => {
     try {
       const result = await window.electron.fileManager.browseDirectory();
       if (result.success) {
         let newPath = result.path;
-        
+
         // If we're compressing, append a filename
         if (mode === 'compress') {
-          const suggestedName = files.length === 1 
-            ? path.basename(files[0].path) 
+          const suggestedName = files.length === 1
+            ? path.basename(files[0].path)
             : 'archive';
-            
+
           newPath = path.join(newPath, `${suggestedName}.${format}`);
         }
-        
+
         setOutputPath(newPath);
       }
     } catch (error) {
       console.error('Error browsing directory:', error);
     }
   };
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={e => e.stopPropagation()}>
@@ -436,28 +436,28 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
                 ))}
               </FileInfo>
             </FormGroup>
-            
+
             {mode === 'compress' && (
               <FormGroup>
                 <Label>Archive Format</Label>
                 <Radio>
                   <RadioOption>
-                    <input 
-                      type="radio" 
-                      name="format" 
-                      value="zip" 
-                      checked={format === 'zip'} 
+                    <input
+                      type="radio"
+                      name="format"
+                      value="zip"
+                      checked={format === 'zip'}
                       onChange={handleFormatChange}
                       id="format-zip"
                     />
                     <label htmlFor="format-zip">ZIP</label>
                   </RadioOption>
                   <RadioOption>
-                    <input 
-                      type="radio" 
-                      name="format" 
-                      value="tar" 
-                      checked={format === 'tar'} 
+                    <input
+                      type="radio"
+                      name="format"
+                      value="tar"
+                      checked={format === 'tar'}
                       onChange={handleFormatChange}
                       id="format-tar"
                     />
@@ -466,17 +466,17 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
                 </Radio>
               </FormGroup>
             )}
-            
+
             <FormGroup>
               <Label>{mode === 'compress' ? 'Output Archive Path' : 'Extract to Directory'}</Label>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <Input 
-                  type="text" 
+                <Input
+                  type="text"
                   value={outputPath}
                   onChange={(e) => setOutputPath(e.target.value)}
                   disabled={isProcessing}
                 />
-                <ActionButton 
+                <ActionButton
                   onClick={browseOutputLocation}
                   disabled={isProcessing}
                 >
@@ -484,10 +484,10 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
                 </ActionButton>
               </div>
             </FormGroup>
-            
+
             <ButtonContainer>
-              <ActionButton 
-                $primary 
+              <ActionButton
+                $primary
                 onClick={handleSubmit}
                 disabled={isProcessing}
               >
@@ -505,7 +505,7 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
                   </>
                 )}
               </ActionButton>
-              <ActionButton 
+              <ActionButton
                 onClick={onClose}
                 disabled={isProcessing}
               >
@@ -513,18 +513,18 @@ function FileCompressionModal({ isOpen, onClose, files = [], mode = 'compress', 
               </ActionButton>
             </ButtonContainer>
           </CompressionForm>
-          
+
           {message && (
             <Message $type={message.type}>
               <MessageIcon>
-                {message.type === 'success' ? <FaCheck /> : 
-                 message.type === 'error' ? <FaTimes /> : 
+                {message.type === 'success' ? <FaCheck /> :
+                 message.type === 'error' ? <FaTimes /> :
                  <FaInfoCircle />}
               </MessageIcon>
               <div>{message.text}</div>
             </Message>
           )}
-          
+
           <InfoBox>
             <strong><FaInfoCircle style={{ marginRight: '5px' }} /> Information</strong>
             <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>

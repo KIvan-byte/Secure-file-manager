@@ -9,12 +9,12 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px; // Adds space between title and table/messages
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     gap: 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     gap: 12px;
@@ -26,12 +26,12 @@ const Title = styled.h2`
   font-weight: 600;
   color: #2c3e50; // Dark blue-grey
   margin-bottom: 0; // Gap handles spacing
-  
+
   @media (max-width: 768px) {
     font-size: 20px;
     text-align: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 18px;
   }
@@ -60,28 +60,28 @@ const Table = styled.table`
   tbody tr:last-child td {
     border-bottom: none; // No border for the last row
   }
-  
+
   @media (max-width: 768px) {
     th, td {
       padding: 8px 10px;
       font-size: 14px;
     }
-    
+
     th {
       font-size: 13px;
     }
   }
-  
+
   @media (max-width: 480px) {
     th, td {
       padding: 6px 8px;
       font-size: 12px;
     }
-    
+
     th {
       font-size: 11px;
     }
-    
+
     border-radius: 6px;
   }
 `;
@@ -96,17 +96,17 @@ const Button = styled.button`
   align-items: center;
   gap: 6px; // Space between icon and text
   transition: background-color 0.2s ease, transform 0.1s ease;
-  
+
   &:active {
     transform: translateY(1px);
   }
-  
+
   @media (max-width: 768px) {
     padding: 6px 10px;
     gap: 4px;
     font-size: 14px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 6px 8px;
     font-size: 12px;
@@ -228,7 +228,7 @@ function ManageLinks() {
       <Title>Manage Shared Links</Title>
       {/* Display error message even if some links are loaded, but an error occurred (e.g., copy failed) */}
       {error && <ErrorMessage style={{ marginBottom: '15px' }}>Error: {error}</ErrorMessage>}
-      
+
       {links.length === 0 && !loading && !error ? ( // Only show empty message if no links and no initial loading error
         <EmptyMessage>No active shared links found.</EmptyMessage>
       ) : links.length > 0 ? ( // Only render table if there are links
@@ -247,10 +247,10 @@ function ManageLinks() {
               <tr key={link.id}>
                 <td title={link.filePath}>{getFileName(link.filePath)}</td>
                 <td>
-                  <a 
-                    href={link.shareUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={link.shareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     title={link.shareUrl}
                     style={{display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#3498db', textDecoration: 'none'}}
                     onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
