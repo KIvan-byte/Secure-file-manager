@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { styled, keyframes } from 'styled-components';
-import { FaInfoCircle, FaTimes, FaCalendarAlt, FaUserAlt, FaLock, FaTag, FaDatabase, 
-  FaFileImage, FaFileVideo, FaFileAudio, FaFileAlt, FaFilePdf, FaCode, FaFileArchive, 
+import { FaInfoCircle, FaTimes, FaCalendarAlt, FaUserAlt, FaLock, FaTag, FaDatabase,
+  FaFileImage, FaFileVideo, FaFileAudio, FaFileAlt, FaFilePdf, FaCode, FaFileArchive,
   FaFile, FaCheck, FaExclamationTriangle, FaCopy, FaExternalLinkAlt, FaShieldAlt, FaKey, FaCalculator, FaFolder } from 'react-icons/fa';
 import path from 'path-browserify';
 
@@ -51,21 +51,21 @@ const ModalContent = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  
+
   &::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 10px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 10px;
   }
-  
+
   &::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
   }
@@ -100,7 +100,7 @@ const CloseButton = styled.button`
   justify-content: center;
   border-radius: 50%;
   transition: all 0.2s ease;
-  
+
   &:hover {
     color: #34495e;
     background-color: #f8f9fa;
@@ -132,7 +132,7 @@ const Tab = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   &:hover {
     color: #3498db;
     background-color: rgba(52, 152, 219, 0.05);
@@ -186,11 +186,11 @@ const HashButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 120px;
-  
+
   &:hover {
     background-color: #2980b9;
   }
-  
+
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
@@ -206,7 +206,7 @@ const TabContent = styled.div`
 const PropertySection = styled.div`
   margin-bottom: 28px;
   animation: ${fadeIn} 0.5s ease;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -220,7 +220,7 @@ const SectionTitle = styled.h4`
   gap: 10px;
   font-size: 16px;
   position: relative;
-  
+
   &:after {
     content: '';
     position: absolute;
@@ -247,7 +247,7 @@ const Property = styled.div`
   transition: all 0.2s ease;
   border-radius: 8px;
   padding: 12px;
-  
+
   &:hover {
     background-color: #f8f9fa;
   }
@@ -282,11 +282,11 @@ const CopyToClipboardButton = styled.button`
   align-items: center;
   opacity: 0;
   transition: all 0.2s ease;
-  
+
   ${Property}:hover & {
     opacity: 1;
   }
-  
+
   &:hover {
     color: #3498db;
     background-color: rgba(52, 152, 219, 0.1);
@@ -334,7 +334,7 @@ const CopyPathButton = styled.button`
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
-  
+
   &:hover {
     color: #3498db;
     background-color: rgba(52, 152, 219, 0.1);
@@ -379,7 +379,7 @@ const FileIconContainer = styled.div`
   color: ${props => props.$color || '#3498db'};
   margin-right: 12px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -462,18 +462,18 @@ const formatSize = (size) => {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let unitIndex = 0;
   let fileSize = size;
-  
+
   while (fileSize >= 1024 && unitIndex < units.length - 1) {
     fileSize /= 1024;
     unitIndex++;
   }
-  
+
   return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Not available';
-  
+
   try {
     const date = new Date(dateString);
     // A more thorough check for valid dates
@@ -490,28 +490,28 @@ const formatDate = (dateString) => {
 const formatMode = (mode) => {
   // Convert file mode to readable permissions (Unix-style)
   const permissions = [];
-  
+
   // Owner permissions
   permissions.push((mode & 0o400) ? 'r' : '-');
   permissions.push((mode & 0o200) ? 'w' : '-');
   permissions.push((mode & 0o100) ? 'x' : '-');
-  
+
   // Group permissions
   permissions.push((mode & 0o040) ? 'r' : '-');
   permissions.push((mode & 0o020) ? 'w' : '-');
   permissions.push((mode & 0o010) ? 'x' : '-');
-  
+
   // Others permissions
   permissions.push((mode & 0o004) ? 'r' : '-');
   permissions.push((mode & 0o002) ? 'w' : '-');
   permissions.push((mode & 0o001) ? 'x' : '-');
-  
+
   return permissions.join('');
 };
 
 const getFileIcon = (file) => {
   const fileType = getFileType(file);
-  
+
   switch (fileType) {
     case 'image':
       return { icon: <FaFileImage />, color: '#3498db', rgb: '52, 152, 219' };
@@ -534,12 +534,12 @@ const getFileIcon = (file) => {
 
 const getFileType = (file) => {
   const ext = path.extname(file.name).toLowerCase();
-  
+
   // Check if it's an archive
   if (isArchive(file.name)) {
     return 'archive';
   }
-  
+
   // Check file extension
   if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'].includes(ext)) {
     return 'image';
@@ -554,7 +554,7 @@ const getFileType = (file) => {
   } else if (['.js', '.html', '.css', '.py', '.java', '.c', '.cpp', '.php', '.go', '.ts', '.jsx', '.tsx'].includes(ext)) {
     return 'code';
   }
-  
+
   return 'other';
 };
 
@@ -565,7 +565,7 @@ const isArchive = (fileName) => {
 
 const getFileIconByMimeType = (mimeType) => {
   if (!mimeType) return { icon: <FaFile />, color: '#7f8c8d', rgb: '127, 140, 141' };
-  
+
   if (mimeType.startsWith('image/')) {
     return { icon: <FaFileImage />, color: '#3498db', rgb: '52, 152, 219' };
   } else if (mimeType.startsWith('video/')) {
@@ -581,7 +581,7 @@ const getFileIconByMimeType = (mimeType) => {
   } else if (mimeType.includes('javascript') || mimeType.includes('json') || mimeType.includes('xml')) {
     return { icon: <FaCode />, color: '#f1c40f', rgb: '241, 196, 15' };
   }
-  
+
   return { icon: <FaFile />, color: '#7f8c8d', rgb: '127, 140, 141' };
 };
 
@@ -592,7 +592,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
   const [activeTab, setActiveTab] = useState('general');
   const [copiedItem, setCopiedItem] = useState(null);
   const [pathCopied, setPathCopied] = useState(false);
-  
+
   // Hash calculation state
   const [hashCalculations, setHashCalculations] = useState({
     md5: { value: '', isCalculating: false },
@@ -622,42 +622,42 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
 
     try {
       const result = await window.electron.fileManager.calculateFileHash(file.path, algorithm);
-      
+
       if (result.success) {
         setHashCalculations(prev => ({
           ...prev,
-          [algorithm]: { 
-            value: result.hash, 
-            isCalculating: false 
+          [algorithm]: {
+            value: result.hash,
+            isCalculating: false
           }
         }));
       } else {
         setHashCalculations(prev => ({
           ...prev,
-          [algorithm]: { 
-            value: 'Error', 
-            isCalculating: false 
+          [algorithm]: {
+            value: 'Error',
+            isCalculating: false
           }
         }));
       }
     } catch (error) {
       setHashCalculations(prev => ({
         ...prev,
-        [algorithm]: { 
-          value: 'Error', 
-          isCalculating: false 
+        [algorithm]: {
+          value: 'Error',
+          isCalculating: false
         }
       }));
     }
   };
-  
+
   const fetchFileDetails = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const result = await window.electron.fileManager.getFileDetails(file.path);
-      
+
       if (result.success) {
         setFileDetails(result.details);
       } else {
@@ -670,20 +670,20 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
       setIsLoading(false);
     }
   };
-  
+
   const copyToClipboard = (text, item) => {
     if (!text || text === 'Error' || text === 'Not calculated') return;
     navigator.clipboard.writeText(text);
     setCopiedItem(item);
     setTimeout(() => setCopiedItem(null), 2000);
   };
-  
+
   const copyFilePath = () => {
     navigator.clipboard.writeText(file.path);
     setPathCopied(true);
     setTimeout(() => setPathCopied(false), 2000);
   };
-  
+
   const openFileLocation = () => {
     const dirPath = path.dirname(file.path);
     // Navigate to directory or show it in OS file explorer
@@ -693,12 +693,12 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
       window.electron.fileManager.openDirectory(dirPath);
     }
   };
-  
+
   if (!isOpen || !file) return null;
-  
+
   const fileIcon = getFileIcon(file);
   const mimeTypeIcon = fileDetails?.mime ? getFileIconByMimeType(fileDetails.mime) : fileIcon;
-  
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={e => e.stopPropagation()}>
@@ -723,34 +723,34 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
             <FaTimes />
           </CloseButton>
         </ModalHeader>
-        
+
         <PropertyTabs>
-          <Tab 
-            $active={activeTab === 'general'} 
+          <Tab
+            $active={activeTab === 'general'}
             onClick={() => setActiveTab('general')}
           >
             <FaInfoCircle /> General
           </Tab>
-          <Tab 
-            $active={activeTab === 'timestamps'} 
+          <Tab
+            $active={activeTab === 'timestamps'}
             onClick={() => setActiveTab('timestamps')}
           >
             <FaCalendarAlt /> Timestamps
           </Tab>
-          <Tab 
-            $active={activeTab === 'permissions'} 
+          <Tab
+            $active={activeTab === 'permissions'}
             onClick={() => setActiveTab('permissions')}
           >
             <FaLock /> Permissions
           </Tab>
-          <Tab 
-            $active={activeTab === 'checksums'} 
+          <Tab
+            $active={activeTab === 'checksums'}
             onClick={() => setActiveTab('checksums')}
           >
             <FaKey /> Checksums
           </Tab>
         </PropertyTabs>
-        
+
         <ModalBody>
           <TabContent $active={activeTab === 'general'}>
             <FilePath>
@@ -764,7 +764,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                 </OpenLocationButton>
               </div>
             </FilePath>
-            
+
             {isLoading ? (
               <LoadingIndicator>
                 <Spinner />
@@ -788,7 +788,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                     <PropertyLabel>Size</PropertyLabel>
                     <PropertyValue>
                       {formatSize(file.size)}
-                      <CopyToClipboardButton 
+                      <CopyToClipboardButton
                         onClick={() => copyToClipboard(formatSize(file.size), 'size')}
                         title="Copy to clipboard"
                       >
@@ -800,14 +800,14 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       <ProgressFill $percentage={Math.min(100, file.size / 1024 / 1024)} />
                     </ProgressBar>
                   </Property>
-                  
+
                   {fileDetails?.mime && (
                     <Property>
                       <PropertyLabel>MIME Type</PropertyLabel>
                       <PropertyValue>
                         <span style={{ color: mimeTypeIcon.color }}>{mimeTypeIcon.icon}</span>
                         {fileDetails.mime}
-                        <CopyToClipboardButton 
+                        <CopyToClipboardButton
                           onClick={() => copyToClipboard(fileDetails.mime, 'mime')}
                           title="Copy to clipboard"
                         >
@@ -817,7 +817,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       </PropertyValue>
                     </Property>
                   )}
-                  
+
                   <Property>
                     <PropertyLabel>File Type</PropertyLabel>
                     <PropertyValue>
@@ -825,7 +825,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       {getFileType(file).charAt(0).toUpperCase() + getFileType(file).slice(1)}
                     </PropertyValue>
                   </Property>
-                  
+
                   <Property>
                     <PropertyLabel>Location</PropertyLabel>
                     <PropertyValue>
@@ -836,7 +836,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
               </PropertySection>
             )}
           </TabContent>
-          
+
           <TabContent $active={activeTab === 'timestamps'}>
             {isLoading ? (
               <LoadingIndicator>
@@ -861,7 +861,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                     <PropertyLabel>Created</PropertyLabel>
                     <PropertyValue>
                       {formatDate(fileDetails?.birthtime || file.birthtime)}
-                      <CopyToClipboardButton 
+                      <CopyToClipboardButton
                         onClick={() => copyToClipboard(formatDate(fileDetails?.birthtime || file.birthtime), 'created')}
                         title="Copy to clipboard"
                       >
@@ -870,12 +870,12 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       {copiedItem === 'created' && <CopiedIndicator>Copied!</CopiedIndicator>}
                     </PropertyValue>
                   </Property>
-                  
+
                   <Property>
                     <PropertyLabel>Modified</PropertyLabel>
                     <PropertyValue>
                       {formatDate(fileDetails?.mtime || file.mtime)}
-                      <CopyToClipboardButton 
+                      <CopyToClipboardButton
                         onClick={() => copyToClipboard(formatDate(fileDetails?.mtime || file.mtime), 'modified')}
                         title="Copy to clipboard"
                       >
@@ -884,12 +884,12 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       {copiedItem === 'modified' && <CopiedIndicator>Copied!</CopiedIndicator>}
                     </PropertyValue>
                   </Property>
-                  
+
                   <Property>
                     <PropertyLabel>Last Accessed</PropertyLabel>
                     <PropertyValue>
                       {formatDate(fileDetails?.atime)}
-                      <CopyToClipboardButton 
+                      <CopyToClipboardButton
                         onClick={() => copyToClipboard(formatDate(fileDetails?.atime), 'accessed')}
                         title="Copy to clipboard"
                       >
@@ -898,12 +898,12 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       {copiedItem === 'accessed' && <CopiedIndicator>Copied!</CopiedIndicator>}
                     </PropertyValue>
                   </Property>
-                  
+
                   <Property>
                     <PropertyLabel>Status Changed</PropertyLabel>
                     <PropertyValue>
                       {formatDate(fileDetails?.ctime)}
-                      <CopyToClipboardButton 
+                      <CopyToClipboardButton
                         onClick={() => copyToClipboard(formatDate(fileDetails?.ctime), 'changed')}
                         title="Copy to clipboard"
                       >
@@ -916,7 +916,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
               </PropertySection>
             )}
           </TabContent>
-          
+
           <TabContent $active={activeTab === 'permissions'}>
             {isLoading ? (
               <LoadingIndicator>
@@ -942,7 +942,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       <PropertyLabel>File Mode</PropertyLabel>
                       <PropertyValue>
                         {formatMode(fileDetails.mode)} ({fileDetails.mode.toString(8)})
-                        <CopyToClipboardButton 
+                        <CopyToClipboardButton
                           onClick={() => copyToClipboard(`${formatMode(fileDetails.mode)} (${fileDetails.mode.toString(8)})`, 'mode')}
                           title="Copy to clipboard"
                         >
@@ -952,13 +952,13 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       </PropertyValue>
                     </Property>
                   )}
-                  
+
                   {fileDetails?.owner && (
                     <Property>
                       <PropertyLabel>Owner</PropertyLabel>
                       <PropertyValue>
                         <FaUserAlt style={{ fontSize: '14px' }} /> {fileDetails.owner}
-                        <CopyToClipboardButton 
+                        <CopyToClipboardButton
                           onClick={() => copyToClipboard(fileDetails.owner, 'owner')}
                           title="Copy to clipboard"
                         >
@@ -968,13 +968,13 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                       </PropertyValue>
                     </Property>
                   )}
-                  
+
                   {fileDetails?.group && (
                     <Property>
                       <PropertyLabel>Group</PropertyLabel>
                       <PropertyValue>
                         <FaUserAlt style={{ fontSize: '14px' }} /> {fileDetails.group}
-                        <CopyToClipboardButton 
+                        <CopyToClipboardButton
                           onClick={() => copyToClipboard(fileDetails.group, 'group')}
                           title="Copy to clipboard"
                         >
@@ -996,16 +996,16 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                 <SectionTitle>
                   <FaKey /> File Checksums
                 </SectionTitle>
-                
+
                 <HashContainer>
                   {['md5', 'sha1', 'sha256'].map(algorithm => (
                     <HashRow key={algorithm}>
                       <HashLabel>{algorithm.toUpperCase()}</HashLabel>
-                      
+
                       <HashValue>
                         {hashCalculations[algorithm].value || 'Not calculated'}
                       </HashValue>
-                      
+
                       <HashButton
                         onClick={() => calculateHash(algorithm)}
                         disabled={hashCalculations[algorithm].isCalculating}
@@ -1020,7 +1020,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                           </>
                         )}
                       </HashButton>
-                      
+
                       {hashCalculations[algorithm].value && hashCalculations[algorithm].value !== 'Error' && hashCalculations[algorithm].value !== 'Not calculated' && (
                         <HashButton
                           onClick={() => copyToClipboard(hashCalculations[algorithm].value, `${algorithm}_hash`)}
@@ -1040,7 +1040,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                     </HashRow>
                   ))}
                 </HashContainer>
-                
+
                 <div style={{ marginTop: '20px', backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
                   <strong>About Checksums:</strong><br />
                   • MD5: 128-bit hash (fast, suitable for file integrity)<br />
@@ -1049,7 +1049,7 @@ function FilePropertiesModal({ isOpen, onClose, file }) {
                 </div>
               </PropertySection>
             )}
-            
+
             {file && file.isDirectory && (
               <PropertySection>
                 <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>

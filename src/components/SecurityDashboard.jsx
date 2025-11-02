@@ -12,19 +12,19 @@ const SecurityDashboard = () => {
   const loadSecurityData = async () => {
     try {
       setLoading(true);
-      
+
       // Get security statistics
       const statsResult = await window.electron.security.getStats();
       if (statsResult.success) {
         setSecurityStats(statsResult.data);
       }
-      
+
       // Get recent security events
       const eventsResult = await window.electron.security.getEvents(100);
       if (eventsResult.success) {
         setSecurityEvents(eventsResult.data);
       }
-      
+
       setError(null);
     } catch (err) {
       console.error('Error loading security data:', err);
@@ -48,7 +48,7 @@ const SecurityDashboard = () => {
   const getSeverityColor = (eventType) => {
     const highSeverity = ['auto_blocked_suspicious', 'path_traversal_attempt', 'csrf_violation'];
     const mediumSeverity = ['rate_limit_exceeded', '2fa_failed_attempt', 'failed_auth'];
-    
+
     if (highSeverity.includes(eventType)) return '#f44336';
     if (mediumSeverity.includes(eventType)) return '#ff9800';
     return '#4caf50';
@@ -67,10 +67,10 @@ const SecurityDashboard = () => {
 
   useEffect(() => {
     loadSecurityData();
-    
+
     // Refresh data every 30 seconds
     const interval = setInterval(loadSecurityData, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -249,11 +249,11 @@ const Container = styled.div`
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  
+
   @media (max-width: 768px) {
     padding: 16px 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px 8px;
   }
@@ -266,12 +266,12 @@ const SettingsCard = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
   overflow: hidden;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
     border-radius: 4px;
@@ -287,12 +287,12 @@ const CardHeader = styled.div`
   border-bottom: 1px solid #eaeaea;
   flex-wrap: wrap;
   gap: 12px;
-  
+
   @media (max-width: 768px) {
     padding: 12px 16px;
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     flex-direction: column;
@@ -307,12 +307,12 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   @media (max-width: 768px) {
     font-size: 16px;
     gap: 6px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 15px;
     justify-content: center;
@@ -321,11 +321,11 @@ const CardTitle = styled.h3`
 
 const CardContent = styled.div`
   padding: 24px;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -339,12 +339,12 @@ const LoadingIndicator = styled.div`
   padding: 40px;
   color: #7f8c8d;
   font-size: 16px;
-  
+
   svg {
     animation: spin 1s linear infinite;
     color: #3498db;
   }
-  
+
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -361,7 +361,7 @@ const ErrorMessage = styled.div`
   border-radius: 6px;
   color: #c62828;
   font-size: 14px;
-  
+
   svg {
     color: #f44336;
   }
@@ -379,12 +379,12 @@ const RefreshButton = styled.button`
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background: #2980b9;
     transform: translateY(-1px);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
@@ -406,7 +406,7 @@ const StatItem = styled.div`
   border-radius: 6px;
   border: 1px solid #e9ecef;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background: #e3f2fd;
     border-color: #3498db;
@@ -453,7 +453,7 @@ const InfoBox = styled.div`
   font-size: 14px;
   display: flex;
   align-items: flex-start;
-  
+
   svg {
     color: #3498db;
     margin-top: 2px;
@@ -476,7 +476,7 @@ const ToggleButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background: #7f8c8d;
   }
@@ -494,7 +494,7 @@ const ClearButton = styled.button`
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background: #c0392b;
   }
@@ -509,7 +509,7 @@ const NoEvents = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  
+
   svg {
     font-size: 32px;
     color: #bdc3c7;
@@ -530,11 +530,11 @@ const EventItem = styled.div`
   padding: 16px;
   border-bottom: 1px solid #f0f0f0;
   transition: background 0.2s ease;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   &:hover {
     background: #f8f9fa;
   }
@@ -559,7 +559,7 @@ const EventHeader = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     gap: 4px;
@@ -590,11 +590,11 @@ const EventDetails = styled.div`
 const DetailItem = styled.div`
   margin-bottom: 4px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
-  
+
   strong {
     color: #2c3e50;
     font-weight: 600;

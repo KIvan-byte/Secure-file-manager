@@ -9,7 +9,7 @@ const ResultsContainer = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
   overflow: hidden;
-  
+
   @media (max-width: 768px) {
     border-radius: 0;
     margin-bottom: 16px;
@@ -23,7 +23,7 @@ const ResultsHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eaeaea;
-  
+
   @media (max-width: 768px) {
     padding: 12px;
   }
@@ -36,7 +36,7 @@ const ResultsTitle = styled.h3`
   align-items: center;
   gap: 10px;
   color: #2c3e50;
-  
+
   @media (max-width: 768px) {
     font-size: 14px;
     gap: 8px;
@@ -62,7 +62,7 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   &:hover {
     color: #34495e;
   }
@@ -79,15 +79,15 @@ const ResultItem = styled.div`
   border-bottom: 1px solid #eaeaea;
   cursor: pointer;
   transition: background-color 0.2s;
-  
+
   &:hover {
     background-color: #f5f6fa;
   }
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   @media (max-width: 768px) {
     padding: 12px;
   }
@@ -98,7 +98,7 @@ const ResultHeader = styled.div`
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
-  
+
   @media (max-width: 768px) {
     gap: 8px;
     flex-wrap: wrap;
@@ -115,7 +115,7 @@ const FileName = styled.div`
   font-weight: 600;
   flex: 1;
   word-break: break-all;
-  
+
   @media (max-width: 768px) {
     font-size: 14px;
     min-width: 0;
@@ -129,13 +129,13 @@ const FileInfo = styled.div`
   font-size: 13px;
   color: #7f8c8d;
   margin-bottom: 12px;
-  
+
   @media (max-width: 768px) {
     gap: 12px;
     font-size: 12px;
     flex-direction: column;
   }
-  
+
   @media (max-width: 480px) {
     gap: 8px;
   }
@@ -156,11 +156,11 @@ const ViewButton = styled.button`
   display: flex;
   align-items: center;
   gap: 4px;
-  
+
   &:hover {
     background-color: #2980b9;
   }
-  
+
   @media (max-width: 768px) {
     padding: 6px 10px;
     font-size: 11px;
@@ -192,7 +192,7 @@ const SnippetContent = styled.pre`
   background-color: white;
   white-space: pre-wrap;
   word-break: break-all;
-  
+
   @media (max-width: 768px) {
     padding: 8px;
     font-size: 12px;
@@ -212,7 +212,7 @@ const LoadingState = styled.div`
   padding: 48px 24px;
   color: #7f8c8d;
   text-align: center;
-  
+
   @media (max-width: 768px) {
     padding: 32px 16px;
   }
@@ -226,7 +226,7 @@ const EmptyState = styled.div`
   padding: 48px 24px;
   color: #7f8c8d;
   text-align: center;
-  
+
   @media (max-width: 768px) {
     padding: 32px 16px;
   }
@@ -242,12 +242,12 @@ function formatSize(size) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let unitIndex = 0;
   let fileSize = size;
-  
+
   while (fileSize >= 1024 && unitIndex < units.length - 1) {
     fileSize /= 1024;
     unitIndex++;
   }
-  
+
   return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
 }
 
@@ -258,21 +258,21 @@ function formatDate(date) {
 // Function to highlight search term in a snippet text while preserving line numbers
 function HighlightedSnippet({ text, searchTerm, caseSensitive }) {
   if (!text) return null;
-  
+
   // Break into lines
   const lines = text.split('\n');
-  
+
   return (
     <SnippetContent>
       {lines.map((line, index) => {
-        const hasMatch = caseSensitive 
+        const hasMatch = caseSensitive
           ? line.includes(searchTerm)
           : line.toLowerCase().includes(searchTerm.toLowerCase());
-        
+
         if (hasMatch) {
           return <HighlightedLine key={index}>{line}</HighlightedLine>;
         }
-        
+
         return <div key={index}>{line}</div>;
       })}
     </SnippetContent>
@@ -293,7 +293,7 @@ function SearchResults({ results, searchTerm, onClose, onFileClick, isLoading, c
           <FaTimes />
         </CloseButton>
       </ResultsHeader>
-      
+
       <ResultsContent>
         {isLoading ? (
           <LoadingState>
@@ -322,7 +322,7 @@ function SearchResults({ results, searchTerm, onClose, onFileClick, isLoading, c
                   <FaEye /> View
                 </ViewButton>
               </ResultHeader>
-              
+
               <FileInfo>
                 <div>
                   <strong>Path:</strong> {path.dirname(result.path)}
@@ -334,13 +334,13 @@ function SearchResults({ results, searchTerm, onClose, onFileClick, isLoading, c
                   <strong>Modified:</strong> {formatDate(result.mtime)}
                 </div>
               </FileInfo>
-              
+
               {result.snippets && result.snippets.length > 0 && (
                 <CodeSnippets>
                   <SnippetTitle>Matches:</SnippetTitle>
                   {result.snippets.map((snippet, snippetIndex) => (
                     <div key={snippetIndex}>
-                      <HighlightedSnippet 
+                      <HighlightedSnippet
                         text={snippet.text}
                         searchTerm={searchTerm}
                         caseSensitive={caseSensitive}

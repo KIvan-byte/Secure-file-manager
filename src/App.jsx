@@ -175,16 +175,16 @@ function App() {
   return (
     <AppContainer>
       {isLocked ? (
-        <LockScreen 
-          onUnlock={handleUnlock} 
-          password={securitySettings.password} 
+        <LockScreen
+          onUnlock={handleUnlock}
+          password={securitySettings.password}
         />
       ) : (
         <>
-          <Sidebar 
-            selectedIndex={selectedPage} 
-            onSelect={setSelectedPage} 
-            onLock={lockApplication} 
+          <Sidebar
+            selectedIndex={selectedPage}
+            onSelect={setSelectedPage}
+            onLock={lockApplication}
           />
           <MainContent>
             <Routes>

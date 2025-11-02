@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'styled-components';
-import { FaLock, FaEye, FaEyeSlash, FaPlus, FaTrash, FaEdit, FaFolder, FaCopy, 
-         FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, 
-         FaClipboard, FaSearch, FaKey, FaFile, FaFileAlt, FaCreditCard, 
+import { FaLock, FaEye, FaEyeSlash, FaPlus, FaTrash, FaEdit, FaFolder, FaCopy,
+         FaSave, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle,
+         FaClipboard, FaSearch, FaKey, FaFile, FaFileAlt, FaCreditCard,
          FaLockOpen, FaSpinner, FaIdCard, FaStickyNote, FaSort, FaFilter } from 'react-icons/fa';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
@@ -11,11 +11,11 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -28,7 +28,7 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -44,13 +44,13 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     gap: 8px;
     justify-content: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
     gap: 6px;
@@ -62,17 +62,17 @@ const TwoColumnLayout = styled.div`
   grid-template-columns: 300px 1fr;
   gap: 24px;
   flex: 1;
-  
+
   @media (max-width: 1024px) {
     grid-template-columns: 250px 1fr;
     gap: 16px;
   }
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   @media (max-width: 480px) {
     gap: 12px;
   }
@@ -86,14 +86,14 @@ const CategoryPanel = styled.div`
   height: calc(100vh - 140px);
   display: flex;
   flex-direction: column;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     height: auto;
     max-height: 400px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     max-height: 300px;
@@ -131,11 +131,11 @@ const CategoryItem = styled.div`
   transition: background-color 0.2s ease;
   background-color: ${props => props.$active ? '#f0f7ff' : 'transparent'};
   border-left: 3px solid ${props => props.$active ? '#3498db' : 'transparent'};
-  
+
   &:hover {
     background-color: ${props => props.$active ? '#f0f7ff' : '#f8f9fa'};
   }
-  
+
   &:not(:last-child) {
     margin-bottom: 4px;
   }
@@ -198,7 +198,7 @@ const SearchInput = styled.input`
   border-radius: 6px;
   font-size: 14px;
   width: 100%;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
@@ -227,11 +227,11 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
@@ -269,7 +269,7 @@ const EntryItem = styled.div`
   margin-bottom: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
@@ -309,7 +309,7 @@ const EntryActions = styled.div`
   gap: 8px;
   opacity: 0.5;
   transition: opacity 0.2s ease;
-  
+
   ${EntryItem}:hover & {
     opacity: 1;
   }
@@ -327,7 +327,7 @@ const IconButton = styled.button`
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$bgHover || '#eaeaea'};
   }
@@ -378,7 +378,7 @@ const EntryFieldValue = styled.div`
   border-radius: 4px;
   color: #2c3e50;
   font-family: ${props => props.$monospace ? 'monospace' : 'inherit'};
-  
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -493,7 +493,7 @@ const Input = styled.input`
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
@@ -507,7 +507,7 @@ const Select = styled.select`
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
@@ -537,7 +537,7 @@ const ButtonSmall = styled.button`
   color: ${props => props.$color || '#34495e'};
   border: none;
   cursor: pointer;
-  
+
   &:hover {
     background-color: ${props => props.$bgHover || '#eaeaea'};
   }
@@ -550,7 +550,7 @@ const TextArea = styled.textarea`
   border-radius: 6px;
   font-size: 14px;
   min-height: 100px;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
@@ -571,7 +571,7 @@ const ToolBar = styled.div`
   gap: 8px;
   margin-left: auto;
   flex-wrap: wrap;
-  
+
   @media (max-width: 576px) {
     margin-top: 10px;
     width: 100%;
@@ -636,7 +636,7 @@ const PasswordEye = styled.div`
   transform: translateY(-50%);
   color: #7f8c8d;
   cursor: pointer;
-  
+
   &:hover {
     color: #34495e;
   }
@@ -700,7 +700,7 @@ const PasswordRequirements = styled.div`
 
 const LoadingSpinner = styled(FaSpinner)`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -716,16 +716,16 @@ const fadeTransition = `
   .fade-enter {
     opacity: 0;
   }
-  
+
   .fade-enter-active {
     opacity: 1;
     transition: opacity 300ms;
   }
-  
+
   .fade-exit {
     opacity: 1;
   }
-  
+
   .fade-exit-active {
     opacity: 0;
     transition: opacity 300ms;
@@ -821,31 +821,31 @@ const TYPE_COLORS = {
 };
 
 // Function to generate a random password
-const generatePassword = (length = 16, options = { 
-  uppercase: true, 
-  lowercase: true, 
-  numbers: true, 
-  symbols: true 
+const generatePassword = (length = 16, options = {
+  uppercase: true,
+  lowercase: true,
+  numbers: true,
+  symbols: true
 }) => {
   const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
   const numberChars = '0123456789';
   const symbolChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
-  
+
   let chars = '';
   if (options.uppercase) chars += uppercaseChars;
   if (options.lowercase) chars += lowercaseChars;
   if (options.numbers) chars += numberChars;
   if (options.symbols) chars += symbolChars;
-  
+
   if (!chars) return '';
-  
+
   let password = '';
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * chars.length);
     password += chars[randomIndex];
   }
-  
+
   return password;
 };
 
@@ -862,14 +862,14 @@ function SecureNotes() {
   const [createError, setCreateError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState('');
   const [strengthPercent, setStrengthPercent] = useState(0);
-  
+
   // Data state
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // UI state
   const [showAddModal, setShowAddModal] = useState(false);
   const [entryType, setEntryType] = useState('password');
@@ -878,23 +878,23 @@ function SecureNotes() {
   const [message, setMessage] = useState(null);
   const [revealedFields, setRevealedFields] = useState({});
   const [sortOrder, setSortOrder] = useState('newest');
-  
+
   // Track initial load
   const [initialLoad, setInitialLoad] = useState(true);
-  
+
   // Load saved entries when unlocked
   useEffect(() => {
     if (!isLocked) {
       loadEntries();
     }
   }, [isLocked]);
-  
+
   // Filter entries based on search and category
   useEffect(() => {
     if (!entries) return;
-    
+
     let filtered = [...entries];
-    
+
     // Filter by category
     if (selectedCategory !== 'all') {
       const category = CATEGORIES.find(c => c.id === selectedCategory);
@@ -902,14 +902,14 @@ function SecureNotes() {
         filtered = filtered.filter(entry => entry.type === category.entryType);
       }
     }
-    
+
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(entry => {
         // Search in title
         if (entry.title.toLowerCase().includes(term)) return true;
-        
+
         // Search in all fields
         for (const key in entry.fields) {
           const value = entry.fields[key];
@@ -917,16 +917,16 @@ function SecureNotes() {
             return true;
           }
         }
-        
+
         // Search in tags
         if (entry.tags && entry.tags.some(tag => tag.toLowerCase().includes(term))) {
           return true;
         }
-        
+
         return false;
       });
     }
-    
+
     // Apply sorting
     if (sortOrder === 'newest') {
       filtered.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
@@ -935,17 +935,17 @@ function SecureNotes() {
     } else if (sortOrder === 'alphabetical') {
       filtered.sort((a, b) => a.title.localeCompare(b.title));
     }
-    
+
     setFilteredEntries(filtered);
   }, [entries, selectedCategory, searchTerm, sortOrder]);
-  
+
   // Update password strength when masterPassword changes
   useEffect(() => {
     if (initialLoad && masterPassword) {
       calculatePasswordStrength(masterPassword);
     }
   }, [masterPassword, initialLoad]);
-  
+
   // При монтировании сразу проверяем наличие мастер-пароля
   useEffect(() => {
     (async () => {
@@ -957,7 +957,7 @@ function SecureNotes() {
       }
     })();
   }, []);
-  
+
   // Calculate password strength
   const calculatePasswordStrength = (password) => {
     if (!password) {
@@ -965,22 +965,22 @@ function SecureNotes() {
       setStrengthPercent(0);
       return;
     }
-    
+
     let score = 0;
-    
+
     if (password.length >= 8) score += 1;
     if (password.length >= 12) score += 1;
     if (password.length >= 16) score += 1;
-    
+
     if (/\d/.test(password)) score += 1;
     if (/[a-z]/.test(password)) score += 1;
     if (/[A-Z]/.test(password)) score += 1;
     if (/[^A-Za-z0-9]/.test(password)) score += 1;
     if (!/(123|abc|password|qwerty|admin)/i.test(password)) score += 1;
-    
+
     const percent = (score / 8) * 100;
     setStrengthPercent(percent);
-    
+
     if (percent < 30) {
       setPasswordStrength('weak');
     } else if (percent < 60) {
@@ -991,7 +991,7 @@ function SecureNotes() {
       setPasswordStrength('very-strong');
     }
   };
-  
+
   const getStrengthLabel = () => {
     switch (passwordStrength) {
       case 'weak': return 'Weak';
@@ -1001,13 +1001,13 @@ function SecureNotes() {
       default: return '';
     }
   };
-  
+
   // Load entries from secure storage
   const loadEntries = async () => {
     try {
       setIsLoading(true);
       const result = await window.electron.secureNotes.getEntries(masterPassword);
-      
+
       if (result.success) {
         setEntries(result.entries);
       } else {
@@ -1025,26 +1025,26 @@ function SecureNotes() {
       setIsLoading(false);
     }
   };
-  
+
   // Handle master password validation
   const handleUnlock = async () => {
     if (!masterPassword) {
       setAuthError('Please enter your master password');
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setAuthError('');
-      
+
       if (!window.electron || !window.electron.auth || typeof window.electron.auth.validateMasterPassword !== 'function') {
         setIsCreatingPassword(true);
         setIsLoading(false);
         return;
       }
-      
+
       const result = await window.electron.auth.validateMasterPassword(masterPassword);
-      
+
       if (result.success) {
         setIsLocked(false);
       } else if (result.newUser) {
@@ -1096,7 +1096,7 @@ function SecureNotes() {
       setIsLoading(false);
     }
   };
-  
+
   // Handle lock
   const handleLock = () => {
     setIsLocked(true);
@@ -1106,13 +1106,13 @@ function SecureNotes() {
     setFilteredEntries([]);
     setSelectedEntry(null);
   };
-  
+
   // Handle category selection
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
     setSelectedEntry(null);
   };
-  
+
   // Open add/edit modal
   const handleOpenAddModal = (type = 'password') => {
     setEntryType(type);
@@ -1120,28 +1120,28 @@ function SecureNotes() {
     setIsEditing(false);
     setShowAddModal(true);
   };
-  
+
   // Close modal
   const handleCloseModal = () => {
     setShowAddModal(false);
     setFormData({});
   };
-  
+
   // Handle form input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   // Create or update entry
   const handleSaveEntry = async () => {
     // Validate required fields
     const requiredFields = FIELD_CONFIGS[entryType]
       .filter(field => field.required)
       .map(field => field.name);
-    
+
     const missingFields = requiredFields.filter(field => !formData[field]);
-    
+
     if (missingFields.length > 0) {
       setMessage({
         type: 'error',
@@ -1149,10 +1149,10 @@ function SecureNotes() {
       });
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
+
       const entryData = {
         id: isEditing ? formData.id : Date.now().toString(),
         type: entryType,
@@ -1162,7 +1162,7 @@ function SecureNotes() {
         createdAt: isEditing ? formData.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       // Remove metadata from fields
       delete entryData.fields.id;
       delete entryData.fields.type;
@@ -1170,14 +1170,14 @@ function SecureNotes() {
       delete entryData.fields.tags;
       delete entryData.fields.createdAt;
       delete entryData.fields.updatedAt;
-      
+
       const result = await window.electron.secureNotes.saveEntry(entryData, masterPassword);
-      
+
       if (result.success) {
         loadEntries();
         setShowAddModal(false);
         setFormData({});
-        
+
         setMessage({
           type: 'success',
           text: isEditing ? 'Entry updated successfully' : 'Entry created successfully'
@@ -1197,7 +1197,7 @@ function SecureNotes() {
       setIsLoading(false);
     }
   };
-  
+
   // Handle edit entry
   const handleEditEntry = (entry) => {
     setIsEditing(true);
@@ -1213,25 +1213,25 @@ function SecureNotes() {
     });
     setShowAddModal(true);
   };
-  
+
   // Handle delete entry
   const handleDeleteEntry = async (entry) => {
     if (!confirm(`Are you sure you want to delete "${entry.title}"?`)) {
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
+
       const result = await window.electron.secureNotes.deleteEntry(entry.id, masterPassword);
-      
+
       if (result.success) {
         loadEntries();
-        
+
         if (selectedEntry && selectedEntry.id === entry.id) {
           setSelectedEntry(null);
         }
-        
+
         setMessage({
           type: 'success',
           text: 'Entry deleted successfully'
@@ -1251,27 +1251,27 @@ function SecureNotes() {
       setIsLoading(false);
     }
   };
-  
+
   // Select an entry
   const handleSelectEntry = (entry) => {
     setSelectedEntry(entry === selectedEntry ? null : entry);
   };
-  
+
   // Copy field value to clipboard
   const handleCopyToClipboard = (value) => {
     navigator.clipboard.writeText(value);
-    
+
     setMessage({
       type: 'success',
       text: 'Copied to clipboard!'
     });
-    
+
     // Clear message after 3 seconds
     setTimeout(() => {
       setMessage(null);
     }, 3000);
   };
-  
+
   // Toggle field visibility
   const toggleFieldVisibility = (fieldName) => {
     setRevealedFields(prev => ({
@@ -1279,26 +1279,26 @@ function SecureNotes() {
       [fieldName]: !prev[fieldName]
     }));
   };
-  
+
   // Generate a random password
   const handleGeneratePassword = () => {
     const password = generatePassword();
     setFormData(prev => ({ ...prev, password }));
   };
-  
+
   // Handle master password form submit
   const handleMasterPasswordSubmit = (e) => {
     e.preventDefault();
     handleUnlock();
   };
-  
+
   // Handle entry key press
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleUnlock();
     }
   };
-  
+
   // Render the locked screen
   if (isLocked) {
     if (isCreatingPassword) {
@@ -1371,23 +1371,23 @@ function SecureNotes() {
             <FaLock /> Secure Notes & Passwords
           </Title>
         </Header>
-        
+
         <GlobalStyle />
-        
+
         <LockScreen>
           <LockIcon>
             <FaLock />
           </LockIcon>
-          
+
           <LockTitle>Unlock Your Secure Vault</LockTitle>
           <LockSubtitle>
             Enter your master password to access your secure notes and passwords
           </LockSubtitle>
-          
+
           <form onSubmit={handleMasterPasswordSubmit} style={{ width: '100%' }}>
             <PasswordInput>
-              <Input 
-                type={showMasterPassword ? 'text' : 'password'} 
+              <Input
+                type={showMasterPassword ? 'text' : 'password'}
                 placeholder="Enter master password"
                 value={masterPassword}
                 onChange={(e) => setMasterPassword(e.target.value)}
@@ -1397,11 +1397,11 @@ function SecureNotes() {
                 {showMasterPassword ? <FaEyeSlash /> : <FaEye />}
               </PasswordEye>
             </PasswordInput>
-            
+
             {authError && <ErrorText>{authError}</ErrorText>}
-            
-            <ActionButton 
-              $primary 
+
+            <ActionButton
+              $primary
               type="submit"
               style={{ width: '100%' }}
               disabled={isLoading}
@@ -1421,34 +1421,34 @@ function SecureNotes() {
       </Container>
     );
   }
-  
+
   // Get count of entries by category
   const getCategoryCount = (categoryId) => {
     if (categoryId === 'all') return entries.length;
-    
+
     const category = CATEGORIES.find(c => c.id === categoryId);
     if (category && category.entryType) {
       return entries.filter(entry => entry.type === category.entryType).length;
     }
-    
+
     return 0;
   };
-  
+
   // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
-  
+
   // Render entry field
   const renderEntryField = (entry, fieldName, fieldConfig) => {
     if (!entry.fields[fieldName] && fieldName !== 'tags') return null;
-    
+
     const label = fieldConfig ? fieldConfig.label : fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
     const isPassword = fieldConfig && fieldConfig.type === 'password';
     const isTextarea = fieldConfig && fieldConfig.type === 'textarea';
     const isRevealed = revealedFields[fieldName];
-    
+
     return (
       <EntryField key={fieldName}>
         <EntryFieldLabel>
@@ -1465,17 +1465,17 @@ function SecureNotes() {
           ) : (
             entry.fields[fieldName]
           )}
-          
+
           <EntryFieldActions>
             {isPassword && (
-              <IconButton 
+              <IconButton
                 onClick={() => toggleFieldVisibility(fieldName)}
                 title={isRevealed ? 'Hide' : 'Show'}
               >
                 {isRevealed ? <FaEyeSlash /> : <FaEye />}
               </IconButton>
             )}
-            <IconButton 
+            <IconButton
               onClick={() => handleCopyToClipboard(entry.fields[fieldName])}
               title="Copy to clipboard"
             >
@@ -1486,7 +1486,7 @@ function SecureNotes() {
       </EntryField>
     );
   };
-  
+
   return (
     <Container>
       <Header>
@@ -1497,14 +1497,14 @@ function SecureNotes() {
           <FaLock /> Lock Vault
         </ActionButton>
       </Header>
-      
+
       <GlobalStyle />
-      
+
       {message && (
         <Message $type={message.type}>
           <MessageIcon>
-            {message.type === 'error' ? <FaExclamationTriangle /> : 
-             message.type === 'success' ? <FaCheck /> : 
+            {message.type === 'error' ? <FaExclamationTriangle /> :
+             message.type === 'success' ? <FaCheck /> :
              <FaInfoCircle />}
           </MessageIcon>
           <MessageContent>{message.text}</MessageContent>
@@ -1513,7 +1513,7 @@ function SecureNotes() {
           </CloseButton>
         </Message>
       )}
-      
+
       <TwoColumnLayout>
         <CategoryPanel>
           <CategoryHeader>
@@ -1521,10 +1521,10 @@ function SecureNotes() {
               <FaFolder /> Categories
             </CategoryTitle>
           </CategoryHeader>
-          
+
           <CategoryList>
             {CATEGORIES.map(category => (
-              <CategoryItem 
+              <CategoryItem
                 key={category.id}
                 $active={selectedCategory === category.id}
                 onClick={() => handleCategorySelect(category.id)}
@@ -1541,38 +1541,38 @@ function SecureNotes() {
               </CategoryItem>
             ))}
           </CategoryList>
-          
+
           <ActionButton $primary onClick={() => handleOpenAddModal()}>
             <FaPlus /> Add New Item
           </ActionButton>
         </CategoryPanel>
-        
+
         <ContentPanel>
           <ContentHeader>
             <SearchContainer>
               <SearchIcon><FaSearch /></SearchIcon>
-              <SearchInput 
+              <SearchInput
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </SearchContainer>
-            
+
             <ToolBar>
               <ActionButton
-                onClick={() => setSortOrder(prev => 
-                  prev === 'newest' ? 'oldest' : 
+                onClick={() => setSortOrder(prev =>
+                  prev === 'newest' ? 'oldest' :
                   prev === 'oldest' ? 'alphabetical' : 'newest'
                 )}
                 title="Change sort order"
               >
-                <FaSort /> {sortOrder === 'newest' ? 'Newest' : 
+                <FaSort /> {sortOrder === 'newest' ? 'Newest' :
                            sortOrder === 'oldest' ? 'Oldest' : 'A-Z'}
               </ActionButton>
-              
+
               {selectedCategory !== 'all' && (
-                <ActionButton 
+                <ActionButton
                   $primary
                   onClick={() => {
                     const category = CATEGORIES.find(c => c.id === selectedCategory);
@@ -1583,15 +1583,15 @@ function SecureNotes() {
                     }
                   }}
                 >
-                  <FaPlus /> Add {selectedCategory === 'passwords' ? 'Password' : 
-                             selectedCategory === 'notes' ? 'Note' : 
-                             selectedCategory === 'cards' ? 'Card' : 
+                  <FaPlus /> Add {selectedCategory === 'passwords' ? 'Password' :
+                             selectedCategory === 'notes' ? 'Note' :
+                             selectedCategory === 'cards' ? 'Card' :
                              selectedCategory === 'identities' ? 'Identity' : 'Entry'}
                 </ActionButton>
               )}
             </ToolBar>
           </ContentHeader>
-          
+
           <ContentList>
             {isLoading ? (
               <EmptyState>
@@ -1601,13 +1601,13 @@ function SecureNotes() {
             ) : filteredEntries.length === 0 ? (
               <EmptyState>
                 <IconContainer>
-                  {selectedCategory === 'all' ? <FaFolder /> : 
-                   selectedCategory === 'passwords' ? <FaKey /> : 
-                   selectedCategory === 'notes' ? <FaStickyNote /> : 
-                   selectedCategory === 'cards' ? <FaCreditCard /> : 
+                  {selectedCategory === 'all' ? <FaFolder /> :
+                   selectedCategory === 'passwords' ? <FaKey /> :
+                   selectedCategory === 'notes' ? <FaStickyNote /> :
+                   selectedCategory === 'cards' ? <FaCreditCard /> :
                    selectedCategory === 'identities' ? <FaIdCard /> : <FaFile />}
                 </IconContainer>
-                
+
                 {searchTerm ? (
                   <>
                     <p>No entries found matching "{searchTerm}"</p>
@@ -1618,7 +1618,7 @@ function SecureNotes() {
                 ) : (
                   <>
                     <p>No entries in this category</p>
-                    <ActionButton 
+                    <ActionButton
                       $primary
                       onClick={() => {
                         const category = CATEGORIES.find(c => c.id === selectedCategory);
@@ -1630,9 +1630,9 @@ function SecureNotes() {
                       }}
                       style={{ marginTop: '16px' }}
                     >
-                      <FaPlus /> Add {selectedCategory === 'passwords' ? 'Password' : 
-                               selectedCategory === 'notes' ? 'Note' : 
-                               selectedCategory === 'cards' ? 'Card' : 
+                      <FaPlus /> Add {selectedCategory === 'passwords' ? 'Password' :
+                               selectedCategory === 'notes' ? 'Note' :
+                               selectedCategory === 'cards' ? 'Card' :
                                selectedCategory === 'identities' ? 'Identity' : 'Entry'}
                     </ActionButton>
                   </>
@@ -1646,7 +1646,7 @@ function SecureNotes() {
                     timeout={300}
                     classNames="fade"
                   >
-                    <EntryItem 
+                    <EntryItem
                       $selected={selectedEntry && selectedEntry.id === entry.id}
                       onClick={() => handleSelectEntry(entry)}
                     >
@@ -1656,7 +1656,7 @@ function SecureNotes() {
                         </EntryIcon>
                         <EntryTitle>{entry.title}</EntryTitle>
                         <EntryActions>
-                          <IconButton 
+                          <IconButton
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditEntry(entry);
@@ -1665,7 +1665,7 @@ function SecureNotes() {
                           >
                             <FaEdit />
                           </IconButton>
-                          <IconButton 
+                          <IconButton
                             $bg="#f8d7da"
                             $bgHover="#f5c6cb"
                             $color="#e74c3c"
@@ -1679,14 +1679,14 @@ function SecureNotes() {
                           </IconButton>
                         </EntryActions>
                       </EntryHeader>
-                      
+
                       {selectedEntry && selectedEntry.id === entry.id && (
                         <EntryBody>
                           {Object.keys(entry.fields).map(fieldName => {
                             const fieldConfig = FIELD_CONFIGS[entry.type].find(f => f.name === fieldName);
                             return renderEntryField(entry, fieldName, fieldConfig);
                           })}
-                          
+
                           {entry.tags && entry.tags.length > 0 && (
                             <EntryField>
                               <EntryFieldLabel>Tags</EntryFieldLabel>
@@ -1699,7 +1699,7 @@ function SecureNotes() {
                           )}
                         </EntryBody>
                       )}
-                      
+
                       <EntryMeta>
                         <EntryCategory>
                           {TYPE_ICONS[entry.type]} {entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}
@@ -1714,7 +1714,7 @@ function SecureNotes() {
           </ContentList>
         </ContentPanel>
       </TwoColumnLayout>
-      
+
       {/* Add/Edit Modal */}
       {showAddModal && (
         <Modal onClick={handleCloseModal}>
@@ -1735,11 +1735,11 @@ function SecureNotes() {
                 <FaTimes />
               </CloseButton>
             </ModalHeader>
-            
+
             <ModalBody>
               <FormGroup>
                 <Label>Entry Type</Label>
-                <Select 
+                <Select
                   value={entryType}
                   onChange={(e) => setEntryType(e.target.value)}
                   disabled={isEditing}
@@ -1750,13 +1750,13 @@ function SecureNotes() {
                   <option value="identity">Identity</option>
                 </Select>
               </FormGroup>
-              
+
               {FIELD_CONFIGS[entryType].map(field => (
                 <FormGroup key={field.name}>
                   <Label>{field.label}{field.required ? ' *' : ''}</Label>
-                  
+
                   {field.type === 'textarea' ? (
-                    <TextArea 
+                    <TextArea
                       name={field.name}
                       value={formData[field.name] || ''}
                       onChange={handleInputChange}
@@ -1765,7 +1765,7 @@ function SecureNotes() {
                   ) : field.type === 'password' ? (
                     <FieldRow>
                       <FieldInput>
-                        <Input 
+                        <Input
                           type="text"
                           name={field.name}
                           value={formData[field.name] || ''}
@@ -1773,7 +1773,7 @@ function SecureNotes() {
                           placeholder={field.label}
                         />
                       </FieldInput>
-                      
+
                       {field.name === 'password' && (
                         <ButtonSmall
                           title="Generate password"
@@ -1787,7 +1787,7 @@ function SecureNotes() {
                       )}
                     </FieldRow>
                   ) : (
-                    <Input 
+                    <Input
                       type={field.type}
                       name={field.name}
                       value={formData[field.name] || ''}
@@ -1797,10 +1797,10 @@ function SecureNotes() {
                   )}
                 </FormGroup>
               ))}
-              
+
               <FormGroup>
                 <Label>Tags (comma separated)</Label>
-                <Input 
+                <Input
                   type="text"
                   name="tags"
                   value={formData.tags ? formData.tags.join(', ') : ''}
@@ -1816,13 +1816,13 @@ function SecureNotes() {
                 />
               </FormGroup>
             </ModalBody>
-            
+
             <ModalFooter>
               <ActionButton onClick={handleCloseModal}>
                 <FaTimes /> Cancel
               </ActionButton>
-              <ActionButton 
-                $primary 
+              <ActionButton
+                $primary
                 onClick={handleSaveEntry}
                 disabled={isLoading}
               >
