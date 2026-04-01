@@ -15,11 +15,11 @@ const slideUp = keyframes`
 const TwoFactorContainer = styled.div`
   /* animation: ${fadeIn} 0.3s ease; */
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -35,14 +35,14 @@ const StatusCard = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     margin-bottom: 16px;
     border-radius: 6px;
     gap: 10px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     margin-bottom: 12px;
@@ -57,13 +57,13 @@ const SetupCard = styled.div`
   padding: 24px;
   margin-bottom: 20px;
   /* animation: ${slideUp} 0.4s ease; */
-  
+
   @media (max-width: 768px) {
     padding: 20px;
     margin-bottom: 16px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 16px;
     margin-bottom: 12px;
@@ -77,13 +77,13 @@ const QRContainer = styled.div`
   margin: 20px 0;
   text-align: center;
   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     margin: 16px 0;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     margin: 12px 0;
@@ -107,12 +107,12 @@ const SetupInstructions = styled.div`
   margin: 20px 0;
   color: #495057;
   line-height: 1.6;
-  
+
   ol {
     padding-left: 20px;
     margin: 10px 0;
   }
-  
+
   li {
     margin-bottom: 8px;
   }
@@ -128,19 +128,19 @@ const CodeInput = styled.input`
   text-align: center;
   letter-spacing: 4px;
   font-weight: 600;
-  
+
   &:focus {
     outline: none;
     border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
     box-shadow: 0 0 0 0.2rem ${props => props.$error ? 'rgba(220, 53, 69, 0.25)' : 'rgba(0, 123, 255, 0.25)'};
   }
-  
+
   @media (max-width: 768px) {
     padding: 10px;
     font-size: 15px;
     letter-spacing: 3px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px;
     font-size: 14px;
@@ -152,7 +152,7 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
   margin-top: 20px;
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
   }
@@ -170,7 +170,7 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   ${props => {
     switch (props.$variant) {
       case 'primary':
@@ -206,12 +206,12 @@ const Button = styled.button`
         `;
     }
   }}
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
@@ -248,7 +248,7 @@ const LoadingSpinner = styled.div`
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
@@ -285,7 +285,7 @@ const TwoFactorSettings = () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
       const result = await window.electron.auth.generateTwoFactorSecret();
       if (result.success) {
         setSecretKey(result.secret);
@@ -311,7 +311,7 @@ const TwoFactorSettings = () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
       const result = await window.electron.auth.setupTwoFactor(secretKey, verificationCode);
       if (result.success) {
         setIsEnabled(true);
@@ -337,7 +337,7 @@ const TwoFactorSettings = () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
       const result = await window.electron.auth.disableTwoFactor();
       if (result.success) {
         setIsEnabled(false);
@@ -382,7 +382,7 @@ const TwoFactorSettings = () => {
         <div>
           <strong>Two-Factor Authentication: {isEnabled ? 'Enabled' : 'Disabled'}</strong>
           <div style={{ fontSize: '14px', marginTop: '4px' }}>
-            {isEnabled 
+            {isEnabled
               ? 'Your account is protected with two-factor authentication'
               : 'Add an extra layer of security to your account'
             }
@@ -394,12 +394,12 @@ const TwoFactorSettings = () => {
         <div>
           <h4>Enable Two-Factor Authentication</h4>
           <p>
-            Two-factor authentication adds an extra layer of security to your account by requiring 
+            Two-factor authentication adds an extra layer of security to your account by requiring
             a code from your mobile device in addition to your password.
           </p>
           <ButtonGroup>
-            <Button 
-              $variant="primary" 
+            <Button
+              $variant="primary"
               onClick={startSetup}
               disabled={isLoading}
             >
@@ -416,7 +416,7 @@ const TwoFactorSettings = () => {
             <FaQrcode style={{ marginRight: '8px' }} />
             Set Up Two-Factor Authentication
           </h4>
-          
+
           <SetupInstructions>
             <ol>
               <li>Download Google Authenticator or another TOTP app on your mobile device</li>
@@ -427,9 +427,9 @@ const TwoFactorSettings = () => {
 
           <QRContainer>
             {qrCodeUrl ? (
-              <img 
-                src={qrCodeUrl} 
-                alt="QR Code for 2FA setup" 
+              <img
+                src={qrCodeUrl}
+                alt="QR Code for 2FA setup"
                 style={{ maxWidth: '200px', height: 'auto' }}
                 onError={(e) => {
                   console.error('QR Code failed to load:', e);
@@ -441,7 +441,7 @@ const TwoFactorSettings = () => {
                 Generating QR code...
               </div>
             )}
-            
+
             <div style={{ marginTop: '15px' }}>
               <strong>Manual Entry Key:</strong>
               <SecretKey>{secretKey}</SecretKey>
@@ -463,16 +463,16 @@ const TwoFactorSettings = () => {
           </div>
 
           <ButtonGroup>
-            <Button 
-              $variant="secondary" 
+            <Button
+              $variant="secondary"
               onClick={cancelSetup}
               disabled={isLoading}
             >
               <FaTimes />
               Cancel
             </Button>
-            <Button 
-              $variant="success" 
+            <Button
+              $variant="success"
               $flex="1"
               onClick={completeSetup}
               disabled={isLoading || verificationCode.length !== 6}
@@ -488,12 +488,12 @@ const TwoFactorSettings = () => {
         <div>
           <h4>Manage Two-Factor Authentication</h4>
           <p>
-            Two-factor authentication is currently enabled for your account. 
+            Two-factor authentication is currently enabled for your account.
             You can disable it below, but this will make your account less secure.
           </p>
           <ButtonGroup>
-            <Button 
-              $variant="danger" 
+            <Button
+              $variant="danger"
               onClick={disable2FA}
               disabled={isLoading}
             >
@@ -505,10 +505,10 @@ const TwoFactorSettings = () => {
       )}
 
       {!isSetupMode && (
-        <div style={{ 
-          marginTop: '20px', 
-          padding: '15px', 
-          backgroundColor: '#e9ecef', 
+        <div style={{
+          marginTop: '20px',
+          padding: '15px',
+          backgroundColor: '#e9ecef',
           borderRadius: '6px',
           borderLeft: '4px solid #007bff'
         }}>

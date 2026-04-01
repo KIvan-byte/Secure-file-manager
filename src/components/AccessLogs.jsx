@@ -7,11 +7,11 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -24,7 +24,7 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -40,13 +40,13 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     gap: 8px;
     justify-content: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
     gap: 6px;
@@ -61,13 +61,13 @@ const Card = styled.div`
   margin-bottom: 24px;
   overflow: auto;
   transition: all 0.3s ease;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
     margin-bottom: 16px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     margin-bottom: 12px;
@@ -79,18 +79,18 @@ const FilterBar = styled.div`
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 24px;
-  
+
   @media (max-width: 768px) {
     gap: 8px;
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
   }
@@ -109,7 +109,7 @@ const FilterButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$active ? props.$hoverColor : '#7f8c8d'};
   }
@@ -123,7 +123,7 @@ const FilterButton = styled.button`
   @media (max-width: 576px) {
     justify-content: flex-start;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px 10px;
     font-size: 13px;
@@ -203,7 +203,7 @@ const Table = styled.table`
 
 const TableHead = styled.thead`
   background-color: #f8f9fa;
-  
+
   th {
     position: sticky;
     top: 0;
@@ -215,11 +215,11 @@ const TableHead = styled.thead`
 const TableRow = styled.tr`
   border-bottom: 1px solid #eaeaea;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: #f9f9f9;
   }
-  
+
   &:last-child {
     border-bottom: none;
   }
@@ -232,7 +232,7 @@ const TableCell = styled.td`
   overflow: ${props => props.$overflow ? 'hidden' : 'visible'};
   text-overflow: ${props => props.$overflow ? 'ellipsis' : 'clip'};
   white-space: ${props => props.$wrap ? 'normal' : 'nowrap'};
-  
+
   @media (max-width: 768px) {
     padding: 10px;
     font-size: 13px;
@@ -245,7 +245,7 @@ const TableHeader = styled.th`
   font-weight: 600;
   color: #34495e;
   white-space: nowrap;
-  
+
   @media (max-width: 768px) {
     padding: 10px;
   }
@@ -280,11 +280,11 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
@@ -303,7 +303,7 @@ const LoadingIndicator = styled.div`
 const SpinningIcon = styled.div`
   animation: spin 1s linear infinite;
   font-size: 24px;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -319,7 +319,7 @@ const Timestamp = styled.div`
   font-size: 13px;
   display: flex;
   flex-direction: column;
-  
+
   span:first-child {
     font-weight: 500;
     color: #34495e;
@@ -370,7 +370,7 @@ function AccessLogs() {
       const result = await window.electron.fileManager.getAccessLogs();
       if (result.success) {
         // Sort logs from newest to oldest
-        const sortedLogs = result.logs.sort((a, b) => 
+        const sortedLogs = result.logs.sort((a, b) =>
           new Date(b.timestamp) - new Date(a.timestamp)
         );
         setLogs(sortedLogs);
@@ -409,7 +409,7 @@ function AccessLogs() {
       default: return action;
     }
   };
-  
+
   const getActionIcon = (action) => {
     switch (action) {
       case 'read_file': return <FaFile />;
@@ -444,7 +444,7 @@ function AccessLogs() {
       )}
 
       <FilterBar>
-        <FilterButton 
+        <FilterButton
           $active={filter === 'all'}
           $color="#2c3e50"
           $hoverColor="#1a252f"
@@ -452,7 +452,7 @@ function AccessLogs() {
         >
           <FaFilter /> All Activities
         </FilterButton>
-        <FilterButton 
+        <FilterButton
           $active={filter === 'read_file'}
           $color="#3498db"
           $hoverColor="#2980b9"
@@ -460,7 +460,7 @@ function AccessLogs() {
         >
           <FaFile /> File Reads
         </FilterButton>
-        <FilterButton 
+        <FilterButton
           $active={filter === 'read_directory'}
           $color="#2ecc71"
           $hoverColor="#27ae60"
@@ -468,7 +468,7 @@ function AccessLogs() {
         >
           <FaFolder /> Directory Access
         </FilterButton>
-        <FilterButton 
+        <FilterButton
           $active={filter === 'share_file'}
           $color="#e74c3c"
           $hoverColor="#c0392b"
@@ -476,7 +476,7 @@ function AccessLogs() {
         >
           <FaShare /> File Shares
         </FilterButton>
-        <FilterButton 
+        <FilterButton
           $active={filter === 'access_shared_file'}
           $color="#f39c12"
           $hoverColor="#d35400"

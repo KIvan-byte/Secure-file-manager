@@ -11,11 +11,11 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -28,7 +28,7 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -44,13 +44,13 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     gap: 8px;
     justify-content: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
     gap: 6px;
@@ -63,12 +63,12 @@ const Card = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   margin-bottom: 24px;
-  
+
   @media (max-width: 768px) {
     border-radius: 6px;
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
   }
@@ -81,14 +81,14 @@ const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   @media (max-width: 768px) {
     padding: 12px 16px;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 10px 12px;
   }
@@ -101,13 +101,13 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   @media (max-width: 768px) {
     font-size: 16px;
     gap: 6px;
     justify-content: center;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 14px;
   }
@@ -115,11 +115,11 @@ const CardTitle = styled.h3`
 
 const CardContent = styled.div`
   padding: ${props => props.$noPadding ? '0' : '24px'};
-  
+
   @media (max-width: 768px) {
     padding: ${props => props.$noPadding ? '0' : '16px'};
   }
-  
+
   @media (max-width: 480px) {
     padding: ${props => props.$noPadding ? '0' : '12px'};
   }
@@ -167,15 +167,15 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
-  
+
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
@@ -193,15 +193,15 @@ const FileRow = styled.div`
   padding: 16px 24px;
   border-bottom: 1px solid #eaeaea;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: #f8f9fa;
   }
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -241,7 +241,7 @@ const FileMeta = styled.div`
   margin-left: 34px;
   gap: 16px;
   margin-top: 4px;
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     gap: 4px;
@@ -271,11 +271,11 @@ const FileActions = styled.div`
   display: flex;
   gap: 8px;
   align-self: center;
-  
+
   @media (max-width: 768px) {
     justify-content: flex-end;
   }
-  
+
   @media (max-width: 576px) {
     flex-wrap: wrap;
   }
@@ -294,15 +294,15 @@ const ActionButton = styled.button`
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$hoverColor || '#2980b9'};
   }
-  
+
   svg {
     font-size: 14px;
   }
-  
+
   @media (max-width: 576px) {
     flex: 1;
     min-width: 120px;
@@ -332,13 +332,13 @@ const SearchInput = styled.input`
   font-size: 14px;
   transition: border 0.3s ease;
   width: 250px;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   @media (max-width: 768px) {
     width: 100%;
   }
@@ -347,7 +347,7 @@ const SearchInput = styled.input`
 const SearchContainer = styled.div`
   position: relative;
   margin-left: auto;
-  
+
   @media (max-width: 768px) {
     margin-top: 16px;
     width: 100%;
@@ -409,7 +409,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   color: #7f8c8d;
   padding: 5px;
-  
+
   &:hover {
     color: #34495e;
   }
@@ -437,13 +437,13 @@ const Input = styled.input`
   border-radius: 6px;
   font-size: 14px;
   transition: border 0.3s ease;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   &:disabled {
     background-color: #f5f5f5;
   }
@@ -455,11 +455,11 @@ const Checkbox = styled.div`
   gap: 10px;
   margin-bottom: 5px;
   cursor: pointer;
-  
+
   input {
     cursor: pointer;
   }
-  
+
   label {
     cursor: pointer;
     margin-bottom: 0;
@@ -548,7 +548,7 @@ const Spinner = styled(FaSpinner)`
   font-size: 30px;
   margin-bottom: 16px;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -568,7 +568,7 @@ function EncryptedFiles() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
   const [encryptionMode, setEncryptionMode] = useState('decrypt');
-  
+
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareFile, setShareFile] = useState(null);
   const [sharePassword, setSharePassword] = useState('');
@@ -577,16 +577,16 @@ function EncryptedFiles() {
   const [copied, setCopied] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [isSharingLoading, setIsSharingLoading] = useState(false);
-  
+
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     fetchEncryptedFiles();
   }, []);
-  
+
   useEffect(() => {
     if (searchTerm) {
-      const filtered = encryptedFiles.filter(file => 
+      const filtered = encryptedFiles.filter(file =>
         file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         file.path.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -595,31 +595,31 @@ function EncryptedFiles() {
       setFilteredFiles(encryptedFiles);
     }
   }, [searchTerm, encryptedFiles]);
-  
+
   const fetchEncryptedFiles = async () => {
     try {
       setLoading(true);
-      
+
       const result = await window.electron.fileManager.listEncryptedFiles();
       if (result.success) {
         setEncryptedFiles(result.files);
         setFilteredFiles(result.files);
       } else {
-        setMessage({ 
-          type: 'error', 
-          text: `Error loading encrypted files: ${result.error}` 
+        setMessage({
+          type: 'error',
+          text: `Error loading encrypted files: ${result.error}`
         });
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: `Error loading encrypted files: ${error.message}` 
+      setMessage({
+        type: 'error',
+        text: `Error loading encrypted files: ${error.message}`
       });
     } finally {
       setLoading(false);
     }
   };
-  
+
   const getFileDetails = async (file) => {
     try {
       const result = await window.electron.fileManager.getEncryptedFileDetails(file.path);
@@ -631,13 +631,13 @@ function EncryptedFiles() {
     }
     return null;
   };
-  
+
   const handleDecrypt = (file) => {
     setSelectedFile(file);
     setEncryptionMode('decrypt');
     setShowEncryptionModal(true);
   };
-  
+
   const handleShare = async (file) => {
     // Get detailed info about the file
     const details = await getFileDetails(file);
@@ -648,13 +648,13 @@ function EncryptedFiles() {
     setShowQRCode(false);
     setShowShareModal(true);
   };
-  
+
   const shareEncryptedFile = async () => {
     if (!shareFile) return;
-    
+
     try {
       setIsSharingLoading(true);
-      
+
       // If decryption is allowed but no password is provided
       if (allowDecryption && !sharePassword) {
         setMessage({
@@ -664,13 +664,13 @@ function EncryptedFiles() {
         setIsSharingLoading(false);
         return;
       }
-      
+
       const result = await window.electron.fileManager.shareEncryptedFileWithDecryption({
         filePath: shareFile.path,
         password: sharePassword,
         allowDecryption
       });
-      
+
       if (result.success) {
         setShareLink(result.shareLink);
         setMessage({
@@ -692,43 +692,43 @@ function EncryptedFiles() {
       setIsSharingLoading(false);
     }
   };
-  
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  
+
   const toggleQRCode = () => {
     setShowQRCode(!showQRCode);
   };
-  
+
   const formatDate = (date) => {
     return new Date(date).toLocaleString();
   };
-  
+
   const formatSize = (size) => {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let unitIndex = 0;
     let fileSize = size;
-    
+
     while (fileSize >= 1024 && unitIndex < units.length - 1) {
       fileSize /= 1024;
       unitIndex++;
     }
-    
+
     return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
   };
-  
+
   const closeEncryptionModal = () => {
     setShowEncryptionModal(false);
     fetchEncryptedFiles(); // Refresh list after encryption/decryption
   };
-  
+
   const viewInExplorer = (file) => {
     navigate('/', { state: { openDirectory: path.dirname(file.path) } });
   };
-  
+
   return (
     <Container>
       <Header>
@@ -737,7 +737,7 @@ function EncryptedFiles() {
         </Title>
         <SearchContainer>
           <SearchIcon><FaSearch /></SearchIcon>
-          <SearchInput 
+          <SearchInput
             type="text"
             placeholder="Search encrypted files..."
             value={searchTerm}
@@ -745,14 +745,14 @@ function EncryptedFiles() {
           />
         </SearchContainer>
       </Header>
-      
+
       {message && (
         <Message $type={message.type}>
           <MessageIcon>
-            {message.type === 'error' 
-              ? <FaExclamationTriangle /> 
-              : message.type === 'success' 
-                ? <FaCheck /> 
+            {message.type === 'error'
+              ? <FaExclamationTriangle />
+              : message.type === 'success'
+                ? <FaCheck />
                 : <FaInfoCircle />}
           </MessageIcon>
           <div>{message.text}</div>
@@ -761,13 +761,13 @@ function EncryptedFiles() {
           </CloseButton>
         </Message>
       )}
-      
+
       <Card>
         <CardHeader>
           <CardTitle>
             <FaLock /> Your Encrypted Files
           </CardTitle>
-          <Button 
+          <Button
             $primary
             onClick={fetchEncryptedFiles}
             disabled={loading}
@@ -775,7 +775,7 @@ function EncryptedFiles() {
             Refresh
           </Button>
         </CardHeader>
-        
+
         <CardContent $noPadding>
           {loading ? (
             <LoadingIndicator>
@@ -798,7 +798,7 @@ function EncryptedFiles() {
                 <>
                   <p>You haven't encrypted any files yet</p>
                   <p>Use the File Explorer to encrypt your files</p>
-                  <Button 
+                  <Button
                     $primary
                     onClick={() => navigate('/')}
                     style={{ marginTop: '16px' }}
@@ -827,28 +827,28 @@ function EncryptedFiles() {
                       </FileMetaItem>
                     </FileMeta>
                   </FileInfo>
-                  
+
                   <FileActions>
-                    <ActionButton 
-                      $color="#27ae60" 
+                    <ActionButton
+                      $color="#27ae60"
                       $hoverColor="#219653"
                       onClick={() => handleDecrypt(file)}
                       title="Decrypt file"
                     >
                       <FaUnlock /> Decrypt
                     </ActionButton>
-                    
-                    <ActionButton 
-                      $color="#e74c3c" 
+
+                    <ActionButton
+                      $color="#e74c3c"
                       $hoverColor="#c0392b"
                       onClick={() => handleShare(file)}
                       title="Share encrypted file"
                     >
                       <FaShare /> Share
                     </ActionButton>
-                    
-                    <ActionButton 
-                      $color="#3498db" 
+
+                    <ActionButton
+                      $color="#3498db"
                       $hoverColor="#2980b9"
                       onClick={() => viewInExplorer(file)}
                       title="View in file explorer"
@@ -862,14 +862,14 @@ function EncryptedFiles() {
           )}
         </CardContent>
       </Card>
-      
-      <FileEncryptionModal 
+
+      <FileEncryptionModal
         isOpen={showEncryptionModal}
         onClose={closeEncryptionModal}
         file={selectedFile}
         mode={encryptionMode}
       />
-      
+
       {/* Share Encrypted File Modal */}
       {showShareModal && (
         <Modal onClick={() => !isSharingLoading && setShowShareModal(false)}>
@@ -878,14 +878,14 @@ function EncryptedFiles() {
               <ModalTitle>
                 <FaShare /> Share Encrypted File
               </ModalTitle>
-              <CloseButton 
+              <CloseButton
                 onClick={() => !isSharingLoading && setShowShareModal(false)}
                 disabled={isSharingLoading}
               >
                 <FaTimes />
               </CloseButton>
             </ModalHeader>
-            
+
             <ModalBody>
               {shareFile && (
                 <>
@@ -894,17 +894,17 @@ function EncryptedFiles() {
                     <div style={{ fontSize: '13px', fontFamily: 'monospace', marginTop: '5px', wordBreak: 'break-all' }}>
                       {shareFile.path}
                     </div>
-                    
+
                     {shareFile.originalFileName && (
                       <OriginalFile>
                         Original file: {shareFile.originalFileName}
                       </OriginalFile>
                     )}
                   </div>
-                  
+
                   <FormGroup>
                     <Checkbox>
-                      <input 
+                      <input
                         type="checkbox"
                         id="allowDecryption"
                         checked={allowDecryption}
@@ -913,16 +913,16 @@ function EncryptedFiles() {
                       />
                       <label htmlFor="allowDecryption">Allow recipient to decrypt file</label>
                     </Checkbox>
-                    
+
                     <div style={{ fontSize: '13px', color: '#7f8c8d', marginLeft: '25px' }}>
                       When enabled, the recipient can download the decrypted file directly
                     </div>
                   </FormGroup>
-                  
+
                   {allowDecryption && (
                     <FormGroup>
                       <Label>Decryption Password</Label>
-                      <Input 
+                      <Input
                         type="password"
                         value={sharePassword}
                         onChange={e => setSharePassword(e.target.value)}
@@ -931,16 +931,16 @@ function EncryptedFiles() {
                       />
                     </FormGroup>
                   )}
-                  
-                  <Button 
-                    $primary 
+
+                  <Button
+                    $primary
                     onClick={shareEncryptedFile}
                     style={{ width: '100%' }}
                     disabled={isSharingLoading}
                   >
                     {isSharingLoading ? (
                       <>
-                        <FaSpinner style={{ animation: 'spin 1s linear infinite' }} /> 
+                        <FaSpinner style={{ animation: 'spin 1s linear infinite' }} />
                         Creating Share Link...
                       </>
                     ) : (
@@ -949,7 +949,7 @@ function EncryptedFiles() {
                       </>
                     )}
                   </Button>
-                  
+
                   {shareLink && (
                     <>
                       <ShareLinkContainer>
@@ -964,7 +964,7 @@ function EncryptedFiles() {
                             <ActionButton onClick={() => copyToClipboard(shareLink)}>
                               {copied ? <><FaCheck /> Copied!</> : <><FaCopy /> Copy Link</>}
                             </ActionButton>
-                            <ActionButton 
+                            <ActionButton
                               $color={showQRCode ? '#e74c3c' : '#3498db'}
                               $hoverColor={showQRCode ? '#c0392b' : '#2980b9'}
                               onClick={toggleQRCode}
@@ -983,7 +983,7 @@ function EncryptedFiles() {
                           </QRCodeFrame>
                         </QRCodeContainer>
                       )}
-                      
+
                       <InfoBox>
                         <strong><FaInfoCircle style={{ marginRight: '5px' }} /> Sharing Information</strong>
                         <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>

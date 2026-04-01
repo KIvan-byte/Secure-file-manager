@@ -8,14 +8,14 @@ import VirusTotalSettings from './VirusTotalSettings';
 // Enhanced password validation component
 const PasswordValidator = ({ password, onValidationChange }) => {
   const [validation, setValidation] = useState(null);
-  
+
   useEffect(() => {
     if (!password) {
       setValidation(null);
       onValidationChange?.(null);
       return;
     }
-    
+
     // Use the new security API for password validation
     window.electron.security.validatePassword(password)
       .then(result => {
@@ -28,9 +28,9 @@ const PasswordValidator = ({ password, onValidationChange }) => {
         console.error('Password validation error:', err);
       });
   }, [password, onValidationChange]);
-  
+
   if (!validation) return null;
-  
+
   return (
     <ValidationContainer>
       <ValidationHeader $isValid={validation.isValid}>
@@ -63,11 +63,11 @@ const Container = styled.div`
   flex-direction: column;
   max-width: 100%;
   padding: 0 16px;
-  
+
   @media (max-width: 768px) {
     padding: 0 12px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0 8px;
   }
@@ -80,12 +80,12 @@ const Header = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
     gap: 12px;
   }
-  
+
   @media (max-width: 480px) {
     flex-direction: column;
     align-items: stretch;
@@ -100,12 +100,12 @@ const Title = styled.h2`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
     gap: 8px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 1.25rem;
     text-align: center;
@@ -119,12 +119,12 @@ const SettingsCard = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
   overflow: hidden;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
     border-radius: 6px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
     border-radius: 4px;
@@ -138,11 +138,11 @@ const CardHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eaeaea;
-  
+
   @media (max-width: 768px) {
     padding: 12px 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
     flex-direction: column;
@@ -158,12 +158,12 @@ const CardTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   @media (max-width: 768px) {
     font-size: 16px;
     gap: 6px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 15px;
   }
@@ -171,11 +171,11 @@ const CardTitle = styled.h3`
 
 const CardContent = styled.div`
   padding: 24px;
-  
+
   @media (max-width: 768px) {
     padding: 16px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 12px;
   }
@@ -183,15 +183,15 @@ const CardContent = styled.div`
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
-  
+
   @media (max-width: 768px) {
     margin-bottom: 16px;
   }
-  
+
   @media (max-width: 480px) {
     margin-bottom: 12px;
   }
@@ -202,11 +202,11 @@ const Label = styled.label`
   margin-bottom: 8px;
   font-weight: 600;
   color: #34495e;
-  
+
   @media (max-width: 768px) {
     font-size: 14px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 13px;
   }
@@ -216,12 +216,12 @@ const Description = styled.div`
   color: #7f8c8d;
   font-size: 14px;
   margin-bottom: 12px;
-  
+
   @media (max-width: 768px) {
     font-size: 13px;
     margin-bottom: 10px;
   }
-  
+
   @media (max-width: 480px) {
     font-size: 12px;
     margin-bottom: 8px;
@@ -232,11 +232,11 @@ const InputContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  
+
   @media (max-width: 768px) {
     gap: 10px;
   }
-  
+
   @media (max-width: 576px) {
     flex-direction: column;
     align-items: stretch;
@@ -251,19 +251,19 @@ const Input = styled.input`
   font-size: 14px;
   transition: border 0.3s ease;
   width: 100%;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   @media (max-width: 768px) {
     padding: 8px 10px;
     font-size: 13px;
     border-radius: 4px;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px;
     font-size: 14px;
@@ -277,25 +277,25 @@ const Select = styled.select`
   font-size: 14px;
   transition: border 0.3s ease;
   min-width: 150px;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   @media (max-width: 768px) {
     padding: 8px 10px;
     font-size: 13px;
     border-radius: 4px;
     min-width: 120px;
   }
-  
+
   @media (max-width: 576px) {
     width: 100%;
     min-width: auto;
   }
-  
+
   @media (max-width: 480px) {
     padding: 8px;
     font-size: 14px;
@@ -315,39 +315,39 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
-  
+
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
   }
-  
+
   @media (max-width: 768px) {
     padding: 8px 12px;
     font-size: 14px;
     gap: 6px;
     border-radius: 4px;
-    
+
     &:hover {
       transform: none;
     }
-    
+
     &:active {
       transform: none;
     }
   }
-  
+
   @media (max-width: 576px) {
     width: 100%;
   }
-  
+
   @media (max-width: 480px) {
     padding: 10px 12px;
     font-size: 14px;
@@ -365,11 +365,11 @@ const SwitchInput = styled.input`
   opacity: 0;
   width: 0;
   height: 0;
-  
+
   &:checked + span {
     background-color: #2ecc71;
   }
-  
+
   &:checked + span:before {
     transform: translateX(24px);
   }
@@ -385,7 +385,7 @@ const SwitchSlider = styled.span`
   background-color: #ccc;
   transition: 0.4s;
   border-radius: 34px;
-  
+
   &:before {
     position: absolute;
     content: "";
@@ -467,12 +467,12 @@ const RadioOption = styled.label`
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: #ebf5fd;
     border-color: #3498db;
   }
-  
+
   input {
     cursor: pointer;
   }
@@ -492,16 +492,16 @@ const NumberInput = styled.input`
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   /* Hide spinner buttons */
-  &::-webkit-inner-spin-button, 
-  &::-webkit-outer-spin-button { 
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
@@ -578,7 +578,7 @@ const ValidationIssue = styled.div`
   font-size: 13px;
   color: #d84315;
   margin-bottom: 4px;
-  
+
   svg {
     font-size: 12px;
   }
@@ -608,11 +608,11 @@ const TabButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  
+
   &:hover {
     background: ${props => props.$active ? '#1976d2' : '#e0e0e0'};
   }
-  
+
   &:not(:last-child) {
     border-right: 1px solid #e0e0e0;
   }
@@ -629,16 +629,16 @@ function Settings() {
   const [passwordValidation, setPasswordValidation] = useState(null);
   const [activeTab, setActiveTab] = useState('security'); // security, privacy, advanced
   const [securityDashboardVisible, setSecurityDashboardVisible] = useState(false);
-  
+
   useEffect(() => {
     // Load settings from local storage or settings service
     loadSettings();
   }, []);
-  
+
   const handlePasswordValidation = (validation) => {
     setPasswordValidation(validation);
   };
-  
+
   const validatePasswordsMatch = () => {
     if (lockPassword && confirmPassword && lockPassword !== confirmPassword) {
       setMessage({
@@ -649,7 +649,7 @@ function Settings() {
     }
     return true;
   };
-  
+
   const validatePasswordStrength = () => {
     if (lockPassword && passwordValidation && !passwordValidation.isValid) {
       setMessage({
@@ -660,11 +660,11 @@ function Settings() {
     }
     return true;
   };
-  
+
   const loadSettings = async () => {
     try {
       setIsLoading(true);
-      
+
       // Check if secure storage has any saved settings
       try {
         const stats = await window.electronAPI.secureStorage.getStats();
@@ -678,11 +678,11 @@ function Settings() {
       } catch (error) {
         console.warn('Could not check for saved settings:', error);
       }
-      
+
       // For security reasons, we don't pre-load the password
       // The user will need to re-enter it each time they change settings
       // This is intentional for security
-      
+
     } catch (error) {
       console.error('Error loading settings:', error);
       setMessage({
@@ -693,7 +693,7 @@ function Settings() {
       setIsLoading(false);
     }
   };
-  
+
   const saveSettings = async () => {
     try {
       // Validate settings
@@ -704,15 +704,15 @@ function Settings() {
         });
         return;
       }
-      
+
       if (!validatePasswordsMatch()) {
         return;
       }
-      
+
       if (!validatePasswordStrength()) {
         return;
       }
-      
+
       // Validate custom timeout
       if (lockTimeout === 'custom') {
         const customTimeoutValue = parseInt(customTimeout, 10);
@@ -724,15 +724,15 @@ function Settings() {
           return;
         }
       }
-      
+
       setIsLoading(true);
-      
+
       const securitySettings = {
         autoLock: autoLockEnabled,
         timeout: lockTimeout === 'custom' ? parseInt(customTimeout, 10) : lockTimeout,
         password: lockPassword
       };
-      
+
       // Initialize secure storage with the password if it's provided
       if (securitySettings.password && securitySettings.password.length >= 8) {
         try {
@@ -740,23 +740,23 @@ function Settings() {
           if (!initResult.success) {
             throw new Error('Failed to initialize secure storage');
           }
-          
+
           // Save settings to secure storage (without the password for security)
           const settingsToSave = {
             ...securitySettings,
             password: '' // Don't save the actual password
           };
-          
+
           const storeResult = await window.electronAPI.secureStorage.store('securitySettings', JSON.stringify(settingsToSave));
           if (!storeResult.success) {
             throw new Error('Failed to save settings to secure storage');
           }
-          
+
           // Save a flag indicating that a password has been set
           await window.electronAPI.secureStorage.store('hasPassword', 'true');
-          
+
           console.log('Settings saved to secure storage successfully');
-          
+
         } catch (storageError) {
           console.error('Failed to save to secure storage:', storageError);
           setMessage({
@@ -766,17 +766,17 @@ function Settings() {
           return;
         }
       }
-      
+
       // Dispatch a custom event that App.js can listen to
-      window.dispatchEvent(new CustomEvent('securitySettingsChanged', { 
-        detail: securitySettings 
+      window.dispatchEvent(new CustomEvent('securitySettingsChanged', {
+        detail: securitySettings
       }));
-      
+
       setMessage({
         type: 'success',
         text: 'Security settings saved successfully and will persist between application restarts'
       });
-      
+
     } catch (error) {
       console.error('Error saving settings:', error);
       setMessage({
@@ -787,7 +787,7 @@ function Settings() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <Container>
       <Header>
@@ -795,12 +795,12 @@ function Settings() {
           <FaCog /> Settings
         </Title>
       </Header>
-      
+
       {message && (
         <Message $type={message.type}>
           <MessageIcon>
-            {message.type === 'success' ? <FaCheck /> : 
-             message.type === 'error' ? <FaExclamationTriangle /> : 
+            {message.type === 'success' ? <FaCheck /> :
+             message.type === 'error' ? <FaExclamationTriangle /> :
              <FaInfoCircle />}
           </MessageIcon>
           <div>{message.text}</div>
@@ -809,34 +809,34 @@ function Settings() {
           </CloseButton>
         </Message>
       )}
-      
+
       <TabContainer>
-        <TabButton 
-          $active={activeTab === 'security'} 
+        <TabButton
+          $active={activeTab === 'security'}
           onClick={() => setActiveTab('security')}
         >
           <FaLock /> Security
         </TabButton>
-        <TabButton 
-          $active={activeTab === 'privacy'} 
+        <TabButton
+          $active={activeTab === 'privacy'}
           onClick={() => setActiveTab('privacy')}
         >
           <FaShieldAlt /> Privacy
         </TabButton>
-        <TabButton 
-          $active={activeTab === 'virustotal'} 
+        <TabButton
+          $active={activeTab === 'virustotal'}
           onClick={() => setActiveTab('virustotal')}
         >
           <FaVirus /> VirusTotal
         </TabButton>
-        <TabButton 
-          $active={activeTab === 'dashboard'} 
+        <TabButton
+          $active={activeTab === 'dashboard'}
           onClick={() => setActiveTab('dashboard')}
         >
           <FaShieldAlt /> Security Dashboard
         </TabButton>
       </TabContainer>
-      
+
       {activeTab === 'security' && (
         <>
           <SettingsCard>
@@ -853,8 +853,8 @@ function Settings() {
             </Description>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <SwitchContainer>
-                <SwitchInput 
-                  type="checkbox" 
+                <SwitchInput
+                  type="checkbox"
                   checked={autoLockEnabled}
                   onChange={(e) => setAutoLockEnabled(e.target.checked)}
                 />
@@ -863,7 +863,7 @@ function Settings() {
               <span>{autoLockEnabled ? 'Enabled' : 'Disabled'}</span>
             </div>
           </FormGroup>
-          
+
           {autoLockEnabled && (
             <>
               <FormGroup>
@@ -873,9 +873,9 @@ function Settings() {
                 </Description>
                 <TimeoutRadio>
                   <RadioOption $checked={lockTimeout === 1}>
-                    <input 
-                      type="radio" 
-                      name="timeout" 
+                    <input
+                      type="radio"
+                      name="timeout"
                       value="1"
                       checked={lockTimeout === 1}
                       onChange={() => setLockTimeout(1)}
@@ -883,9 +883,9 @@ function Settings() {
                     1 minute
                   </RadioOption>
                   <RadioOption $checked={lockTimeout === 5}>
-                    <input 
-                      type="radio" 
-                      name="timeout" 
+                    <input
+                      type="radio"
+                      name="timeout"
                       value="5"
                       checked={lockTimeout === 5}
                       onChange={() => setLockTimeout(5)}
@@ -893,9 +893,9 @@ function Settings() {
                     5 minutes
                   </RadioOption>
                   <RadioOption $checked={lockTimeout === 10}>
-                    <input 
-                      type="radio" 
-                      name="timeout" 
+                    <input
+                      type="radio"
+                      name="timeout"
                       value="10"
                       checked={lockTimeout === 10}
                       onChange={() => setLockTimeout(10)}
@@ -903,9 +903,9 @@ function Settings() {
                     10 minutes
                   </RadioOption>
                   <RadioOption $checked={lockTimeout === 15}>
-                    <input 
-                      type="radio" 
-                      name="timeout" 
+                    <input
+                      type="radio"
+                      name="timeout"
                       value="15"
                       checked={lockTimeout === 15}
                       onChange={() => setLockTimeout(15)}
@@ -913,9 +913,9 @@ function Settings() {
                     15 minutes
                   </RadioOption>
                   <RadioOption $checked={lockTimeout === 30}>
-                    <input 
-                      type="radio" 
-                      name="timeout" 
+                    <input
+                      type="radio"
+                      name="timeout"
                       value="30"
                       checked={lockTimeout === 30}
                       onChange={() => setLockTimeout(30)}
@@ -923,9 +923,9 @@ function Settings() {
                     30 minutes
                   </RadioOption>
                   <RadioOption $checked={lockTimeout === 'custom'}>
-                    <input 
-                      type="radio" 
-                      name="timeout" 
+                    <input
+                      type="radio"
+                      name="timeout"
                       value="custom"
                       checked={lockTimeout === 'custom'}
                       onChange={() => setLockTimeout('custom')}
@@ -935,8 +935,8 @@ function Settings() {
                 </TimeoutRadio>
                 {lockTimeout === 'custom' && (
                   <CustomTimeInput>
-                    <NumberInput 
-                      type="number" 
+                    <NumberInput
+                      type="number"
                       value={customTimeout}
                       onChange={(e) => setCustomTimeout(e.target.value)}
                       min="1"
@@ -946,7 +946,7 @@ function Settings() {
                   </CustomTimeInput>
                 )}
               </FormGroup>
-              
+
               <FormGroup>
                 <Label>Master Password</Label>
                 <Description>
@@ -954,38 +954,38 @@ function Settings() {
                 </Description>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   <InputContainer>
-                    <Input 
-                      type="password" 
+                    <Input
+                      type="password"
                       value={lockPassword}
                       onChange={(e) => setLockPassword(e.target.value)}
                       placeholder="Enter master password"
                     />
                   </InputContainer>
                   <InputContainer>
-                    <Input 
-                      type="password" 
+                    <Input
+                      type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm master password"
                     />
                   </InputContainer>
-                  <PasswordValidator 
-                    password={lockPassword} 
+                  <PasswordValidator
+                    password={lockPassword}
                     onValidationChange={(validation) => setPasswordValidation(validation)}
                   />
                 </div>
               </FormGroup>
             </>
           )}
-          
-          <Button 
-            $primary 
+
+          <Button
+            $primary
             onClick={saveSettings}
             disabled={isLoading}
           >
             <FaSave /> Save Settings
           </Button>
-          
+
           <InfoBox>
             <strong><FaInfoCircle style={{ marginRight: '5px' }} /> Security Information</strong>
             <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
@@ -1010,7 +1010,7 @@ function Settings() {
       </SettingsCard>
         </>
       )}
-      
+
       {activeTab === 'privacy' && (
         <SettingsCard>
           <CardHeader>
@@ -1025,7 +1025,7 @@ function Settings() {
                 All sensitive data is encrypted and stored locally. No data is sent to external servers.
               </Description>
             </FormGroup>
-            
+
             <FormGroup>
               <Label>Session Management</Label>
               <Description>
@@ -1035,11 +1035,11 @@ function Settings() {
           </CardContent>
         </SettingsCard>
       )}
-      
+
       {activeTab === 'virustotal' && (
         <VirusTotalSettings />
       )}
-      
+
       {activeTab === 'dashboard' && (
         <SecurityDashboard />
       )}

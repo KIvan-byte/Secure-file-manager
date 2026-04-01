@@ -50,7 +50,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   color: #7f8c8d;
   padding: 5px;
-  
+
   &:hover {
     color: #34495e;
   }
@@ -83,13 +83,13 @@ const Input = styled.input`
   border-radius: 6px;
   font-size: 14px;
   transition: border 0.3s ease;
-  
+
   &:focus {
     border-color: #3498db;
     outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
-  
+
   &[disabled] {
     background-color: #f5f5f5;
     cursor: not-allowed;
@@ -130,11 +130,11 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.$primary ? '#2980b9' : '#1a252f'};
   }
-  
+
   &:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
@@ -178,7 +178,7 @@ const MessageIcon = styled.div`
 
 const Spinner = styled(FaSpinner)`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -256,7 +256,7 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState('');
   const [strengthPercent, setStrengthPercent] = useState(0);
-  
+
   useEffect(() => {
     if (file) {
       if (mode === 'encrypt') {
@@ -266,35 +266,35 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       }
     }
   }, [file, mode]);
-  
+
   useEffect(() => {
     if (mode === 'encrypt') {
       calculatePasswordStrength(password);
     }
   }, [password, mode]);
-  
+
   const calculatePasswordStrength = (pass) => {
     if (!pass) {
       setPasswordStrength('');
       setStrengthPercent(0);
       return;
     }
-    
+
     let score = 0;
-    
+
     if (pass.length >= 8) score += 1;
     if (pass.length >= 12) score += 1;
     if (pass.length >= 16) score += 1;
-    
+
     if (/\d/.test(pass)) score += 1;
     if (/[a-z]/.test(pass)) score += 1;
     if (/[A-Z]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
     if (!/(123|abc|password|qwerty|admin)/i.test(pass)) score += 1;
-    
+
     const percent = (score / 8) * 100;
     setStrengthPercent(percent);
-    
+
     if (percent < 30) {
       setPasswordStrength('weak');
     } else if (percent < 60) {
@@ -305,7 +305,7 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       setPasswordStrength('very-strong');
     }
   };
-  
+
   const getStrengthLabel = () => {
     switch (passwordStrength) {
       case 'weak': return 'Weak';
@@ -315,7 +315,7 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       default: return '';
     }
   };
-  
+
   const validateForm = () => {
     if (!password) {
       setMessage({
@@ -324,7 +324,7 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       });
       return false;
     }
-    
+
     if (mode === 'encrypt' && passwordStrength === 'weak') {
       setMessage({
         type: 'error',
@@ -332,7 +332,7 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       });
       return false;
     }
-    
+
     if (mode === 'encrypt' && password !== confirmPassword) {
       setMessage({
         type: 'error',
@@ -340,37 +340,37 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       });
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     try {
       setIsProcessing(true);
       setMessage(null);
-      
+
       const params = {
         filePath: file.path,
         password,
         outputPath: mode === 'encrypt' ? outputPath : null
       };
-      
-      const result = mode === 'encrypt' 
+
+      const result = mode === 'encrypt'
         ? await window.electron.fileManager.encryptFile(params)
         : await window.electron.fileManager.decryptFile(params);
-      
+
       if (result.success) {
         setOutputPath(result.outputPath);
-        
+
         setMessage({
           type: 'success',
-          text: mode === 'encrypt' 
+          text: mode === 'encrypt'
             ? `File encrypted successfully. Saved to ${result.outputPath}`
             : `File decrypted successfully. Saved to ${result.outputPath}${result.originalExtension ? ` with original extension (${result.originalExtension})` : ''}`
         });
-        
+
         setPassword('');
         setConfirmPassword('');
       } else {
@@ -388,9 +388,9 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
       setIsProcessing(false);
     }
   };
-  
+
   if (!isOpen || !file) return null;
-  
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={e => e.stopPropagation()}>
@@ -415,12 +415,12 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
             <FileName>{file.name}</FileName>
             <FilePath>{file.path}</FilePath>
           </FileInfo>
-          
+
           <EncryptionForm>
             <FormGroup>
               <Label>Password</Label>
-              <Input 
-                type="password" 
+              <Input
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isProcessing}
@@ -429,9 +429,9 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
               {mode === 'encrypt' && password && (
                 <PasswordStrengthContainer>
                   <PasswordStrengthBar>
-                    <PasswordStrengthIndicator 
-                      $percent={strengthPercent} 
-                      $strength={passwordStrength} 
+                    <PasswordStrengthIndicator
+                      $percent={strengthPercent}
+                      $strength={passwordStrength}
                     />
                   </PasswordStrengthBar>
                   <PasswordStrengthText>
@@ -448,12 +448,12 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
                 </PasswordStrengthContainer>
               )}
             </FormGroup>
-            
+
             {mode === 'encrypt' && (
               <FormGroup>
                 <Label>Confirm Password</Label>
-                <Input 
-                  type="password" 
+                <Input
+                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isProcessing}
@@ -461,19 +461,19 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
                 />
               </FormGroup>
             )}
-            
+
             {mode === 'encrypt' && (
               <FormGroup>
                 <Label>Output File Path</Label>
-                <Input 
-                  type="text" 
+                <Input
+                  type="text"
                   value={outputPath}
                   onChange={(e) => setOutputPath(e.target.value)}
                   disabled={isProcessing}
                 />
               </FormGroup>
             )}
-            
+
             {mode === 'decrypt' && (
               <div style={{ marginBottom: '15px' }}>
                 <small style={{ color: '#7f8c8d' }}>
@@ -482,10 +482,10 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
                 </small>
               </div>
             )}
-            
+
             <ButtonContainer>
-              <ActionButton 
-                $primary 
+              <ActionButton
+                $primary
                 onClick={handleSubmit}
                 disabled={isProcessing}
               >
@@ -503,7 +503,7 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
                   </>
                 )}
               </ActionButton>
-              <ActionButton 
+              <ActionButton
                 onClick={onClose}
                 disabled={isProcessing}
               >
@@ -511,25 +511,25 @@ function FileEncryptionModal({ isOpen, onClose, file, mode = 'encrypt' }) {
               </ActionButton>
             </ButtonContainer>
           </EncryptionForm>
-          
+
           {message && (
             <Message $type={message.type}>
               <MessageIcon>
-                {message.type === 'success' ? <FaCheck /> : 
-                 message.type === 'error' ? <FaTimes /> : 
+                {message.type === 'success' ? <FaCheck /> :
+                 message.type === 'error' ? <FaTimes /> :
                  <FaInfoCircle />}
               </MessageIcon>
               <div>{message.text}</div>
             </Message>
           )}
-          
+
           <InfoBox>
             <strong><FaInfoCircle style={{ marginRight: '5px' }} /> Security Information</strong>
             <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
               <li>Files are encrypted using AES-256-CBC algorithm</li>
               <li>Your password is never stored anywhere</li>
               <li>
-                {mode === 'encrypt' 
+                {mode === 'encrypt'
                   ? 'Make sure to remember your password. There is no way to recover encrypted files without it.'
                   : 'If decryption fails, double-check your password and ensure the file is not corrupted.'}
               </li>
